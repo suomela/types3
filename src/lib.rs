@@ -1,80 +1,89 @@
 use core::ops::Range;
+use std::collections::HashMap;
 
 type Coord = u64;
-type Value = u64;
-
-const DIMBITS: usize = 4;
-const DIMSIZE: usize = 1 << DIMBITS;
-
-fn calc_bits(n: Coord) -> usize {
-    let mut n = n;
-    let mut b = 0;
-    while n >= DIMSIZE as Coord {
-        b += DIMBITS;
-        n <<= DIMBITS;
-    }
-    b
-}
-
-type Cell1D = [Cell; DIMSIZE];
-type Cell2D = [Cell1D; DIMSIZE];
-
-pub enum Node {
-    Bottom,
-    SubY(Cell1D),
-    SubX(Cell1D),
-    SubYX(Cell2D),
-}
-
-pub struct Cell {
-    children: Box<Node>,
-    value: Value,
-}
+type Value = i64;
 
 pub struct Grid {
     ny: Coord,
     nx: Coord,
-    by: usize,
-    bx: usize,
-    top: Cell2D,
+    values: HashMap<(Coord, Coord), Value>,
 }
 
-impl Cell {
-    fn new() -> Cell {
-        Cell {
-            children: Box::new(Node::Bottom),
-            value: 0,
-        }
-    }
+#[derive(Debug)]
+pub struct LinePoint {
+    pub x: Coord,
+    pub v: Value,
+}
 
-    fn new_1d() -> Cell1D {
-        core::array::from_fn(|i| Cell::new())
-    }
+#[derive(Debug)]
+pub struct GridLine {
+    pub y: Coord,
+    pub values: Vec<LinePoint>,
+}
 
-    fn new_2d() -> Cell2D {
-        core::array::from_fn(|i| Cell::new_1d())
-    }
+#[derive(Debug)]
+pub struct GridLines {
+    pub ny: Coord,
+    pub nx: Coord,
+    pub lines: Vec<GridLine>,
 }
 
 impl Grid {
-    fn new(ny: Coord, nx: Coord) -> Grid {
+    pub fn new(ny: Coord, nx: Coord) -> Grid {
         Grid {
             ny,
             nx,
-            by: calc_bits(ny),
-            bx: calc_bits(nx),
-            top: Cell::new_2d(),
+            values: HashMap::new(),
         }
     }
 
-    fn add(&mut self, yy: Range<Coord>, xx: Range<Coord>, v: Value) {
-        let y0 = yy.start;
-        let y1 = yy.end;
+    pub fn add(&mut self, y: Coord, xx: Range<Coord>, v: Value) {
         let x0 = xx.start;
         let x1 = xx.end;
-        assert!(y1 <= self.ny);
-        assert!(x1 <= self.nx);
-        // FIXME
+        debug_assert!(y <= self.ny);
+        debug_assert!(x1 <= self.nx);
+        *self.values.entry((y, x0)).or_insert(0) += v;
+        *self.values.entry((y, x1)).or_insert(0) -= v;
+    }
+
+    pub fn process(&self) -> GridLines {
+        let mut points: Vec<_> = self.values.iter().collect();
+        points.sort();
+        let mut lines = Vec::new();
+        let mut ocurline = None;
+        for (&(y, x), &v) in points {
+            let lp = LinePoint { x, v };
+            ocurline = match ocurline {
+                None => Some(GridLine {
+                    y,
+                    values: vec![lp],
+                }),
+                Some(mut curline) => {
+                    if curline.y == y {
+                        curline.values.push(lp);
+                        Some(curline)
+                    } else {
+                        lines.push(curline);
+                        Some(GridLine {
+                            y,
+                            values: vec![lp],
+                        })
+                    }
+                }
+            };
+        }
+        match ocurline {
+            None => {}
+            Some(curline) => {
+                lines.push(curline);
+            }
+        }
+        GridLines {
+            ny: self.ny,
+            nx: self.nx,
+            lines,
+        }
     }
 }
 
@@ -85,6 +94,22 @@ mod tests {
     #[test]
     fn grid_basic() {
         let mut grid = Grid::new(1234, 5678);
-        grid.add(111..222, 3333..4444, 999);
+        grid.add(111, 3333..4444, 999);
+        grid.add(222, 3111..4111, 9999);
+        let lines = grid.process();
+        assert_eq!(lines.ny, 1234);
+        assert_eq!(lines.nx, 5678);
+        assert_eq!(lines.lines.len(), 2);
+        assert_eq!(lines.lines[0].y, 111);
+        assert_eq!(lines.lines[0].values.len(), 2);
+        assert_eq!(lines.lines[0].values[0].x, 3333);
+        assert_eq!(lines.lines[0].values[0].v, 999);
+        assert_eq!(lines.lines[0].values[1].x, 4444);
+        assert_eq!(lines.lines[0].values[1].v, -999);
+        assert_eq!(lines.lines[1].y, 222);
+        assert_eq!(lines.lines[1].values[0].x, 3111);
+        assert_eq!(lines.lines[1].values[0].v, 9999);
+        assert_eq!(lines.lines[1].values[1].x, 4111);
+        assert_eq!(lines.lines[1].values[1].v, -9999);
     }
 }
