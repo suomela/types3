@@ -5,8 +5,6 @@ type Coord = u64;
 type Value = i64;
 
 pub struct Grid {
-    ny: Coord,
-    nx: Coord,
     values: HashMap<(Coord, Coord), Value>,
 }
 
@@ -30,10 +28,8 @@ pub struct GridLines {
 }
 
 impl Grid {
-    pub fn new(ny: Coord, nx: Coord) -> Grid {
+    pub fn new() -> Grid {
         Grid {
-            ny,
-            nx,
             values: HashMap::new(),
         }
     }
@@ -41,8 +37,6 @@ impl Grid {
     pub fn add(&mut self, y: Coord, xx: Range<Coord>, v: Value) {
         let x0 = xx.start;
         let x1 = xx.end;
-        debug_assert!(y <= self.ny);
-        debug_assert!(x1 <= self.nx);
         *self.values.entry((y, x0)).or_insert(0) += v;
         *self.values.entry((y, x1)).or_insert(0) -= v;
     }
@@ -52,7 +46,14 @@ impl Grid {
         points.sort();
         let mut lines = Vec::new();
         let mut ocurline = None;
+        let mut ny = 0;
+        let mut nx = 0;
         for (&(y, x), &v) in points {
+            if v == 0 {
+                continue;
+            }
+            ny = ny.max(y + 1);
+            nx = nx.max(x);
             let lp = LinePoint { x, v };
             ocurline = match ocurline {
                 None => Some(GridLine {
@@ -79,11 +80,13 @@ impl Grid {
                 lines.push(curline);
             }
         }
-        GridLines {
-            ny: self.ny,
-            nx: self.nx,
-            lines,
-        }
+        GridLines { ny, nx, lines }
+    }
+}
+
+impl Default for Grid {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -93,12 +96,16 @@ mod tests {
 
     #[test]
     fn grid_basic() {
-        let mut grid = Grid::new(1234, 5678);
-        grid.add(111, 3333..4444, 999);
+        let mut grid = Grid::new();
+        grid.add(111, 4000..4444, 1);
+        grid.add(111, 3333..4000, 999);
         grid.add(222, 3111..4111, 9999);
+        grid.add(111, 4000..4444, 998);
+        grid.add(333, 5555..6666, 1);
+        grid.add(333, 5555..6666, -1);
         let lines = grid.process();
-        assert_eq!(lines.ny, 1234);
-        assert_eq!(lines.nx, 5678);
+        assert_eq!(lines.ny, 223);
+        assert_eq!(lines.nx, 4444);
         assert_eq!(lines.lines.len(), 2);
         assert_eq!(lines.lines[0].y, 111);
         assert_eq!(lines.lines[0].values.len(), 2);
