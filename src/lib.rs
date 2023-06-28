@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use core::ops::Range;
 
 pub struct SToken {
     count: u64,
@@ -11,10 +11,10 @@ pub struct Sample {
 }
 
 pub struct Dataset {
-    samples: Vec<Sample>,
-    total_words: u64,
-    total_tokens: u64,
-    total_types: usize,
+    pub samples: Vec<Sample>,
+    pub total_words: u64,
+    pub total_tokens: u64,
+    pub total_types: u64,
 }
 
 impl Dataset {
@@ -33,22 +33,33 @@ impl Dataset {
             samples,
             total_words,
             total_tokens,
-            total_types,
+            total_types: total_types as u64,
         }
     }
 }
 
 pub struct Limits {
-    lower: HashMap<(u64, u64), u64>,
-    upper: HashMap<(u64, u64), u64>,
+    lower: density_curve::Grid,
+    upper: density_curve::Grid,
 }
 
 impl Limits {
     pub fn new() -> Limits {
         Limits {
-            lower: HashMap::new(),
-            upper: HashMap::new(),
+            lower: density_curve::Grid::new(),
+            upper: density_curve::Grid::new(),
         }
+    }
+
+    pub fn add(&mut self, yy: Range<u64>, xx: Range<u64>) {
+        self.lower.add(yy.start, xx.clone(), 1);
+        self.upper.add(yy.end, xx, 1);
+    }
+}
+
+impl Default for Limits {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -67,6 +78,12 @@ impl Limitset {
             tokens_by_words: Limits::new(),
             total: 0,
         }
+    }
+}
+
+impl Default for Limitset {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -122,6 +139,12 @@ fn update_counters(ds: &Dataset, cs: &mut Limitset, idx: &mut [usize], seen: &mu
             c.tokens += t.count;
         }
         c.words += sample.words;
+        cs.tokens_by_words
+            .add(prev.tokens..c.tokens, prev.words..c.words);
+        cs.types_by_words
+            .add(prev.types..c.types, prev.words..c.words);
+        cs.types_by_tokens
+            .add(prev.types..c.types, prev.tokens..c.tokens);
     }
     cs.total += 1;
 }
@@ -146,6 +169,9 @@ mod tests {
                 tokens: vec![SToken { count: 1, id: 1 }],
             },
         ]);
+        assert_eq!(ds.total_words, 3);
+        assert_eq!(ds.total_tokens, 3);
+        assert_eq!(ds.total_types, 2);
         let mut cs = Limitset::new();
         count_exact(&ds, &mut cs);
         assert_eq!(1 * 2 * 3, cs.total);

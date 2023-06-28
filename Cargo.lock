@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
+name = "density-curve"
+version = "0.1.0"
+
+[[package]]
 name = "types3"
 version = "0.1.0"
+dependencies = [
+ "density-curve",
+]
