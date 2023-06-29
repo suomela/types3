@@ -81,37 +81,35 @@ fn push_or_change(r: &mut Vec<SumPoint>, v: SumPoint) {
     }
 }
 
-pub fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
-    let mut r = Vec::new();
+pub fn add_lines_to(a: &[SumPoint], b: &[SumPoint], r: &mut Vec<SumPoint>) {
     let mut i = 0;
     let mut j = 0;
     while i < a.len() && j < b.len() {
         let sum = a[i].sum + b[j].sum;
         match a[i].x.cmp(&b[j].x) {
             Ordering::Equal => {
-                push_or_change(&mut r, SumPoint { x: a[i].x, sum });
+                push_or_change(r, SumPoint { x: a[i].x, sum });
                 i += 1;
                 j += 1;
             }
             Ordering::Less => {
-                push_or_change(&mut r, SumPoint { x: a[i].x, sum });
+                push_or_change(r, SumPoint { x: a[i].x, sum });
                 i += 1;
             }
             Ordering::Greater => {
-                push_or_change(&mut r, SumPoint { x: b[j].x, sum });
+                push_or_change(r, SumPoint { x: b[j].x, sum });
                 j += 1;
             }
         }
     }
     while i < a.len() {
-        push_or_change(&mut r, a[i]);
+        push_or_change(r, a[i]);
         i += 1;
     }
     while j < b.len() {
-        push_or_change(&mut r, b[j]);
+        push_or_change(r, b[j]);
         j += 1;
     }
-    r
 }
 
 impl Grid {
@@ -197,6 +195,12 @@ mod tests {
 
     fn sp(x: Coord, sum: Value) -> SumPoint {
         SumPoint { x, sum }
+    }
+
+    fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
+        let mut r = Vec::new();
+        add_lines_to(a, b, &mut r);
+        r
     }
 
     #[test]
