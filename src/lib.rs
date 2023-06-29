@@ -4,6 +4,7 @@ use std::collections::HashMap;
 type Coord = u64;
 type Value = i64;
 
+#[derive(Debug)]
 pub struct Grid {
     values: HashMap<(Coord, Coord), Value>,
 }
