@@ -28,6 +28,27 @@ pub struct RawLines {
     pub lines: Vec<RawLine>,
 }
 
+/// Represents sums for one horizontal line segment, for x coordinates less than `x`
+#[derive(Debug)]
+pub struct SumPoint {
+    pub x: Coord,
+    pub sum: Value,
+}
+
+/// Represents sums for one horizontal slice, for y coordinates less than `y`
+#[derive(Debug)]
+pub struct SumLine {
+    pub y: Coord,
+    pub sums: Vec<SumPoint>,
+}
+
+#[derive(Debug)]
+pub struct Sums {
+    pub ny: Coord,
+    pub nx: Coord,
+    pub lines: Vec<SumLine>,
+}
+
 impl Grid {
     pub fn new() -> Grid {
         Grid {
@@ -88,6 +109,17 @@ impl Grid {
 impl Default for Grid {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl RawLines {
+    pub fn to_sums(&self) -> Sums {
+        // FIXME
+        Sums {
+            ny: self.ny,
+            nx: self.nx,
+            lines: Vec::new(),
+        }
     }
 }
 
