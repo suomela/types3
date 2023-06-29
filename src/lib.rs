@@ -9,22 +9,22 @@ pub struct Grid {
 }
 
 #[derive(Debug)]
-pub struct LinePoint {
+pub struct RawPoint {
     pub x: Coord,
     pub v: Value,
 }
 
 #[derive(Debug)]
-pub struct GridLine {
+pub struct RawLine {
     pub y: Coord,
-    pub values: Vec<LinePoint>,
+    pub values: Vec<RawPoint>,
 }
 
 #[derive(Debug)]
-pub struct GridLines {
+pub struct RawLines {
     pub ny: Coord,
     pub nx: Coord,
-    pub lines: Vec<GridLine>,
+    pub lines: Vec<RawLine>,
 }
 
 impl Grid {
@@ -41,7 +41,7 @@ impl Grid {
         *self.values.entry((y, x1)).or_insert(0) -= v;
     }
 
-    pub fn process(&self) -> GridLines {
+    pub fn to_rawlines(&self) -> RawLines {
         let mut points: Vec<_> = self.values.iter().collect();
         points.sort();
         let mut lines = Vec::new();
@@ -54,9 +54,9 @@ impl Grid {
             }
             ny = ny.max(y + 1);
             nx = nx.max(x);
-            let lp = LinePoint { x, v };
+            let lp = RawPoint { x, v };
             ocurline = match ocurline {
-                None => Some(GridLine {
+                None => Some(RawLine {
                     y,
                     values: vec![lp],
                 }),
@@ -66,7 +66,7 @@ impl Grid {
                         Some(curline)
                     } else {
                         lines.push(curline);
-                        Some(GridLine {
+                        Some(RawLine {
                             y,
                             values: vec![lp],
                         })
@@ -80,7 +80,7 @@ impl Grid {
                 lines.push(curline);
             }
         }
-        GridLines { ny, nx, lines }
+        RawLines { ny, nx, lines }
     }
 }
 
@@ -103,7 +103,7 @@ mod tests {
         grid.add(111, 4000..4444, 998);
         grid.add(333, 5555..6666, 1);
         grid.add(333, 5555..6666, -1);
-        let lines = grid.process();
+        let lines = grid.to_rawlines();
         assert_eq!(lines.ny, 223);
         assert_eq!(lines.nx, 4444);
         assert_eq!(lines.lines.len(), 2);
