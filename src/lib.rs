@@ -1,5 +1,5 @@
 use core::ops::Range;
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 type Coord = u64;
 type Value = i64;
@@ -9,12 +9,14 @@ pub struct Grid {
     values: HashMap<(Coord, Coord), Value>,
 }
 
-#[derive(Debug)]
+/// Represents the change of the sum for one point
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct RawPoint {
     pub x: Coord,
     pub v: Value,
 }
 
+/// Represents the change of the sums for one line
 #[derive(Debug)]
 pub struct RawLine {
     pub y: Coord,
@@ -29,7 +31,7 @@ pub struct RawLines {
 }
 
 /// Represents sums for one horizontal line segment, for x coordinates less than `x`
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct SumPoint {
     pub x: Coord,
     pub sum: Value,
@@ -47,6 +49,69 @@ pub struct Sums {
     pub ny: Coord,
     pub nx: Coord,
     pub lines: Vec<SumLine>,
+}
+
+pub fn cum_sum(a: &[RawPoint]) -> Vec<SumPoint> {
+    let mut sums = Vec::new();
+    let mut sum = 0;
+    for &RawPoint { x, v } in a {
+        debug_assert!(v != 0);
+        sums.push(SumPoint { x, sum });
+        sum += v;
+    }
+    assert_eq!(sum, 0);
+    sums
+}
+
+fn push_or_change(r: &mut Vec<SumPoint>, v: SumPoint) {
+    match r.last_mut() {
+        None => {
+            r.push(v);
+        }
+        Some(l) => {
+            debug_assert!(l.x <= v.x);
+            if l.x == v.x {
+                l.sum = v.sum;
+            } else if l.sum == v.sum {
+                l.x = v.x;
+            } else {
+                r.push(v);
+            }
+        }
+    }
+}
+
+pub fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
+    let mut r = Vec::new();
+    let mut i = 0;
+    let mut j = 0;
+    while i < a.len() && j < b.len() {
+        let sum = a[i].sum + b[j].sum;
+        match a[i].x.cmp(&b[j].x) {
+            Ordering::Equal => {
+                push_or_change(&mut r, SumPoint { x: a[i].x, sum });
+                i += 1;
+                j += 1;
+            }
+            Ordering::Less => {
+                push_or_change(&mut r, SumPoint { x: a[i].x, sum });
+                i += 1;
+            }
+            Ordering::Greater => {
+                push_or_change(&mut r, SumPoint { x: b[j].x, sum });
+                j += 1;
+            }
+        }
+    }
+    while i < a.len() {
+        push_or_change(&mut r, a[i]);
+        i += 1;
+    }
+    while j < b.len() {
+        push_or_change(&mut r, b[j]);
+        j += 1;
+    }
+    r
 }
 
 impl Grid {
@@ -114,7 +179,6 @@ impl Default for Grid {
 
 impl RawLines {
     pub fn to_sums(&self) -> Sums {
-        // FIXME
         Sums {
             ny: self.ny,
             nx: self.nx,
@@ -126,6 +190,147 @@ impl RawLines {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn rp(x: Coord, v: Value) -> RawPoint {
+        RawPoint { x, v }
+    }
+
+    fn sp(x: Coord, sum: Value) -> SumPoint {
+        SumPoint { x, sum }
+    }
+
+    #[test]
+    fn push_or_change_basic() {
+        let mut r = Vec::new();
+        push_or_change(&mut r, sp(100, 2));
+        assert_eq!(&r, &[sp(100, 2)]);
+        push_or_change(&mut r, sp(200, 3));
+        assert_eq!(&r, &[sp(100, 2), sp(200, 3)]);
+        push_or_change(&mut r, sp(300, 2));
+        assert_eq!(&r, &[sp(100, 2), sp(200, 3), sp(300, 2)]);
+        push_or_change(&mut r, sp(400, 3));
+        assert_eq!(&r, &[sp(100, 2), sp(200, 3), sp(300, 2), sp(400, 3)]);
+        push_or_change(&mut r, sp(500, 3));
+        assert_eq!(&r, &[sp(100, 2), sp(200, 3), sp(300, 2), sp(500, 3)]);
+        push_or_change(&mut r, sp(500, 4));
+        assert_eq!(&r, &[sp(100, 2), sp(200, 3), sp(300, 2), sp(500, 4)]);
+    }
+
+    #[test]
+    fn cum_sum_basic() {
+        assert_eq!(cum_sum(&[]), &[]);
+        assert_eq!(
+            cum_sum(&[rp(100, 2), rp(200, -2)]),
+            &[sp(100, 0), sp(200, 2)]
+        );
+        assert_eq!(
+            cum_sum(&[rp(100, 2), rp(200, 1), rp(300, -3)]),
+            &[sp(100, 0), sp(200, 2), sp(300, 3)]
+        );
+    }
+
+    #[test]
+    fn add_lines_same_length() {
+        assert_eq!(add_lines(&[], &[]), &[]);
+        assert_eq!(
+            add_lines(&[sp(100, 0), sp(200, 2)], &[sp(100, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(200, 5)]
+        );
+        assert_eq!(
+            add_lines(&[sp(110, 0), sp(200, 2)], &[sp(100, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(110, 3), sp(200, 5)]
+        );
+        assert_eq!(
+            add_lines(&[sp(100, 0), sp(200, 2)], &[sp(110, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(110, 2), sp(200, 5)]
+        );
+    }
+
+    #[test]
+    fn add_lines_different_length() {
+        assert_eq!(add_lines(&[], &[]), &[]);
+        assert_eq!(
+            add_lines(&[sp(100, 0), sp(200, 2)], &[sp(100, 0), sp(300, 3)]),
+            &[sp(100, 0), sp(200, 5), sp(300, 3)]
+        );
+        assert_eq!(
+            add_lines(&[sp(100, 0), sp(300, 2)], &[sp(100, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(200, 5), sp(300, 2)]
+        );
+        assert_eq!(
+            add_lines(&[sp(110, 0), sp(200, 2)], &[sp(100, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(110, 3), sp(200, 5)]
+        );
+        assert_eq!(
+            add_lines(&[sp(110, 0), sp(200, 2)], &[sp(100, 0), sp(300, 3)]),
+            &[sp(100, 0), sp(110, 3), sp(200, 5), sp(300, 3)]
+        );
+        assert_eq!(
+            add_lines(&[sp(110, 0), sp(300, 2)], &[sp(100, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(110, 3), sp(200, 5), sp(300, 2)]
+        );
+        assert_eq!(
+            add_lines(&[sp(100, 0), sp(200, 2)], &[sp(110, 0), sp(300, 3)]),
+            &[sp(100, 0), sp(110, 2), sp(200, 5), sp(300, 3)]
+        );
+        assert_eq!(
+            add_lines(&[sp(100, 0), sp(300, 2)], &[sp(110, 0), sp(200, 3)]),
+            &[sp(100, 0), sp(110, 2), sp(200, 5), sp(300, 2)]
+        );
+    }
+
+    #[test]
+    fn add_lines_no_redundant_points() {
+        assert_eq!(
+            add_lines(
+                &[sp(100, 0), sp(200, 2), sp(300, 3)],
+                &[sp(100, 0), sp(200, 3), sp(300, 2)]
+            ),
+            &[sp(100, 0), sp(300, 5)]
+        );
+        assert_eq!(
+            add_lines(
+                &[sp(100, 0), sp(200, 4), sp(300, 3)],
+                &[sp(100, 0), sp(200, 3), sp(300, 2)]
+            ),
+            &[sp(100, 0), sp(200, 7), sp(300, 5)]
+        );
+        assert_eq!(
+            add_lines(
+                &[sp(100, 0), sp(150, 1), sp(200, 2), sp(300, 3)],
+                &[sp(100, 0), sp(200, 3), sp(250, 2), sp(300, 4)]
+            ),
+            &[sp(100, 0), sp(150, 4), sp(250, 5), sp(300, 7)]
+        );
+        assert_eq!(
+            add_lines(
+                &[sp(100, 0), sp(150, 1), sp(200, 2), sp(300, 3)],
+                &[sp(100, 0), sp(201, 3), sp(250, 2), sp(300, 4)]
+            ),
+            &[
+                sp(100, 0),
+                sp(150, 4),
+                sp(200, 5),
+                sp(201, 6),
+                sp(250, 5),
+                sp(300, 7)
+            ]
+        );
+        assert_eq!(
+            add_lines(
+                &[sp(100, 0), sp(150, 1), sp(200, 2), sp(300, 3)],
+                &[sp(100, 0), sp(199, 3), sp(250, 2), sp(300, 4)]
+            ),
+            &[
+                sp(100, 0),
+                sp(150, 4),
+                sp(199, 5),
+                sp(200, 4),
+                sp(250, 5),
+                sp(300, 7)
+            ]
+        );
+    }
 
     #[test]
     fn grid_basic() {
