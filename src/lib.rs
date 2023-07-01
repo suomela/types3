@@ -23,6 +23,7 @@ impl Dataset {
         let mut total_tokens = 0;
         let mut total_words = 0;
         for sample in &samples {
+            assert!(sample.tokens.len() as u64 <= sample.words);
             total_words += sample.words;
             for stoken in &sample.tokens {
                 total_tokens += stoken.count;
