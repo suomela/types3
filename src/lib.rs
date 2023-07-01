@@ -17,6 +17,15 @@ pub struct Dataset {
     pub total_types: u64,
 }
 
+type Seen = Vec<bool>;
+
+#[derive(Clone)]
+struct Counter {
+    types: u64,
+    tokens: u64,
+    words: u64,
+}
+
 impl Dataset {
     pub fn new(samples: Vec<Sample>) -> Dataset {
         let mut total_types = 0;
@@ -37,122 +46,157 @@ impl Dataset {
             total_types: total_types as u64,
         }
     }
+
+    pub fn count_exact(&self) -> Resultset {
+        let mut rs = Resultset::new();
+        self.count_exact_to(&mut rs);
+        rs
+    }
+
+    pub fn count_exact_to(&self, rs: &mut Resultset) {
+        let n = self.samples.len();
+        let mut idx = vec![0; n];
+        for (i, x) in idx.iter_mut().enumerate() {
+            *x = i;
+        }
+        let mut seen = vec![false; n];
+        self.count_exact_rec(rs, &mut idx, 0, &mut seen);
+    }
+
+    fn count_exact_rec(&self, rs: &mut Resultset, idx: &mut [usize], i: usize, seen: &mut Seen) {
+        let n = self.samples.len();
+        if i == n {
+            self.update_counters(rs, idx, seen);
+        } else {
+            for j in i..n {
+                idx.swap(i, j);
+                self.count_exact_rec(rs, idx, i + 1, seen);
+                idx.swap(i, j);
+            }
+        }
+    }
+
+    fn update_counters(&self, rs: &mut Resultset, idx: &mut [usize], seen: &mut Seen) {
+        for e in seen.iter_mut() {
+            *e = false;
+        }
+        let mut c = Counter {
+            types: 0,
+            tokens: 0,
+            words: 0,
+        };
+        rs.tokens_by_words.add_start(c.tokens, c.words);
+        rs.types_by_words.add_start(c.types, c.words);
+        rs.types_by_tokens.add_start(c.types, c.tokens);
+        for i in idx {
+            let prev = c.clone();
+            let sample = &self.samples[*i];
+            for t in &sample.tokens {
+                if !seen[t.id] {
+                    c.types += 1;
+                    seen[t.id] = true;
+                }
+                c.tokens += t.count;
+            }
+            c.words += sample.words;
+            rs.tokens_by_words
+                .add_box(prev.tokens..c.tokens, prev.words..c.words);
+            rs.types_by_words
+                .add_box(prev.types..c.types, prev.words..c.words);
+            rs.types_by_tokens
+                .add_box(prev.types..c.types, prev.tokens..c.tokens);
+        }
+        rs.tokens_by_words.add_end(c.tokens, c.words);
+        rs.types_by_words.add_end(c.types, c.words);
+        rs.types_by_tokens.add_end(c.types, c.tokens);
+
+        rs.total += 1;
+    }
 }
 
-pub struct Limits {
+pub struct Results {
     lower: density_curve::Grid,
     upper: density_curve::Grid,
 }
 
-impl Limits {
-    pub fn new() -> Limits {
-        Limits {
+impl Results {
+    pub fn new() -> Results {
+        Results {
             lower: density_curve::Grid::new(),
             upper: density_curve::Grid::new(),
         }
     }
 
-    pub fn add(&mut self, yy: Range<u64>, xx: Range<u64>) {
-        self.lower.add(yy.start, xx.clone(), 1);
-        self.upper.add(yy.end, xx, 1);
+    pub fn add_start(&mut self, y: u64, x: u64) {
+        self.upper.add(y, x..x + 1, 1);
+    }
+
+    pub fn add_end(&mut self, y: u64, x: u64) {
+        self.lower.add(y, x..x + 1, 1);
+    }
+
+    pub fn add_box(&mut self, yy: Range<u64>, xx: Range<u64>) {
+        self.upper.add(yy.end, xx.start + 1..xx.end + 1, 1);
+        self.lower.add(yy.start, xx, 1);
     }
 }
 
-impl Default for Limits {
+impl Default for Results {
     fn default() -> Self {
         Self::new()
     }
 }
 
-pub struct Limitset {
-    types_by_tokens: Limits,
-    types_by_words: Limits,
-    tokens_by_words: Limits,
+pub struct Resultset {
+    types_by_tokens: Results,
+    types_by_words: Results,
+    tokens_by_words: Results,
     total: u64,
 }
 
-impl Limitset {
-    pub fn new() -> Limitset {
-        Limitset {
-            types_by_tokens: Limits::new(),
-            types_by_words: Limits::new(),
-            tokens_by_words: Limits::new(),
+impl Resultset {
+    pub fn new() -> Resultset {
+        Resultset {
+            types_by_tokens: Results::new(),
+            types_by_words: Results::new(),
+            tokens_by_words: Results::new(),
             total: 0,
         }
     }
 }
 
-impl Default for Limitset {
+impl Default for Resultset {
     fn default() -> Self {
         Self::new()
     }
 }
 
-type Seen = Vec<bool>;
-
-pub fn count_exact(ds: &Dataset, cs: &mut Limitset) {
-    let n = ds.samples.len();
-    let mut idx = vec![0; n];
-    for (i, x) in idx.iter_mut().enumerate() {
-        *x = i;
-    }
-    let mut seen = vec![false; n];
-    count_exact_rec(ds, cs, &mut idx, 0, &mut seen);
-}
-
-fn count_exact_rec(ds: &Dataset, cs: &mut Limitset, idx: &mut [usize], i: usize, seen: &mut Seen) {
-    let n = ds.samples.len();
-    if i == n {
-        update_counters(ds, cs, idx, seen);
-    } else {
-        for j in i..n {
-            idx.swap(i, j);
-            count_exact_rec(ds, cs, idx, i + 1, seen);
-            idx.swap(i, j);
-        }
-    }
-}
-
-#[derive(Clone)]
-struct Counter {
-    types: u64,
-    tokens: u64,
-    words: u64,
-}
-
-fn update_counters(ds: &Dataset, cs: &mut Limitset, idx: &mut [usize], seen: &mut Seen) {
-    for e in seen.iter_mut() {
-        *e = false;
-    }
-    let mut c = Counter {
-        types: 0,
-        tokens: 0,
-        words: 0,
-    };
-    for i in idx {
-        let prev = c.clone();
-        let sample = &ds.samples[*i];
-        for t in &sample.tokens {
-            if !seen[t.id] {
-                c.types += 1;
-                seen[t.id] = true;
-            }
-            c.tokens += t.count;
-        }
-        c.words += sample.words;
-        cs.tokens_by_words
-            .add(prev.tokens..c.tokens, prev.words..c.words);
-        cs.types_by_words
-            .add(prev.types..c.types, prev.words..c.words);
-        cs.types_by_tokens
-            .add(prev.types..c.types, prev.tokens..c.tokens);
-    }
-    cs.total += 1;
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exact_binary_distinct() {
+        let ds = Dataset::new(vec![
+            Sample {
+                words: 1,
+                tokens: vec![SToken { count: 1, id: 0 }],
+            },
+            Sample {
+                words: 1,
+                tokens: vec![SToken { count: 1, id: 1 }],
+            },
+            Sample {
+                words: 1,
+                tokens: vec![SToken { count: 1, id: 2 }],
+            },
+        ]);
+        assert_eq!(ds.total_words, 3);
+        assert_eq!(ds.total_tokens, 3);
+        assert_eq!(ds.total_types, 3);
+        let rs = ds.count_exact();
+        assert_eq!(1 * 2 * 3, rs.total);
+    }
 
     #[test]
     fn exact_binary() {
@@ -173,8 +217,7 @@ mod tests {
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 2);
-        let mut cs = Limitset::new();
-        count_exact(&ds, &mut cs);
-        assert_eq!(1 * 2 * 3, cs.total);
+        let rs = ds.count_exact();
+        assert_eq!(1 * 2 * 3, rs.total);
     }
 }
