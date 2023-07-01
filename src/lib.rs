@@ -1,13 +1,18 @@
 use core::ops::Range;
+use crossbeam_channel::{RecvError, TryRecvError};
+use itertools::Itertools;
+use std::thread;
+
+const MIN_JOBS: usize = 100;
 
 pub struct SToken {
-    count: u64,
-    id: usize,
+    pub count: u64,
+    pub id: usize,
 }
 
 pub struct Sample {
-    words: u64,
-    tokens: Vec<SToken>,
+    pub words: u64,
+    pub tokens: Vec<SToken>,
 }
 
 pub struct Dataset {
@@ -47,20 +52,82 @@ impl Dataset {
         }
     }
 
+    fn choose_job_depth(&self) -> usize {
+        let n = self.samples.len();
+        let mut f = 1;
+        let mut i = 0;
+        while i < n && f < MIN_JOBS {
+            f *= n - i;
+            i += 1;
+        }
+        i
+    }
+
     pub fn count_exact(&self) -> Resultset {
+        let n = self.samples.len();
+        let depth = self.choose_job_depth();
+        let (s1, r1) = crossbeam_channel::unbounded();
+        for job in (0..n).permutations(depth) {
+            s1.send(job).expect("send succeeds");
+        }
+        drop(s1);
+        let nthreads = num_cpus::get();
+        let mut global = Resultset::new();
+        thread::scope(|scope| {
+            let (s2, r2) = crossbeam_channel::unbounded();
+            for _ in 0..nthreads {
+                let r1 = r1.clone();
+                let s2 = s2.clone();
+                scope.spawn(move || {
+                    let mut rs = Resultset::new();
+                    loop {
+                        match r1.try_recv() {
+                            Ok(job) => self.count_exact_start(&mut rs, &job),
+                            Err(TryRecvError::Empty) => unreachable!(),
+                            Err(TryRecvError::Disconnected) => break,
+                        }
+                    }
+                    s2.send(rs).expect("send succeeds");
+                });
+            }
+            drop(s2);
+            loop {
+                match r2.recv() {
+                    Ok(rs) => global.merge(&rs),
+                    Err(RecvError) => break,
+                }
+            }
+        });
+        global
+    }
+
+    pub fn count_exact_seq(&self) -> Resultset {
         let mut rs = Resultset::new();
-        self.count_exact_to(&mut rs);
+        self.count_exact_start(&mut rs, &[]);
         rs
     }
 
-    pub fn count_exact_to(&self, rs: &mut Resultset) {
+    fn count_exact_start(&self, rs: &mut Resultset, start: &[usize]) {
         let n = self.samples.len();
         let mut idx = vec![0; n];
-        for (i, x) in idx.iter_mut().enumerate() {
-            *x = i;
+        let mut used = vec![false; n];
+        let mut i = 0;
+        for &e in start {
+            debug_assert!(!used[e]);
+            used[e] = true;
+            idx[i] = e;
+            i += 1;
         }
+        for e in 0..n {
+            if !used[e] {
+                used[e] = true;
+                idx[i] = e;
+                i += 1;
+            }
+        }
+        assert_eq!(i, n);
         let mut seen = vec![false; self.total_types as usize];
-        self.count_exact_rec(rs, &mut idx, 0, &mut seen);
+        self.count_exact_rec(rs, &mut idx, start.len(), &mut seen);
     }
 
     fn count_exact_rec(&self, rs: &mut Resultset, idx: &mut [usize], i: usize, seen: &mut Seen) {
@@ -127,6 +194,11 @@ impl Results {
         }
     }
 
+    pub fn merge(&mut self, other: &Results) {
+        self.lower.merge(&other.lower);
+        self.upper.merge(&other.upper);
+    }
+
     pub fn add_start(&mut self, y: u64, x: u64) {
         self.upper.add(y, x..x + 1, 1);
     }
@@ -163,6 +235,13 @@ impl Resultset {
             total: 0,
         }
     }
+
+    pub fn merge(&mut self, other: &Resultset) {
+        self.types_by_tokens.merge(&other.types_by_tokens);
+        self.types_by_words.merge(&other.types_by_words);
+        self.tokens_by_words.merge(&other.tokens_by_words);
+        self.total += other.total;
+    }
 }
 
 impl Default for Resultset {
@@ -193,6 +272,36 @@ mod tests {
 
     fn sp(x: Coord, sum: Value) -> SumPoint {
         SumPoint { x, sum }
+    }
+
+    #[test]
+    fn exact_binary_distinct_seq() {
+        let ds = Dataset::new(vec![
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st(1, 1)]),
+            sample(1, vec![st(1, 2)]),
+        ]);
+        assert_eq!(ds.total_words, 3);
+        assert_eq!(ds.total_tokens, 3);
+        assert_eq!(ds.total_types, 3);
+        let rs = ds.count_exact_seq();
+        assert_eq!(1 * 2 * 3, rs.total);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 1 * 2 * 3)]));
+        }
     }
 
     #[test]
@@ -469,6 +578,11 @@ mod tests {
     }
 
     #[test]
+    fn exact_binary_distinct_7() {
+        exact_binary_distinct_helper(7);
+    }
+
+    #[test]
     fn exact_binary_same_1() {
         exact_binary_same_helper(1);
     }
@@ -496,5 +610,10 @@ mod tests {
     #[test]
     fn exact_binary_same_6() {
         exact_binary_same_helper(6);
+    }
+
+    #[test]
+    fn exact_binary_same_7() {
+        exact_binary_same_helper(7);
     }
 }
