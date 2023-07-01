@@ -397,6 +397,47 @@ mod tests {
         }
     }
 
+    fn exact_binary_same_helper(n: u64) {
+        let mut fact = 1;
+        let mut samples = Vec::new();
+        for i in 0..n {
+            samples.push(sample(1, vec![st(1, 0)]));
+            fact *= i + 1;
+        }
+        let ds = Dataset::new(samples);
+        assert_eq!(ds.total_words, n);
+        assert_eq!(ds.total_tokens, n);
+        assert_eq!(ds.total_types, 1);
+        let rs = ds.count_exact();
+        assert_eq!(fact, rs.total);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, n + 1);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len() as u64, n + 1);
+            for i in 0..n + 1 {
+                assert_eq!(
+                    s.lines[i as usize],
+                    sl(i + 1, &[sp(i, 0), sp(n + 1, fact as i64)])
+                );
+            }
+        }
+        for s in [
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(n + 1, fact as i64)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(n + 1, fact as i64)]));
+        }
+    }
+
     #[test]
     fn exact_binary_distinct_1() {
         exact_binary_distinct_helper(1);
@@ -425,5 +466,35 @@ mod tests {
     #[test]
     fn exact_binary_distinct_6() {
         exact_binary_distinct_helper(6);
+    }
+
+    #[test]
+    fn exact_binary_same_1() {
+        exact_binary_same_helper(1);
+    }
+
+    #[test]
+    fn exact_binary_same_2() {
+        exact_binary_same_helper(2);
+    }
+
+    #[test]
+    fn exact_binary_same_3() {
+        exact_binary_same_helper(3);
+    }
+
+    #[test]
+    fn exact_binary_same_4() {
+        exact_binary_same_helper(4);
+    }
+
+    #[test]
+    fn exact_binary_same_5() {
+        exact_binary_same_helper(5);
+    }
+
+    #[test]
+    fn exact_binary_same_6() {
+        exact_binary_same_helper(6);
     }
 }
