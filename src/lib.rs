@@ -326,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn exact_binary() {
+    fn exact_binary_partial_overlap() {
         let ds = Dataset::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 0)]),
@@ -337,5 +337,30 @@ mod tests {
         assert_eq!(ds.total_types, 2);
         let rs = ds.count_exact();
         assert_eq!(1 * 2 * 3, rs.total);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 1 * 2 * 3)]));
+        }
+        for s in [
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4), sp(4, 1 * 2 * 3)]));
+        }
     }
 }
