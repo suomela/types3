@@ -175,21 +175,20 @@ impl Default for Resultset {
 mod tests {
     use super::*;
 
+    fn sample(words: u64, tokens: Vec<SToken>) -> Sample {
+        Sample { words, tokens }
+    }
+
+    fn st(count: u64, id: usize) -> SToken {
+        SToken { count, id }
+    }
+
     #[test]
     fn exact_binary_distinct() {
         let ds = Dataset::new(vec![
-            Sample {
-                words: 1,
-                tokens: vec![SToken { count: 1, id: 0 }],
-            },
-            Sample {
-                words: 1,
-                tokens: vec![SToken { count: 1, id: 1 }],
-            },
-            Sample {
-                words: 1,
-                tokens: vec![SToken { count: 1, id: 2 }],
-            },
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st(1, 1)]),
+            sample(1, vec![st(1, 2)]),
         ]);
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
@@ -201,18 +200,9 @@ mod tests {
     #[test]
     fn exact_binary() {
         let ds = Dataset::new(vec![
-            Sample {
-                words: 1,
-                tokens: vec![SToken { count: 1, id: 0 }],
-            },
-            Sample {
-                words: 1,
-                tokens: vec![SToken { count: 1, id: 0 }],
-            },
-            Sample {
-                words: 1,
-                tokens: vec![SToken { count: 1, id: 1 }],
-            },
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st(1, 1)]),
         ]);
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
