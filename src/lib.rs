@@ -63,6 +63,15 @@ pub fn cum_sum(a: &[RawPoint]) -> Vec<SumPoint> {
     sums
 }
 
+impl RawLine {
+    pub fn to_sumline(&self) -> SumLine {
+        SumLine {
+            y: self.y + 1,
+            sums: cum_sum(&self.values),
+        }
+    }
+}
+
 fn push_or_change(r: &mut Vec<SumPoint>, v: SumPoint) {
     match r.last_mut() {
         None => {
@@ -81,7 +90,7 @@ fn push_or_change(r: &mut Vec<SumPoint>, v: SumPoint) {
     }
 }
 
-pub fn add_lines_to(a: &[SumPoint], b: &[SumPoint], r: &mut Vec<SumPoint>) {
+fn add_lines_to(a: &[SumPoint], b: &[SumPoint], r: &mut Vec<SumPoint>) {
     let mut i = 0;
     let mut j = 0;
     while i < a.len() && j < b.len() {
@@ -110,6 +119,12 @@ pub fn add_lines_to(a: &[SumPoint], b: &[SumPoint], r: &mut Vec<SumPoint>) {
         push_or_change(r, b[j]);
         j += 1;
     }
+}
+
+fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
+    let mut r = Vec::new();
+    add_lines_to(a, b, &mut r);
+    r
 }
 
 impl Grid {
@@ -167,6 +182,10 @@ impl Grid {
         }
         RawLines { ny, nx, lines }
     }
+
+    pub fn to_sums(&self) -> Sums {
+        self.to_rawlines().to_sums()
+    }
 }
 
 impl Default for Grid {
@@ -177,10 +196,17 @@ impl Default for Grid {
 
 impl RawLines {
     pub fn to_sums(&self) -> Sums {
+        let mut lines: Vec<SumLine> = self.lines.iter().map(|x| x.to_sumline()).collect();
+        let n = lines.len();
+        if n > 0 {
+            for i in (0..n - 1).rev() {
+                lines[i].sums = add_lines(&lines[i].sums, &lines[i + 1].sums);
+            }
+        }
         Sums {
             ny: self.ny,
             nx: self.nx,
-            lines: Vec::new(),
+            lines,
         }
     }
 }
@@ -195,12 +221,6 @@ mod tests {
 
     fn sp(x: Coord, sum: Value) -> SumPoint {
         SumPoint { x, sum }
-    }
-
-    fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
-        let mut r = Vec::new();
-        add_lines_to(a, b, &mut r);
-        r
     }
 
     #[test]
@@ -356,9 +376,41 @@ mod tests {
         assert_eq!(lines.lines[0].values[1].x, 4444);
         assert_eq!(lines.lines[0].values[1].v, -999);
         assert_eq!(lines.lines[1].y, 222);
+        assert_eq!(lines.lines[1].values.len(), 2);
         assert_eq!(lines.lines[1].values[0].x, 3111);
         assert_eq!(lines.lines[1].values[0].v, 9999);
         assert_eq!(lines.lines[1].values[1].x, 4111);
         assert_eq!(lines.lines[1].values[1].v, -9999);
+    }
+
+    #[test]
+    fn grid_sums() {
+        let mut grid = Grid::new();
+        grid.add(111, 4000..4444, 1);
+        grid.add(111, 3333..4000, 999);
+        grid.add(222, 3111..4111, 9999);
+        grid.add(111, 4000..4444, 998);
+        grid.add(333, 5555..6666, 1);
+        grid.add(333, 5555..6666, -1);
+        let sums = grid.to_sums();
+        assert_eq!(sums.ny, 223);
+        assert_eq!(sums.nx, 4444);
+        assert_eq!(sums.lines.len(), 2);
+        assert_eq!(sums.lines[0].y, 112);
+        assert_eq!(sums.lines[0].sums.len(), 4);
+        assert_eq!(sums.lines[0].sums[0].x, 3111);
+        assert_eq!(sums.lines[0].sums[0].sum, 0);
+        assert_eq!(sums.lines[0].sums[1].x, 3333);
+        assert_eq!(sums.lines[0].sums[1].sum, 9999);
+        assert_eq!(sums.lines[0].sums[2].x, 4111);
+        assert_eq!(sums.lines[0].sums[2].sum, 9999 + 999);
+        assert_eq!(sums.lines[0].sums[3].x, 4444);
+        assert_eq!(sums.lines[0].sums[3].sum, 999);
+        assert_eq!(sums.lines[1].y, 223);
+        assert_eq!(sums.lines[1].sums.len(), 2);
+        assert_eq!(sums.lines[1].sums[0].x, 3111);
+        assert_eq!(sums.lines[1].sums[0].sum, 0);
+        assert_eq!(sums.lines[1].sums[1].x, 4111);
+        assert_eq!(sums.lines[1].sums[1].sum, 9999);
     }
 }
