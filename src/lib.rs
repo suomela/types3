@@ -23,6 +23,12 @@ impl Grid {
         *self.values.entry((y, x1)).or_insert(0) -= v;
     }
 
+    pub fn merge(&mut self, other: &Grid) {
+        for (&yx, &v) in &other.values {
+            *self.values.entry(yx).or_insert(0) += v;
+        }
+    }
+
     pub fn to_rawlines(&self) -> RawLines {
         let mut points: Vec<_> = self.values.iter().collect();
         points.sort();
@@ -460,6 +466,34 @@ mod tests {
         grid.add(20, 200..300, 1);
         grid.add(0, 0..150, 1);
         grid.add(30, 150..300, 1);
+
+        let sums = grid.to_sums();
+        assert_eq!(sums.ny, 31);
+        assert_eq!(sums.nx, 300);
+        assert_eq!(sums.lines.len(), 4);
+        assert_eq!(sums.lines[0].y, 1);
+        assert_eq!(sums.lines[0].sums, &[sp(0, 0), sp(300, 2)]);
+        assert_eq!(sums.lines[1].y, 11);
+        assert_eq!(sums.lines[1].sums, &[sp(100, 0), sp(150, 1), sp(300, 2)]);
+        assert_eq!(sums.lines[2].y, 21);
+        assert_eq!(sums.lines[2].sums, &[sp(150, 0), sp(200, 1), sp(300, 2)]);
+        assert_eq!(sums.lines[3].y, 31);
+        assert_eq!(sums.lines[3].sums, &[sp(150, 0), sp(300, 1)]);
+    }
+
+    #[test]
+    fn grid_merge() {
+        let mut grid1 = Grid::new();
+        let mut grid2 = Grid::new();
+        grid1.add(0, 0..100, 1);
+        grid2.add(10, 100..200, 1);
+        grid1.add(20, 200..300, 1);
+        grid2.add(0, 0..150, 1);
+        grid1.add(30, 150..300, 1);
+
+        let mut grid = Grid::new();
+        grid.merge(&grid1);
+        grid.merge(&grid2);
 
         let sums = grid.to_sums();
         assert_eq!(sums.ny, 31);
