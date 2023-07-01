@@ -384,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    fn grid_sums() {
+    fn grid_sums_basic() {
         let mut grid = Grid::new();
         grid.add(111, 4000..4444, 1);
         grid.add(111, 3333..4000, 999);
@@ -412,5 +412,66 @@ mod tests {
         assert_eq!(sums.lines[1].sums[0].sum, 0);
         assert_eq!(sums.lines[1].sums[1].x, 4111);
         assert_eq!(sums.lines[1].sums[1].sum, 9999);
+    }
+
+    #[test]
+    fn grid_sums_one_curve() {
+        let mut grid = Grid::new();
+        grid.add(0, 0..100, 1);
+        grid.add(10, 100..200, 1);
+        grid.add(20, 200..300, 1);
+
+        let sums = grid.to_sums();
+        assert_eq!(sums.ny, 21);
+        assert_eq!(sums.nx, 300);
+        assert_eq!(sums.lines.len(), 3);
+        assert_eq!(sums.lines[0].y, 1);
+        assert_eq!(sums.lines[0].sums, &[sp(0, 0), sp(300, 1)]);
+        assert_eq!(sums.lines[1].y, 11);
+        assert_eq!(sums.lines[1].sums, &[sp(100, 0), sp(300, 1)]);
+        assert_eq!(sums.lines[2].y, 21);
+        assert_eq!(sums.lines[2].sums, &[sp(200, 0), sp(300, 1)]);
+    }
+
+    #[test]
+    fn grid_sums_one_fat_curve() {
+        let mut grid = Grid::new();
+        grid.add(0, 0..100, 1000);
+        grid.add(10, 100..200, 1000);
+        grid.add(20, 200..300, 1000);
+
+        let sums = grid.to_sums();
+        assert_eq!(sums.ny, 21);
+        assert_eq!(sums.nx, 300);
+        assert_eq!(sums.lines.len(), 3);
+        assert_eq!(sums.lines[0].y, 1);
+        assert_eq!(sums.lines[0].sums, &[sp(0, 0), sp(300, 1000)]);
+        assert_eq!(sums.lines[1].y, 11);
+        assert_eq!(sums.lines[1].sums, &[sp(100, 0), sp(300, 1000)]);
+        assert_eq!(sums.lines[2].y, 21);
+        assert_eq!(sums.lines[2].sums, &[sp(200, 0), sp(300, 1000)]);
+    }
+
+    #[test]
+    fn grid_sums_two_curves() {
+        let mut grid = Grid::new();
+        grid.add(0, 0..100, 1);
+        grid.add(10, 100..200, 1);
+        grid.add(20, 200..300, 1);
+        grid.add(0, 0..150, 1);
+        grid.add(30, 150..300, 1);
+
+        let sums = grid.to_sums();
+        assert_eq!(sums.ny, 31);
+        assert_eq!(sums.nx, 300);
+        assert_eq!(sums.lines.len(), 4);
+        assert_eq!(sums.lines[0].y, 1);
+        assert_eq!(sums.lines[0].sums, &[sp(0, 0), sp(300, 2)]);
+        assert_eq!(sums.lines[1].y, 11);
+        assert_eq!(sums.lines[1].sums, &[sp(100, 0), sp(150, 1), sp(300, 2)]);
+        assert_eq!(sums.lines[2].y, 21);
+        assert_eq!(sums.lines[2].sums, &[sp(150, 0), sp(200, 1), sp(300, 2)]);
+        assert_eq!(sums.lines[3].y, 31);
+        assert_eq!(sums.lines[3].sums, &[sp(150, 0), sp(300, 1)]);
     }
 }
