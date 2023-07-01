@@ -1,5 +1,5 @@
 use core::ops::Range;
-use crossbeam_channel::{RecvError, TryRecvError};
+use crossbeam_channel::TryRecvError;
 use itertools::Itertools;
 use std::thread;
 
@@ -91,11 +91,8 @@ impl Dataset {
                 });
             }
             drop(s2);
-            loop {
-                match r2.recv() {
-                    Ok(rs) => global.merge(&rs),
-                    Err(RecvError) => break,
-                }
+            while let Ok(rs) = r2.recv() {
+                global.merge(&rs);
             }
         });
         global
@@ -118,9 +115,9 @@ impl Dataset {
             idx[i] = e;
             i += 1;
         }
-        for e in 0..n {
-            if !used[e] {
-                used[e] = true;
+        for (e, u) in used.iter_mut().enumerate() {
+            if !*u {
+                *u = true;
                 idx[i] = e;
                 i += 1;
             }
