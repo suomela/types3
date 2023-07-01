@@ -364,7 +364,7 @@ mod tests {
         }
     }
 
-    fn exact_binary_distinct_large(n: u64) {
+    fn exact_binary_distinct_helper(n: u64) {
         let mut fact = 1;
         let mut samples = Vec::new();
         for i in 0..n {
@@ -398,32 +398,32 @@ mod tests {
     }
 
     #[test]
-    fn exact_binary_distinct_large_1() {
-        exact_binary_distinct_large(1);
+    fn exact_binary_distinct_1() {
+        exact_binary_distinct_helper(1);
     }
 
     #[test]
-    fn exact_binary_distinct_large_2() {
-        exact_binary_distinct_large(2);
+    fn exact_binary_distinct_2() {
+        exact_binary_distinct_helper(2);
     }
 
     #[test]
-    fn exact_binary_distinct_large_3() {
-        exact_binary_distinct_large(3);
+    fn exact_binary_distinct_3() {
+        exact_binary_distinct_helper(3);
     }
 
     #[test]
-    fn exact_binary_distinct_large_4() {
-        exact_binary_distinct_large(4);
+    fn exact_binary_distinct_4() {
+        exact_binary_distinct_helper(4);
     }
 
     #[test]
-    fn exact_binary_distinct_large_5() {
-        exact_binary_distinct_large(5);
+    fn exact_binary_distinct_5() {
+        exact_binary_distinct_helper(5);
     }
 
     #[test]
-    fn exact_binary_distinct_large_6() {
-        exact_binary_distinct_large(6);
+    fn exact_binary_distinct_6() {
+        exact_binary_distinct_helper(6);
     }
 }
