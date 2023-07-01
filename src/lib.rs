@@ -9,124 +9,6 @@ pub struct Grid {
     values: HashMap<(Coord, Coord), Value>,
 }
 
-/// Represents the change of the sum for one point
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub struct RawPoint {
-    pub x: Coord,
-    pub v: Value,
-}
-
-/// Represents the change of the sums for one line
-#[derive(Debug)]
-pub struct RawLine {
-    pub y: Coord,
-    pub values: Vec<RawPoint>,
-}
-
-#[derive(Debug)]
-pub struct RawLines {
-    pub ny: Coord,
-    pub nx: Coord,
-    pub lines: Vec<RawLine>,
-}
-
-/// Represents sums for one horizontal line segment, for x coordinates less than `x`
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub struct SumPoint {
-    pub x: Coord,
-    pub sum: Value,
-}
-
-/// Represents sums for one horizontal slice, for y coordinates less than `y`
-#[derive(Debug)]
-pub struct SumLine {
-    pub y: Coord,
-    pub sums: Vec<SumPoint>,
-}
-
-#[derive(Debug)]
-pub struct Sums {
-    pub ny: Coord,
-    pub nx: Coord,
-    pub lines: Vec<SumLine>,
-}
-
-pub fn cum_sum(a: &[RawPoint]) -> Vec<SumPoint> {
-    let mut sums = Vec::new();
-    let mut sum = 0;
-    for &RawPoint { x, v } in a {
-        debug_assert!(v != 0);
-        sums.push(SumPoint { x, sum });
-        sum += v;
-    }
-    assert_eq!(sum, 0);
-    sums
-}
-
-impl RawLine {
-    pub fn to_sumline(&self) -> SumLine {
-        SumLine {
-            y: self.y + 1,
-            sums: cum_sum(&self.values),
-        }
-    }
-}
-
-fn push_or_change(r: &mut Vec<SumPoint>, v: SumPoint) {
-    match r.last_mut() {
-        None => {
-            r.push(v);
-        }
-        Some(l) => {
-            debug_assert!(l.x <= v.x);
-            if l.x == v.x {
-                l.sum = v.sum;
-            } else if l.sum == v.sum {
-                l.x = v.x;
-            } else {
-                r.push(v);
-            }
-        }
-    }
-}
-
-fn add_lines_to(a: &[SumPoint], b: &[SumPoint], r: &mut Vec<SumPoint>) {
-    let mut i = 0;
-    let mut j = 0;
-    while i < a.len() && j < b.len() {
-        let sum = a[i].sum + b[j].sum;
-        match a[i].x.cmp(&b[j].x) {
-            Ordering::Equal => {
-                push_or_change(r, SumPoint { x: a[i].x, sum });
-                i += 1;
-                j += 1;
-            }
-            Ordering::Less => {
-                push_or_change(r, SumPoint { x: a[i].x, sum });
-                i += 1;
-            }
-            Ordering::Greater => {
-                push_or_change(r, SumPoint { x: b[j].x, sum });
-                j += 1;
-            }
-        }
-    }
-    while i < a.len() {
-        push_or_change(r, a[i]);
-        i += 1;
-    }
-    while j < b.len() {
-        push_or_change(r, b[j]);
-        j += 1;
-    }
-}
-
-fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
-    let mut r = Vec::new();
-    add_lines_to(a, b, &mut r);
-    r
-}
-
 impl Grid {
     pub fn new() -> Grid {
         Grid {
@@ -194,6 +76,36 @@ impl Default for Grid {
     }
 }
 
+/// Represents the change of the sum for one point
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct RawPoint {
+    pub x: Coord,
+    pub v: Value,
+}
+
+/// Represents the change of the sums for one line
+#[derive(Debug)]
+pub struct RawLine {
+    pub y: Coord,
+    pub values: Vec<RawPoint>,
+}
+
+impl RawLine {
+    pub fn to_sumline(&self) -> SumLine {
+        SumLine {
+            y: self.y + 1,
+            sums: cum_sum(&self.values),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct RawLines {
+    pub ny: Coord,
+    pub nx: Coord,
+    pub lines: Vec<RawLine>,
+}
+
 impl RawLines {
     pub fn to_sums(&self) -> Sums {
         let mut lines: Vec<SumLine> = self.lines.iter().map(|x| x.to_sumline()).collect();
@@ -209,6 +121,94 @@ impl RawLines {
             lines,
         }
     }
+}
+
+/// Represents sums for one horizontal line segment, for x coordinates less than `x`
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct SumPoint {
+    pub x: Coord,
+    pub sum: Value,
+}
+
+pub fn cum_sum(a: &[RawPoint]) -> Vec<SumPoint> {
+    let mut sums = Vec::new();
+    let mut sum = 0;
+    for &RawPoint { x, v } in a {
+        debug_assert!(v != 0);
+        sums.push(SumPoint { x, sum });
+        sum += v;
+    }
+    assert_eq!(sum, 0);
+    sums
+}
+
+fn push_or_change(r: &mut Vec<SumPoint>, v: SumPoint) {
+    match r.last_mut() {
+        None => {
+            r.push(v);
+        }
+        Some(l) => {
+            debug_assert!(l.x <= v.x);
+            if l.x == v.x {
+                l.sum = v.sum;
+            } else if l.sum == v.sum {
+                l.x = v.x;
+            } else {
+                r.push(v);
+            }
+        }
+    }
+}
+
+fn add_lines_to(a: &[SumPoint], b: &[SumPoint], r: &mut Vec<SumPoint>) {
+    let mut i = 0;
+    let mut j = 0;
+    while i < a.len() && j < b.len() {
+        let sum = a[i].sum + b[j].sum;
+        match a[i].x.cmp(&b[j].x) {
+            Ordering::Equal => {
+                push_or_change(r, SumPoint { x: a[i].x, sum });
+                i += 1;
+                j += 1;
+            }
+            Ordering::Less => {
+                push_or_change(r, SumPoint { x: a[i].x, sum });
+                i += 1;
+            }
+            Ordering::Greater => {
+                push_or_change(r, SumPoint { x: b[j].x, sum });
+                j += 1;
+            }
+        }
+    }
+    while i < a.len() {
+        push_or_change(r, a[i]);
+        i += 1;
+    }
+    while j < b.len() {
+        push_or_change(r, b[j]);
+        j += 1;
+    }
+}
+
+fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
+    let mut r = Vec::new();
+    add_lines_to(a, b, &mut r);
+    r
+}
+
+/// Represents sums for one horizontal slice, for y coordinates less than `y`
+#[derive(Debug)]
+pub struct SumLine {
+    pub y: Coord,
+    pub sums: Vec<SumPoint>,
+}
+
+#[derive(Debug)]
+pub struct Sums {
+    pub ny: Coord,
+    pub nx: Coord,
+    pub lines: Vec<SumLine>,
 }
 
 #[cfg(test)]
