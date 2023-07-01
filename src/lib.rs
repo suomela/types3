@@ -59,7 +59,7 @@ impl Dataset {
         for (i, x) in idx.iter_mut().enumerate() {
             *x = i;
         }
-        let mut seen = vec![false; n];
+        let mut seen = vec![false; self.total_types as usize];
         self.count_exact_rec(rs, &mut idx, 0, &mut seen);
     }
 
@@ -174,6 +174,7 @@ impl Default for Resultset {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use density_curve::{Coord, SumLine, SumPoint, Value};
 
     fn sample(words: u64, tokens: Vec<SToken>) -> Sample {
         Sample { words, tokens }
@@ -181,6 +182,17 @@ mod tests {
 
     fn st(count: u64, id: usize) -> SToken {
         SToken { count, id }
+    }
+
+    fn sl(y: Coord, sums: &[SumPoint]) -> SumLine {
+        SumLine {
+            y,
+            sums: sums.to_vec(),
+        }
+    }
+
+    fn sp(x: Coord, sum: Value) -> SumPoint {
+        SumPoint { x, sum }
     }
 
     #[test]
@@ -195,6 +207,84 @@ mod tests {
         assert_eq!(ds.total_types, 3);
         let rs = ds.count_exact();
         assert_eq!(1 * 2 * 3, rs.total);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 1 * 2 * 3)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 1 * 2 * 3)]));
+        }
+    }
+
+    #[test]
+    fn exact_large_distinct() {
+        let ds = Dataset::new(vec![
+            sample(1000, vec![st(100, 10), st(100, 11), st(100, 12)]),
+            sample(1000, vec![st(100, 20), st(100, 21), st(100, 22)]),
+            sample(1000, vec![st(100, 30), st(100, 31), st(100, 32)]),
+        ]);
+        assert_eq!(ds.total_words, 3000);
+        assert_eq!(ds.total_tokens, 900);
+        assert_eq!(ds.total_types, 33);
+        let rs = ds.count_exact();
+        assert_eq!(1 * 2 * 3, rs.total);
+        let s = rs.types_by_words.lower.to_sums();
+        assert_eq!(s.ny, 10);
+        assert_eq!(s.nx, 3001);
+        assert_eq!(s.lines.len(), 4);
+        assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[1], sl(4, &[sp(1000, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[2], sl(7, &[sp(2000, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[3], sl(10, &[sp(3000, 0), sp(3001, 1 * 2 * 3)]));
+        let s = rs.types_by_words.upper.to_sums();
+        assert_eq!(s.ny, 10);
+        assert_eq!(s.nx, 3001);
+        assert_eq!(s.lines.len(), 4);
+        assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[1], sl(4, &[sp(1, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[2], sl(7, &[sp(1001, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[3], sl(10, &[sp(2001, 0), sp(3001, 1 * 2 * 3)]));
+        let s = rs.tokens_by_words.lower.to_sums();
+        assert_eq!(s.ny, 901);
+        assert_eq!(s.nx, 3001);
+        assert_eq!(s.lines.len(), 4);
+        assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[1], sl(301, &[sp(1000, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[2], sl(601, &[sp(2000, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[3], sl(901, &[sp(3000, 0), sp(3001, 1 * 2 * 3)]));
+        let s = rs.tokens_by_words.upper.to_sums();
+        assert_eq!(s.ny, 901);
+        assert_eq!(s.nx, 3001);
+        assert_eq!(s.lines.len(), 4);
+        assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[1], sl(301, &[sp(1, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[2], sl(601, &[sp(1001, 0), sp(3001, 1 * 2 * 3)]));
+        assert_eq!(s.lines[3], sl(901, &[sp(2001, 0), sp(3001, 1 * 2 * 3)]));
+        let s = rs.types_by_tokens.lower.to_sums();
+        assert_eq!(s.ny, 10);
+        assert_eq!(s.nx, 901);
+        assert_eq!(s.lines.len(), 4);
+        assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(901, 1 * 2 * 3)]));
+        assert_eq!(s.lines[1], sl(4, &[sp(300, 0), sp(901, 1 * 2 * 3)]));
+        assert_eq!(s.lines[2], sl(7, &[sp(600, 0), sp(901, 1 * 2 * 3)]));
+        assert_eq!(s.lines[3], sl(10, &[sp(900, 0), sp(901, 1 * 2 * 3)]));
+        let s = rs.types_by_tokens.upper.to_sums();
+        assert_eq!(s.ny, 10);
+        assert_eq!(s.nx, 901);
+        assert_eq!(s.lines.len(), 4);
+        assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(901, 1 * 2 * 3)]));
+        assert_eq!(s.lines[1], sl(4, &[sp(1, 0), sp(901, 1 * 2 * 3)]));
+        assert_eq!(s.lines[2], sl(7, &[sp(301, 0), sp(901, 1 * 2 * 3)]));
+        assert_eq!(s.lines[3], sl(10, &[sp(601, 0), sp(901, 1 * 2 * 3)]));
     }
 
     #[test]
