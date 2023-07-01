@@ -1,8 +1,8 @@
 use core::ops::Range;
 use std::{cmp::Ordering, collections::HashMap};
 
-type Coord = u64;
-type Value = i64;
+pub type Coord = u64;
+pub type Value = i64;
 
 #[derive(Debug)]
 pub struct Grid {
@@ -198,7 +198,7 @@ fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
 }
 
 /// Represents sums for one horizontal slice, for y coordinates less than `y`
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SumLine {
     pub y: Coord,
     pub sums: Vec<SumPoint>,
