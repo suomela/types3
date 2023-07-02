@@ -354,38 +354,38 @@ impl Driver {
     }
 }
 
-pub struct CounterPair {
+struct CounterPair {
     lower: density_curve::Counter,
     upper: density_curve::Counter,
 }
 
 impl CounterPair {
-    pub fn new() -> CounterPair {
+    fn new() -> CounterPair {
         CounterPair {
             lower: density_curve::Counter::new(),
             upper: density_curve::Counter::new(),
         }
     }
 
-    pub fn merge(&mut self, other: &CounterPair) {
+    fn merge(&mut self, other: &CounterPair) {
         self.lower.merge(&other.lower);
         self.upper.merge(&other.upper);
     }
 
-    pub fn add_start(&mut self, y: u64, x: u64) {
+    fn add_start(&mut self, y: u64, x: u64) {
         self.upper.add(y, x..x + 1, 1);
     }
 
-    pub fn add_end(&mut self, y: u64, x: u64) {
+    fn add_end(&mut self, y: u64, x: u64) {
         self.lower.add(y, x..x + 1, 1);
     }
 
-    pub fn add_box(&mut self, yy: Range<u64>, xx: Range<u64>) {
+    fn add_box(&mut self, yy: Range<u64>, xx: Range<u64>) {
         self.upper.add(yy.end, xx.start + 1..xx.end + 1, 1);
         self.lower.add(yy.start, xx, 1);
     }
 
-    pub fn to_sums(&self) -> SumPair {
+    fn to_sums(&self) -> SumPair {
         SumPair {
             lower: self.lower.to_sums(),
             upper: self.upper.to_sums(),
@@ -407,7 +407,7 @@ pub struct CounterSet {
 }
 
 impl CounterSet {
-    pub fn new() -> CounterSet {
+    fn new() -> CounterSet {
         CounterSet {
             types_by_tokens: CounterPair::new(),
             types_by_words: CounterPair::new(),
@@ -416,7 +416,7 @@ impl CounterSet {
         }
     }
 
-    pub fn merge(&mut self, other: &CounterSet) {
+    fn merge(&mut self, other: &CounterSet) {
         self.types_by_tokens.merge(&other.types_by_tokens);
         self.types_by_words.merge(&other.types_by_words);
         self.tokens_by_words.merge(&other.tokens_by_words);
