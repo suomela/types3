@@ -663,7 +663,7 @@ mod tests {
             assert_eq!(s.lines[2].sums.len(), 3);
             assert_eq!(s.lines[2].sums[0], sp(2, 0));
             assert_eq!(s.lines[2].sums[1].x, 3);
-            let expected = (2./3.) * iter as f64;
+            let expected = (2. / 3.) * iter as f64;
             let got = s.lines[2].sums[1].sum as f64;
             assert!(got >= 0.99 * expected);
             assert!(got <= 1.01 * expected);
