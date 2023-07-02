@@ -622,6 +622,55 @@ mod tests {
         }
     }
 
+    #[test]
+    fn random_binary_partial_overlap() {
+        let ds = Dataset::new(vec![
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st(1, 1)]),
+        ]);
+        assert_eq!(ds.total_words, 3);
+        assert_eq!(ds.total_tokens, 3);
+        assert_eq!(ds.total_types, 2);
+        let iter = 5000;
+        let rs = ds.count_random(iter);
+        assert!(rs.total >= iter);
+        assert!(rs.total < iter + RANDOM_JOBS);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, iter as i64)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, iter as i64)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, iter as i64)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, iter as i64)]));
+        }
+        for s in [
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, iter as i64)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, iter as i64)]));
+            assert_eq!(s.lines[2].y, 3);
+            assert_eq!(s.lines[2].sums.len(), 3);
+            assert_eq!(s.lines[2].sums[0], sp(2, 0));
+            assert_eq!(s.lines[2].sums[1].x, 3);
+            let expected = (2./3.) * iter as f64;
+            let got = s.lines[2].sums[1].sum as f64;
+            assert!(got >= 0.99 * expected);
+            assert!(got <= 1.01 * expected);
+            assert_eq!(s.lines[2].sums[2], sp(4, iter as i64));
+        }
+    }
+
     fn exact_binary_distinct_helper(n: u64) {
         let mut fact = 1;
         let mut samples = Vec::new();
