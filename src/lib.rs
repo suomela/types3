@@ -218,6 +218,12 @@ pub struct Sums {
     pub lines: Vec<SumLine>,
 }
 
+impl Sums {
+    pub fn total_points(&self) -> usize {
+        self.lines.iter().map(|x| x.sums.len()).sum()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
