@@ -46,11 +46,12 @@ pub struct Samples {
     pub samples: Vec<Sample>,
 }
 
-pub struct Dataset {
+pub struct Driver {
     pub samples: Vec<Sample>,
     pub total_words: u64,
     pub total_tokens: u64,
     pub total_types: u64,
+    pub progress: bool,
 }
 
 type Seen = Vec<bool>;
@@ -62,8 +63,8 @@ struct Counter {
     words: u64,
 }
 
-impl Dataset {
-    pub fn new(samples: Vec<Sample>) -> Dataset {
+impl Driver {
+    pub fn new(samples: Vec<Sample>) -> Driver {
         let mut total_types = 0;
         let mut total_tokens = 0;
         let mut total_words = 0;
@@ -75,18 +76,31 @@ impl Dataset {
                 total_types = total_types.max(1 + stoken.id);
             }
         }
-        Dataset {
+        Driver {
             samples,
             total_words,
             total_tokens,
             total_types: total_types as u64,
+            progress: false,
         }
     }
 
+    pub fn new_with_progress(samples: Vec<Sample>) -> Driver {
+        let mut driver = Driver::new(samples);
+        driver.enable_progress();
+        driver
+    }
+
+    pub fn enable_progress(&mut self) {
+        self.progress = true;
+    }
+
+    pub fn disable_progress(&mut self) {
+        self.progress = false;
+    }
+
     fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {
-        if cfg!(test) {
-            ProgressBar::hidden()
-        } else {
+        if self.progress {
             let bar = ProgressBar::new(len);
             let style = ProgressStyle::with_template("{prefix:8.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left").unwrap();
             bar.set_style(style);
@@ -98,6 +112,8 @@ impl Dataset {
                 "{nsamples:5} {sampleword} · {nthreads} {threadword}"
             ));
             bar
+        } else {
+            ProgressBar::hidden()
         }
     }
 
@@ -463,7 +479,7 @@ mod tests {
 
     #[test]
     fn exact_binary_distinct_seq() {
-        let ds = Dataset::new(vec![
+        let ds = Driver::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 1)]),
             sample(1, vec![st(1, 2)]),
@@ -493,7 +509,7 @@ mod tests {
 
     #[test]
     fn exact_binary_distinct() {
-        let ds = Dataset::new(vec![
+        let ds = Driver::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 1)]),
             sample(1, vec![st(1, 2)]),
@@ -523,7 +539,7 @@ mod tests {
 
     #[test]
     fn exact_large_distinct() {
-        let ds = Dataset::new(vec![
+        let ds = Driver::new(vec![
             sample(1000, vec![st(100, 10), st(100, 11), st(100, 12)]),
             sample(1000, vec![st(100, 20), st(100, 21), st(100, 22)]),
             sample(1000, vec![st(100, 30), st(100, 31), st(100, 32)]),
@@ -585,7 +601,7 @@ mod tests {
 
     #[test]
     fn exact_binary_same() {
-        let ds = Dataset::new(vec![
+        let ds = Driver::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 0)]),
@@ -620,7 +636,7 @@ mod tests {
 
     #[test]
     fn exact_binary_partial_overlap() {
-        let ds = Dataset::new(vec![
+        let ds = Driver::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 1)]),
@@ -656,7 +672,7 @@ mod tests {
 
     #[test]
     fn random_binary_partial_overlap() {
-        let ds = Dataset::new(vec![
+        let ds = Driver::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 1)]),
@@ -707,7 +723,7 @@ mod tests {
             samples.push(sample(1, vec![st(1, i as usize)]));
             fact *= i + 1;
         }
-        let ds = Dataset::new(samples);
+        let ds = Driver::new(samples);
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, n);
@@ -740,7 +756,7 @@ mod tests {
             samples.push(sample(1, vec![st(1, 0)]));
             fact *= i + 1;
         }
-        let ds = Dataset::new(samples);
+        let ds = Driver::new(samples);
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
@@ -776,7 +792,7 @@ mod tests {
         for i in 0..n {
             samples.push(sample(1, vec![st(1, i as usize)]));
         }
-        let ds = Dataset::new(samples);
+        let ds = Driver::new(samples);
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, n);
@@ -808,7 +824,7 @@ mod tests {
         for _ in 0..n {
             samples.push(sample(1, vec![st(1, 0)]));
         }
-        let ds = Dataset::new(samples);
+        let ds = Driver::new(samples);
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
@@ -845,7 +861,7 @@ mod tests {
         for _ in 0..n {
             samples.push(sample(1, vec![st(1, 0)]));
         }
-        let ds = Dataset::new(samples);
+        let ds = Driver::new(samples);
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);

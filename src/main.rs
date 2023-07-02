@@ -35,9 +35,9 @@ fn parse_args() -> Result<Args> {
 
 fn process(iter: u64) -> Result<()> {
     let samples: Vec<Sample> = serde_json::from_reader(io::stdin())?;
-    let ds = Dataset::new(samples);
-    let rs = ds.count(iter).to_sums();
-    serde_json::to_writer(io::stdout(), &rs)?;
+    let driver = Driver::new_with_progress(samples);
+    let result = driver.count(iter).to_sums();
+    serde_json::to_writer(io::stdout(), &result)?;
     Ok(())
 }
 
