@@ -1,5 +1,6 @@
 use core::ops::Range;
 use crossbeam_channel::TryRecvError;
+use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
@@ -20,6 +21,11 @@ const EXACT_THRESHOLD: u64 = 2;
 pub enum Method {
     Exact,
     Random(u64),
+}
+
+enum Progress {
+    Tick,
+    Done(Box<Resultset>),
 }
 
 pub struct SToken {
@@ -69,6 +75,24 @@ impl Dataset {
         }
     }
 
+    fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {
+        if cfg!(test) {
+            ProgressBar::hidden()
+        } else {
+            let bar = ProgressBar::new(len);
+            let style = ProgressStyle::with_template("{prefix:8.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left").unwrap();
+            bar.set_style(style);
+            bar.set_prefix(what.to_owned());
+            let nsamples = self.samples.len();
+            let sampleword = if nsamples == 1 { "sample" } else { "samples" };
+            let threadword = if nthreads == 1 { "thread" } else { "threads" };
+            bar.set_message(format!(
+                "{nsamples:5} {sampleword} · {nthreads} {threadword}"
+            ));
+            bar
+        }
+    }
+
     fn choose_exact_job_depth(&self) -> usize {
         let n = self.samples.len();
         let mut f = 1;
@@ -89,7 +113,7 @@ impl Dataset {
                 return Method::Random(iter);
             }
         }
-        return Method::Exact;
+        Method::Exact
     }
 
     pub fn count(&self, iter: u64) -> Resultset {
@@ -123,6 +147,7 @@ impl Dataset {
         drop(s1);
         let nthreads = num_cpus::get();
         let mut global = Resultset::new();
+        let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
             for _ in 0..nthreads {
@@ -132,18 +157,26 @@ impl Dataset {
                     let mut rs = Resultset::new();
                     loop {
                         match r1.try_recv() {
-                            Ok(job) => self.count_random_job(&mut rs, job, iter_per_job),
+                            Ok(job) => {
+                                self.count_random_job(&mut rs, job, iter_per_job);
+                                s2.send(Progress::Tick).expect("send succeeds");
+                            }
                             Err(TryRecvError::Empty) => unreachable!(),
                             Err(TryRecvError::Disconnected) => break,
                         }
                     }
-                    s2.send(rs).expect("send succeeds");
+                    s2.send(Progress::Done(Box::new(rs)))
+                        .expect("send succeeds");
                 });
             }
             drop(s2);
-            while let Ok(rs) = r2.recv() {
-                global.merge(&rs);
+            while let Ok(msg) = r2.recv() {
+                match msg {
+                    Progress::Tick => bar.inc(1),
+                    Progress::Done(rs) => global.merge(&rs),
+                }
             }
+            bar.finish();
         });
         global
     }
@@ -161,12 +194,15 @@ impl Dataset {
         let n = self.samples.len();
         let depth = self.choose_exact_job_depth();
         let (s1, r1) = crossbeam_channel::unbounded();
+        let mut njobs = 0;
         for job in (0..n).permutations(depth) {
             s1.send(job).expect("send succeeds");
+            njobs += 1;
         }
         drop(s1);
         let nthreads = num_cpus::get();
         let mut global = Resultset::new();
+        let bar = self.progress_bar(njobs, nthreads, "Exact");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
             for _ in 0..nthreads {
@@ -176,18 +212,26 @@ impl Dataset {
                     let mut rs = Resultset::new();
                     loop {
                         match r1.try_recv() {
-                            Ok(job) => self.count_exact_start(&mut rs, &job),
+                            Ok(job) => {
+                                self.count_exact_start(&mut rs, &job);
+                                s2.send(Progress::Tick).expect("send succeeds");
+                            }
                             Err(TryRecvError::Empty) => unreachable!(),
                             Err(TryRecvError::Disconnected) => break,
                         }
                     }
-                    s2.send(rs).expect("send succeeds");
+                    s2.send(Progress::Done(Box::new(rs)))
+                        .expect("send succeeds");
                 });
             }
             drop(s2);
-            while let Ok(rs) = r2.recv() {
-                global.merge(&rs);
+            while let Ok(msg) = r2.recv() {
+                match msg {
+                    Progress::Tick => bar.inc(1),
+                    Progress::Done(rs) => global.merge(&rs),
+                }
             }
+            bar.finish();
         });
         global
     }

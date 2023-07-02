@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 crossbeam-channel = "0.5.8"
 density-curve = { version = "0.1.0", path = "../density-curve" }
+indicatif = "0.17.5"
 itertools = "0.11.0"
 num_cpus = "1.16.0"
 rand = "0.8.5"
