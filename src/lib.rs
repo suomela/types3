@@ -1,9 +1,18 @@
 use core::ops::Range;
 use crossbeam_channel::TryRecvError;
 use itertools::Itertools;
+use rand::seq::SliceRandom;
+use rand_xoshiro::rand_core::SeedableRng;
+use rand_xoshiro::Xoshiro256PlusPlus;
 use std::thread;
 
-const MIN_JOBS: usize = 100;
+/// *Minimum* number of tasks for exact calculation.
+/// This does not influence the outcome, only performance.
+/// Worst-case queue size is quadratic in `MIN_EXACT_JOBS`.
+const MIN_EXACT_JOBS: usize = 100;
+
+/// Number of tasks for randomized calculation.
+const RANDOM_JOBS: u64 = 1000;
 
 pub struct SToken {
     pub count: u64,
@@ -52,20 +61,63 @@ impl Dataset {
         }
     }
 
-    fn choose_job_depth(&self) -> usize {
+    fn choose_exact_job_depth(&self) -> usize {
         let n = self.samples.len();
         let mut f = 1;
         let mut i = 0;
-        while i < n && f < MIN_JOBS {
+        while i < n && f < MIN_EXACT_JOBS {
             f *= n - i;
             i += 1;
         }
         i
     }
 
+    pub fn count_random(&self, iter: u64) -> Resultset {
+        let (s1, r1) = crossbeam_channel::unbounded();
+        for job in 0..RANDOM_JOBS {
+            s1.send(job).expect("send succeeds");
+        }
+        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
+        drop(s1);
+        let nthreads = num_cpus::get();
+        let mut global = Resultset::new();
+        thread::scope(|scope| {
+            let (s2, r2) = crossbeam_channel::unbounded();
+            for _ in 0..nthreads {
+                let r1 = r1.clone();
+                let s2 = s2.clone();
+                scope.spawn(move || {
+                    let mut rs = Resultset::new();
+                    loop {
+                        match r1.try_recv() {
+                            Ok(job) => self.count_random_job(&mut rs, job, iter_per_job),
+                            Err(TryRecvError::Empty) => unreachable!(),
+                            Err(TryRecvError::Disconnected) => break,
+                        }
+                    }
+                    s2.send(rs).expect("send succeeds");
+                });
+            }
+            drop(s2);
+            while let Ok(rs) = r2.recv() {
+                global.merge(&rs);
+            }
+        });
+        global
+    }
+
+    pub fn count_random_seq(&self, iter: u64) -> Resultset {
+        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
+        let mut rs = Resultset::new();
+        for job in 0..RANDOM_JOBS {
+            self.count_random_job(&mut rs, job, iter_per_job);
+        }
+        rs
+    }
+
     pub fn count_exact(&self) -> Resultset {
         let n = self.samples.len();
-        let depth = self.choose_job_depth();
+        let depth = self.choose_exact_job_depth();
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in (0..n).permutations(depth) {
             s1.send(job).expect("send succeeds");
@@ -140,7 +192,21 @@ impl Dataset {
         }
     }
 
-    fn update_counters(&self, rs: &mut Resultset, idx: &mut [usize], seen: &mut Seen) {
+    fn count_random_job(&self, rs: &mut Resultset, job: u64, iter_per_job: u64) {
+        let n = self.samples.len();
+        let mut idx = vec![0; n];
+        for (i, v) in idx.iter_mut().enumerate() {
+            *v = i;
+        }
+        let mut seen = vec![false; self.total_types as usize];
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
+        for _ in 0..iter_per_job {
+            idx.shuffle(&mut rng);
+            self.update_counters(rs, &idx, &mut seen);
+        }
+    }
+
+    fn update_counters(&self, rs: &mut Resultset, idx: &[usize], seen: &mut Seen) {
         for e in seen.iter_mut() {
             *e = false;
         }
@@ -544,6 +610,78 @@ mod tests {
         }
     }
 
+    fn random_binary_distinct_helper(n: u64, iter: u64) {
+        let mut samples = Vec::new();
+        for i in 0..n {
+            samples.push(sample(1, vec![st(1, i as usize)]));
+        }
+        let ds = Dataset::new(samples);
+        assert_eq!(ds.total_words, n);
+        assert_eq!(ds.total_tokens, n);
+        assert_eq!(ds.total_types, n);
+        let rs = ds.count_random(iter);
+        assert!(rs.total >= iter);
+        assert!(rs.total < iter + RANDOM_JOBS);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, n + 1);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len() as u64, n + 1);
+            for i in 0..n + 1 {
+                assert_eq!(
+                    s.lines[i as usize],
+                    sl(i + 1, &[sp(i, 0), sp(n + 1, rs.total as i64)])
+                );
+            }
+        }
+    }
+
+    fn random_binary_same_helper(n: u64, iter: u64) {
+        let mut samples = Vec::new();
+        for _ in 0..n {
+            samples.push(sample(1, vec![st(1, 0)]));
+        }
+        let ds = Dataset::new(samples);
+        assert_eq!(ds.total_words, n);
+        assert_eq!(ds.total_tokens, n);
+        assert_eq!(ds.total_types, 1);
+        let rs = ds.count_random(iter);
+        assert!(rs.total >= iter);
+        assert!(rs.total < iter + RANDOM_JOBS);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, n + 1);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len() as u64, n + 1);
+            for i in 0..n + 1 {
+                assert_eq!(
+                    s.lines[i as usize],
+                    sl(i + 1, &[sp(i, 0), sp(n + 1, rs.total as i64)])
+                );
+            }
+        }
+        for s in [
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(n + 1, rs.total as i64)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(n + 1, rs.total as i64)]));
+        }
+    }
+
     #[test]
     fn exact_binary_distinct_1() {
         exact_binary_distinct_helper(1);
@@ -612,5 +750,45 @@ mod tests {
     #[test]
     fn exact_binary_same_7() {
         exact_binary_same_helper(7);
+    }
+
+    #[test]
+    fn random_binary_distinct_5_10() {
+        random_binary_distinct_helper(5, 10);
+    }
+
+    #[test]
+    fn random_binary_distinct_5_10000() {
+        random_binary_distinct_helper(5, 10000);
+    }
+
+    #[test]
+    fn random_binary_distinct_5_12345() {
+        random_binary_distinct_helper(5, 12345);
+    }
+
+    #[test]
+    fn random_binary_distinct_100_10000() {
+        random_binary_distinct_helper(100, 10000);
+    }
+
+    #[test]
+    fn random_binary_same_5_10() {
+        random_binary_same_helper(5, 10);
+    }
+
+    #[test]
+    fn random_binary_same_5_10000() {
+        random_binary_same_helper(5, 10000);
+    }
+
+    #[test]
+    fn random_binary_same_5_12345() {
+        random_binary_same_helper(5, 12345);
+    }
+
+    #[test]
+    fn random_binary_same_100_10000() {
+        random_binary_same_helper(100, 10000);
     }
 }
