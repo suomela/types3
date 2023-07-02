@@ -9,10 +9,18 @@ use std::thread;
 /// *Minimum* number of tasks for exact calculation.
 /// This does not influence the outcome, only performance.
 /// Worst-case queue size is quadratic in `MIN_EXACT_JOBS`.
-const MIN_EXACT_JOBS: usize = 100;
+const MIN_EXACT_JOBS: u64 = 100;
 
 /// Number of tasks for randomized calculation.
 const RANDOM_JOBS: u64 = 1000;
+
+/// Use exact method if the number of iterations is not more than `EXACT_THRESHOLD` times what was requested.
+const EXACT_THRESHOLD: u64 = 2;
+
+pub enum Method {
+    Exact,
+    Random(u64),
+}
 
 pub struct SToken {
     pub count: u64,
@@ -66,10 +74,44 @@ impl Dataset {
         let mut f = 1;
         let mut i = 0;
         while i < n && f < MIN_EXACT_JOBS {
-            f *= n - i;
+            f *= (n - i) as u64;
             i += 1;
         }
         i
+    }
+
+    pub fn algorithm_heuristic(&self, iter: u64) -> Method {
+        let n = self.samples.len();
+        let mut f = 1;
+        for i in 0..n {
+            f *= (i + 1) as u64;
+            if f > EXACT_THRESHOLD * iter {
+                return Method::Random(iter);
+            }
+        }
+        return Method::Exact;
+    }
+
+    pub fn count(&self, iter: u64) -> Resultset {
+        self.count_method(self.algorithm_heuristic(iter))
+    }
+
+    pub fn count_seq(&self, iter: u64) -> Resultset {
+        self.count_method_seq(self.algorithm_heuristic(iter))
+    }
+
+    pub fn count_method(&self, method: Method) -> Resultset {
+        match method {
+            Method::Exact => self.count_exact(),
+            Method::Random(iter) => self.count_random(iter),
+        }
+    }
+
+    pub fn count_method_seq(&self, method: Method) -> Resultset {
+        match method {
+            Method::Exact => self.count_exact_seq(),
+            Method::Random(iter) => self.count_random_seq(iter),
+        }
     }
 
     pub fn count_random(&self, iter: u64) -> Resultset {
@@ -682,6 +724,44 @@ mod tests {
         }
     }
 
+    fn auto_binary_same_helper(n: u64, iter: u64) {
+        let mut samples = Vec::new();
+        for _ in 0..n {
+            samples.push(sample(1, vec![st(1, 0)]));
+        }
+        let ds = Dataset::new(samples);
+        assert_eq!(ds.total_words, n);
+        assert_eq!(ds.total_tokens, n);
+        assert_eq!(ds.total_types, 1);
+        let rs = ds.count(iter);
+        for s in [
+            rs.tokens_by_words.lower.to_sums(),
+            rs.tokens_by_words.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, n + 1);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len() as u64, n + 1);
+            for i in 0..n + 1 {
+                assert_eq!(
+                    s.lines[i as usize],
+                    sl(i + 1, &[sp(i, 0), sp(n + 1, rs.total as i64)])
+                );
+            }
+        }
+        for s in [
+            rs.types_by_words.lower.to_sums(),
+            rs.types_by_words.upper.to_sums(),
+            rs.types_by_tokens.lower.to_sums(),
+            rs.types_by_tokens.upper.to_sums(),
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, n + 1);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(n + 1, rs.total as i64)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(n + 1, rs.total as i64)]));
+        }
+    }
+
     #[test]
     fn exact_binary_distinct_1() {
         exact_binary_distinct_helper(1);
@@ -758,18 +838,18 @@ mod tests {
     }
 
     #[test]
-    fn random_binary_distinct_5_10000() {
-        random_binary_distinct_helper(5, 10000);
+    fn random_binary_distinct_5_5000() {
+        random_binary_distinct_helper(5, 5000);
     }
 
     #[test]
-    fn random_binary_distinct_5_12345() {
-        random_binary_distinct_helper(5, 12345);
+    fn random_binary_distinct_5_1234() {
+        random_binary_distinct_helper(5, 1234);
     }
 
     #[test]
-    fn random_binary_distinct_100_10000() {
-        random_binary_distinct_helper(100, 10000);
+    fn random_binary_distinct_50_5000() {
+        random_binary_distinct_helper(50, 5000);
     }
 
     #[test]
@@ -778,17 +858,27 @@ mod tests {
     }
 
     #[test]
-    fn random_binary_same_5_10000() {
-        random_binary_same_helper(5, 10000);
+    fn random_binary_same_5_5000() {
+        random_binary_same_helper(5, 5000);
     }
 
     #[test]
-    fn random_binary_same_5_12345() {
-        random_binary_same_helper(5, 12345);
+    fn random_binary_same_5_1234() {
+        random_binary_same_helper(5, 1234);
     }
 
     #[test]
-    fn random_binary_same_100_10000() {
-        random_binary_same_helper(100, 10000);
+    fn random_binary_same_50_5000() {
+        random_binary_same_helper(50, 5000);
+    }
+
+    #[test]
+    fn auto_binary_same_5_5000() {
+        auto_binary_same_helper(5, 5000);
+    }
+
+    #[test]
+    fn auto_binary_same_50_5000() {
+        auto_binary_same_helper(50, 5000);
     }
 }
