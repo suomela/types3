@@ -1,17 +1,18 @@
 use core::ops::Range;
+use serde::Serialize;
 use std::{cmp::Ordering, collections::HashMap};
 
 pub type Coord = u64;
 pub type Value = i64;
 
 #[derive(Debug)]
-pub struct Grid {
+pub struct Counter {
     values: HashMap<(Coord, Coord), Value>,
 }
 
-impl Grid {
-    pub fn new() -> Grid {
-        Grid {
+impl Counter {
+    pub fn new() -> Counter {
+        Counter {
             values: HashMap::new(),
         }
     }
@@ -23,7 +24,7 @@ impl Grid {
         *self.values.entry((y, x1)).or_insert(0) -= v;
     }
 
-    pub fn merge(&mut self, other: &Grid) {
+    pub fn merge(&mut self, other: &Counter) {
         for (&yx, &v) in &other.values {
             *self.values.entry(yx).or_insert(0) += v;
         }
@@ -76,7 +77,7 @@ impl Grid {
     }
 }
 
-impl Default for Grid {
+impl Default for Counter {
     fn default() -> Self {
         Self::new()
     }
@@ -130,7 +131,7 @@ impl RawLines {
 }
 
 /// Represents sums for one horizontal line segment, for x coordinates less than `x`
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize)]
 pub struct SumPoint {
     pub x: Coord,
     pub sum: Value,
@@ -204,13 +205,13 @@ fn add_lines(a: &[SumPoint], b: &[SumPoint]) -> Vec<SumPoint> {
 }
 
 /// Represents sums for one horizontal slice, for y coordinates less than `y`
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct SumLine {
     pub y: Coord,
     pub sums: Vec<SumPoint>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Sums {
     pub ny: Coord,
     pub nx: Coord,
@@ -363,15 +364,15 @@ mod tests {
     }
 
     #[test]
-    fn grid_basic() {
-        let mut grid = Grid::new();
-        grid.add(111, 4000..4444, 1);
-        grid.add(111, 3333..4000, 999);
-        grid.add(222, 3111..4111, 9999);
-        grid.add(111, 4000..4444, 998);
-        grid.add(333, 5555..6666, 1);
-        grid.add(333, 5555..6666, -1);
-        let lines = grid.to_rawlines();
+    fn counter_basic() {
+        let mut counter = Counter::new();
+        counter.add(111, 4000..4444, 1);
+        counter.add(111, 3333..4000, 999);
+        counter.add(222, 3111..4111, 9999);
+        counter.add(111, 4000..4444, 998);
+        counter.add(333, 5555..6666, 1);
+        counter.add(333, 5555..6666, -1);
+        let lines = counter.to_rawlines();
         assert_eq!(lines.ny, 223);
         assert_eq!(lines.nx, 4444);
         assert_eq!(lines.lines.len(), 2);
@@ -390,15 +391,15 @@ mod tests {
     }
 
     #[test]
-    fn grid_sums_basic() {
-        let mut grid = Grid::new();
-        grid.add(111, 4000..4444, 1);
-        grid.add(111, 3333..4000, 999);
-        grid.add(222, 3111..4111, 9999);
-        grid.add(111, 4000..4444, 998);
-        grid.add(333, 5555..6666, 1);
-        grid.add(333, 5555..6666, -1);
-        let sums = grid.to_sums();
+    fn counter_sums_basic() {
+        let mut counter = Counter::new();
+        counter.add(111, 4000..4444, 1);
+        counter.add(111, 3333..4000, 999);
+        counter.add(222, 3111..4111, 9999);
+        counter.add(111, 4000..4444, 998);
+        counter.add(333, 5555..6666, 1);
+        counter.add(333, 5555..6666, -1);
+        let sums = counter.to_sums();
         assert_eq!(sums.ny, 223);
         assert_eq!(sums.nx, 4444);
         assert_eq!(sums.lines.len(), 2);
@@ -421,13 +422,13 @@ mod tests {
     }
 
     #[test]
-    fn grid_sums_one_curve() {
-        let mut grid = Grid::new();
-        grid.add(0, 0..100, 1);
-        grid.add(10, 100..200, 1);
-        grid.add(20, 200..300, 1);
+    fn counter_sums_one_curve() {
+        let mut counter = Counter::new();
+        counter.add(0, 0..100, 1);
+        counter.add(10, 100..200, 1);
+        counter.add(20, 200..300, 1);
 
-        let sums = grid.to_sums();
+        let sums = counter.to_sums();
         assert_eq!(sums.ny, 21);
         assert_eq!(sums.nx, 300);
         assert_eq!(sums.lines.len(), 3);
@@ -440,13 +441,13 @@ mod tests {
     }
 
     #[test]
-    fn grid_sums_one_fat_curve() {
-        let mut grid = Grid::new();
-        grid.add(0, 0..100, 1000);
-        grid.add(10, 100..200, 1000);
-        grid.add(20, 200..300, 1000);
+    fn counter_sums_one_fat_curve() {
+        let mut counter = Counter::new();
+        counter.add(0, 0..100, 1000);
+        counter.add(10, 100..200, 1000);
+        counter.add(20, 200..300, 1000);
 
-        let sums = grid.to_sums();
+        let sums = counter.to_sums();
         assert_eq!(sums.ny, 21);
         assert_eq!(sums.nx, 300);
         assert_eq!(sums.lines.len(), 3);
@@ -459,15 +460,15 @@ mod tests {
     }
 
     #[test]
-    fn grid_sums_two_curves() {
-        let mut grid = Grid::new();
-        grid.add(0, 0..100, 1);
-        grid.add(10, 100..200, 1);
-        grid.add(20, 200..300, 1);
-        grid.add(0, 0..150, 1);
-        grid.add(30, 150..300, 1);
+    fn counter_sums_two_curves() {
+        let mut counter = Counter::new();
+        counter.add(0, 0..100, 1);
+        counter.add(10, 100..200, 1);
+        counter.add(20, 200..300, 1);
+        counter.add(0, 0..150, 1);
+        counter.add(30, 150..300, 1);
 
-        let sums = grid.to_sums();
+        let sums = counter.to_sums();
         assert_eq!(sums.ny, 31);
         assert_eq!(sums.nx, 300);
         assert_eq!(sums.lines.len(), 4);
@@ -482,20 +483,20 @@ mod tests {
     }
 
     #[test]
-    fn grid_merge() {
-        let mut grid1 = Grid::new();
-        let mut grid2 = Grid::new();
-        grid1.add(0, 0..100, 1);
-        grid2.add(10, 100..200, 1);
-        grid1.add(20, 200..300, 1);
-        grid2.add(0, 0..150, 1);
-        grid1.add(30, 150..300, 1);
+    fn counter_merge() {
+        let mut counter1 = Counter::new();
+        let mut counter2 = Counter::new();
+        counter1.add(0, 0..100, 1);
+        counter2.add(10, 100..200, 1);
+        counter1.add(20, 200..300, 1);
+        counter2.add(0, 0..150, 1);
+        counter1.add(30, 150..300, 1);
 
-        let mut grid = Grid::new();
-        grid.merge(&grid1);
-        grid.merge(&grid2);
+        let mut counter = Counter::new();
+        counter.merge(&counter1);
+        counter.merge(&counter2);
 
-        let sums = grid.to_sums();
+        let sums = counter.to_sums();
         assert_eq!(sums.ny, 31);
         assert_eq!(sums.nx, 300);
         assert_eq!(sums.lines.len(), 4);
