@@ -5,6 +5,7 @@ use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
+use serde::{Deserialize, Serialize};
 use std::thread;
 
 /// *Minimum* number of tasks for exact calculation.
@@ -25,17 +26,24 @@ pub enum Method {
 
 enum Progress {
     Tick,
-    Done(Box<Resultset>),
+    Done(Box<CounterSet>),
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct SToken {
     pub count: u64,
     pub id: usize,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct Sample {
     pub words: u64,
     pub tokens: Vec<SToken>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Samples {
+    pub samples: Vec<Sample>,
 }
 
 pub struct Dataset {
@@ -116,29 +124,29 @@ impl Dataset {
         Method::Exact
     }
 
-    pub fn count(&self, iter: u64) -> Resultset {
+    pub fn count(&self, iter: u64) -> CounterSet {
         self.count_method(self.algorithm_heuristic(iter))
     }
 
-    pub fn count_seq(&self, iter: u64) -> Resultset {
+    pub fn count_seq(&self, iter: u64) -> CounterSet {
         self.count_method_seq(self.algorithm_heuristic(iter))
     }
 
-    pub fn count_method(&self, method: Method) -> Resultset {
+    pub fn count_method(&self, method: Method) -> CounterSet {
         match method {
             Method::Exact => self.count_exact(),
             Method::Random(iter) => self.count_random(iter),
         }
     }
 
-    pub fn count_method_seq(&self, method: Method) -> Resultset {
+    pub fn count_method_seq(&self, method: Method) -> CounterSet {
         match method {
             Method::Exact => self.count_exact_seq(),
             Method::Random(iter) => self.count_random_seq(iter),
         }
     }
 
-    pub fn count_random(&self, iter: u64) -> Resultset {
+    pub fn count_random(&self, iter: u64) -> CounterSet {
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in 0..RANDOM_JOBS {
             s1.send(job).expect("send succeeds");
@@ -146,7 +154,7 @@ impl Dataset {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = Resultset::new();
+        let mut global = CounterSet::new();
         let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -154,7 +162,7 @@ impl Dataset {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = Resultset::new();
+                    let mut rs = CounterSet::new();
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -181,16 +189,16 @@ impl Dataset {
         global
     }
 
-    pub fn count_random_seq(&self, iter: u64) -> Resultset {
+    pub fn count_random_seq(&self, iter: u64) -> CounterSet {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-        let mut rs = Resultset::new();
+        let mut rs = CounterSet::new();
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
         }
         rs
     }
 
-    pub fn count_exact(&self) -> Resultset {
+    pub fn count_exact(&self) -> CounterSet {
         let n = self.samples.len();
         let depth = self.choose_exact_job_depth();
         let (s1, r1) = crossbeam_channel::unbounded();
@@ -201,7 +209,7 @@ impl Dataset {
         }
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = Resultset::new();
+        let mut global = CounterSet::new();
         let bar = self.progress_bar(njobs, nthreads, "Exact");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -209,7 +217,7 @@ impl Dataset {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = Resultset::new();
+                    let mut rs = CounterSet::new();
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -236,13 +244,13 @@ impl Dataset {
         global
     }
 
-    pub fn count_exact_seq(&self) -> Resultset {
-        let mut rs = Resultset::new();
+    pub fn count_exact_seq(&self) -> CounterSet {
+        let mut rs = CounterSet::new();
         self.count_exact_start(&mut rs, &[]);
         rs
     }
 
-    fn count_exact_start(&self, rs: &mut Resultset, start: &[usize]) {
+    fn count_exact_start(&self, rs: &mut CounterSet, start: &[usize]) {
         let n = self.samples.len();
         let mut idx = vec![0; n];
         let mut used = vec![false; n];
@@ -265,7 +273,7 @@ impl Dataset {
         self.count_exact_rec(rs, &mut idx, start.len(), &mut seen);
     }
 
-    fn count_exact_rec(&self, rs: &mut Resultset, idx: &mut [usize], i: usize, seen: &mut Seen) {
+    fn count_exact_rec(&self, rs: &mut CounterSet, idx: &mut [usize], i: usize, seen: &mut Seen) {
         let n = self.samples.len();
         if i == n {
             self.update_counters(rs, idx, seen);
@@ -278,7 +286,7 @@ impl Dataset {
         }
     }
 
-    fn count_random_job(&self, rs: &mut Resultset, job: u64, iter_per_job: u64) {
+    fn count_random_job(&self, rs: &mut CounterSet, job: u64, iter_per_job: u64) {
         let n = self.samples.len();
         let mut idx = vec![0; n];
         for (i, v) in idx.iter_mut().enumerate() {
@@ -292,7 +300,7 @@ impl Dataset {
         }
     }
 
-    fn update_counters(&self, rs: &mut Resultset, idx: &[usize], seen: &mut Seen) {
+    fn update_counters(&self, rs: &mut CounterSet, idx: &[usize], seen: &mut Seen) {
         for e in seen.iter_mut() {
             *e = false;
         }
@@ -330,20 +338,20 @@ impl Dataset {
     }
 }
 
-pub struct Results {
-    lower: density_curve::Grid,
-    upper: density_curve::Grid,
+pub struct CounterPair {
+    lower: density_curve::Counter,
+    upper: density_curve::Counter,
 }
 
-impl Results {
-    pub fn new() -> Results {
-        Results {
-            lower: density_curve::Grid::new(),
-            upper: density_curve::Grid::new(),
+impl CounterPair {
+    pub fn new() -> CounterPair {
+        CounterPair {
+            lower: density_curve::Counter::new(),
+            upper: density_curve::Counter::new(),
         }
     }
 
-    pub fn merge(&mut self, other: &Results) {
+    pub fn merge(&mut self, other: &CounterPair) {
         self.lower.merge(&other.lower);
         self.upper.merge(&other.upper);
     }
@@ -360,43 +368,73 @@ impl Results {
         self.upper.add(yy.end, xx.start + 1..xx.end + 1, 1);
         self.lower.add(yy.start, xx, 1);
     }
+
+    pub fn to_sums(&self) -> SumPair {
+        SumPair {
+            lower: self.lower.to_sums(),
+            upper: self.upper.to_sums(),
+        }
+    }
 }
 
-impl Default for Results {
+impl Default for CounterPair {
     fn default() -> Self {
         Self::new()
     }
 }
 
-pub struct Resultset {
-    types_by_tokens: Results,
-    types_by_words: Results,
-    tokens_by_words: Results,
+pub struct CounterSet {
+    types_by_tokens: CounterPair,
+    types_by_words: CounterPair,
+    tokens_by_words: CounterPair,
     total: u64,
 }
 
-impl Resultset {
-    pub fn new() -> Resultset {
-        Resultset {
-            types_by_tokens: Results::new(),
-            types_by_words: Results::new(),
-            tokens_by_words: Results::new(),
+impl CounterSet {
+    pub fn new() -> CounterSet {
+        CounterSet {
+            types_by_tokens: CounterPair::new(),
+            types_by_words: CounterPair::new(),
+            tokens_by_words: CounterPair::new(),
             total: 0,
         }
     }
 
-    pub fn merge(&mut self, other: &Resultset) {
+    pub fn merge(&mut self, other: &CounterSet) {
         self.types_by_tokens.merge(&other.types_by_tokens);
         self.types_by_words.merge(&other.types_by_words);
         self.tokens_by_words.merge(&other.tokens_by_words);
         self.total += other.total;
     }
+
+    pub fn to_sums(&self) -> SumSet {
+        SumSet {
+            types_by_tokens: self.types_by_tokens.to_sums(),
+            types_by_words: self.types_by_words.to_sums(),
+            tokens_by_words: self.tokens_by_words.to_sums(),
+            total: self.total,
+        }
+    }
 }
 
-impl Default for Resultset {
+impl Default for CounterSet {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[derive(Serialize)]
+pub struct SumPair {
+    lower: density_curve::Sums,
+    upper: density_curve::Sums,
+}
+
+#[derive(Serialize)]
+pub struct SumSet {
+    types_by_tokens: SumPair,
+    types_by_words: SumPair,
+    tokens_by_words: SumPair,
+    total: u64,
 }
 
 #[cfg(test)]
@@ -433,15 +471,15 @@ mod tests {
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 3);
-        let rs = ds.count_exact_seq();
+        let rs = ds.count_exact_seq().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
         for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.tokens_by_words.lower,
+            rs.tokens_by_words.upper,
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 4);
             assert_eq!(s.nx, 4);
@@ -463,15 +501,15 @@ mod tests {
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 3);
-        let rs = ds.count_exact();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
         for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.tokens_by_words.lower,
+            rs.tokens_by_words.upper,
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 4);
             assert_eq!(s.nx, 4);
@@ -493,9 +531,9 @@ mod tests {
         assert_eq!(ds.total_words, 3000);
         assert_eq!(ds.total_tokens, 900);
         assert_eq!(ds.total_types, 33);
-        let rs = ds.count_exact();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
-        let s = rs.types_by_words.lower.to_sums();
+        let s = rs.types_by_words.lower;
         assert_eq!(s.ny, 10);
         assert_eq!(s.nx, 3001);
         assert_eq!(s.lines.len(), 4);
@@ -503,7 +541,7 @@ mod tests {
         assert_eq!(s.lines[1], sl(4, &[sp(1000, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[2], sl(7, &[sp(2000, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[3], sl(10, &[sp(3000, 0), sp(3001, 1 * 2 * 3)]));
-        let s = rs.types_by_words.upper.to_sums();
+        let s = rs.types_by_words.upper;
         assert_eq!(s.ny, 10);
         assert_eq!(s.nx, 3001);
         assert_eq!(s.lines.len(), 4);
@@ -511,7 +549,7 @@ mod tests {
         assert_eq!(s.lines[1], sl(4, &[sp(1, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[2], sl(7, &[sp(1001, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[3], sl(10, &[sp(2001, 0), sp(3001, 1 * 2 * 3)]));
-        let s = rs.tokens_by_words.lower.to_sums();
+        let s = rs.tokens_by_words.lower;
         assert_eq!(s.ny, 901);
         assert_eq!(s.nx, 3001);
         assert_eq!(s.lines.len(), 4);
@@ -519,7 +557,7 @@ mod tests {
         assert_eq!(s.lines[1], sl(301, &[sp(1000, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[2], sl(601, &[sp(2000, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[3], sl(901, &[sp(3000, 0), sp(3001, 1 * 2 * 3)]));
-        let s = rs.tokens_by_words.upper.to_sums();
+        let s = rs.tokens_by_words.upper;
         assert_eq!(s.ny, 901);
         assert_eq!(s.nx, 3001);
         assert_eq!(s.lines.len(), 4);
@@ -527,7 +565,7 @@ mod tests {
         assert_eq!(s.lines[1], sl(301, &[sp(1, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[2], sl(601, &[sp(1001, 0), sp(3001, 1 * 2 * 3)]));
         assert_eq!(s.lines[3], sl(901, &[sp(2001, 0), sp(3001, 1 * 2 * 3)]));
-        let s = rs.types_by_tokens.lower.to_sums();
+        let s = rs.types_by_tokens.lower;
         assert_eq!(s.ny, 10);
         assert_eq!(s.nx, 901);
         assert_eq!(s.lines.len(), 4);
@@ -535,7 +573,7 @@ mod tests {
         assert_eq!(s.lines[1], sl(4, &[sp(300, 0), sp(901, 1 * 2 * 3)]));
         assert_eq!(s.lines[2], sl(7, &[sp(600, 0), sp(901, 1 * 2 * 3)]));
         assert_eq!(s.lines[3], sl(10, &[sp(900, 0), sp(901, 1 * 2 * 3)]));
-        let s = rs.types_by_tokens.upper.to_sums();
+        let s = rs.types_by_tokens.upper;
         assert_eq!(s.ny, 10);
         assert_eq!(s.nx, 901);
         assert_eq!(s.lines.len(), 4);
@@ -555,12 +593,9 @@ mod tests {
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 1);
-        let rs = ds.count_exact();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
-        for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-        ] {
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, 4);
             assert_eq!(s.nx, 4);
             assert_eq!(s.lines.len(), 4);
@@ -570,10 +605,10 @@ mod tests {
             assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 1 * 2 * 3)]));
         }
         for s in [
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 2);
             assert_eq!(s.nx, 4);
@@ -593,12 +628,9 @@ mod tests {
         assert_eq!(ds.total_words, 3);
         assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 2);
-        let rs = ds.count_exact();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
-        for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-        ] {
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, 4);
             assert_eq!(s.nx, 4);
             assert_eq!(s.lines.len(), 4);
@@ -608,10 +640,10 @@ mod tests {
             assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 1 * 2 * 3)]));
         }
         for s in [
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 3);
             assert_eq!(s.nx, 4);
@@ -633,13 +665,10 @@ mod tests {
         assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 2);
         let iter = 5000;
-        let rs = ds.count_random(iter);
+        let rs = ds.count_random(iter).to_sums();
         assert!(rs.total >= iter);
         assert!(rs.total < iter + RANDOM_JOBS);
-        for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-        ] {
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, 4);
             assert_eq!(s.nx, 4);
             assert_eq!(s.lines.len(), 4);
@@ -649,10 +678,10 @@ mod tests {
             assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, iter as i64)]));
         }
         for s in [
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 3);
             assert_eq!(s.nx, 4);
@@ -682,15 +711,15 @@ mod tests {
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, n);
-        let rs = ds.count_exact();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(fact, rs.total);
         for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.tokens_by_words.lower,
+            rs.tokens_by_words.upper,
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, n + 1);
             assert_eq!(s.nx, n + 1);
@@ -715,12 +744,9 @@ mod tests {
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
-        let rs = ds.count_exact();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(fact, rs.total);
-        for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-        ] {
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, n + 1);
             assert_eq!(s.nx, n + 1);
             assert_eq!(s.lines.len() as u64, n + 1);
@@ -732,10 +758,10 @@ mod tests {
             }
         }
         for s in [
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 2);
             assert_eq!(s.nx, n + 1);
@@ -754,16 +780,16 @@ mod tests {
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, n);
-        let rs = ds.count_random(iter);
+        let rs = ds.count_random(iter).to_sums();
         assert!(rs.total >= iter);
         assert!(rs.total < iter + RANDOM_JOBS);
         for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.tokens_by_words.lower,
+            rs.tokens_by_words.upper,
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, n + 1);
             assert_eq!(s.nx, n + 1);
@@ -786,13 +812,10 @@ mod tests {
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
-        let rs = ds.count_random(iter);
+        let rs = ds.count_random(iter).to_sums();
         assert!(rs.total >= iter);
         assert!(rs.total < iter + RANDOM_JOBS);
-        for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-        ] {
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, n + 1);
             assert_eq!(s.nx, n + 1);
             assert_eq!(s.lines.len() as u64, n + 1);
@@ -804,10 +827,10 @@ mod tests {
             }
         }
         for s in [
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 2);
             assert_eq!(s.nx, n + 1);
@@ -826,11 +849,8 @@ mod tests {
         assert_eq!(ds.total_words, n);
         assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
-        let rs = ds.count(iter);
-        for s in [
-            rs.tokens_by_words.lower.to_sums(),
-            rs.tokens_by_words.upper.to_sums(),
-        ] {
+        let rs = ds.count(iter).to_sums();
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, n + 1);
             assert_eq!(s.nx, n + 1);
             assert_eq!(s.lines.len() as u64, n + 1);
@@ -842,10 +862,10 @@ mod tests {
             }
         }
         for s in [
-            rs.types_by_words.lower.to_sums(),
-            rs.types_by_words.upper.to_sums(),
-            rs.types_by_tokens.lower.to_sums(),
-            rs.types_by_tokens.upper.to_sums(),
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
         ] {
             assert_eq!(s.ny, 2);
             assert_eq!(s.nx, n + 1);
