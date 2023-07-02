@@ -1,30 +1,62 @@
+use console::style;
+use std::{env, error, fmt, io, process, result};
 use types3::*;
 
-fn sample(words: u64, tokens: Vec<SToken>) -> Sample {
-    Sample { words, tokens }
+const NAME: &str = "types3";
+
+type Result<T> = result::Result<T, Box<dyn error::Error>>;
+
+struct Args {
+    iter: u64,
 }
 
-fn st(count: u64, id: usize) -> SToken {
-    SToken { count, id }
+#[derive(Debug, Clone)]
+struct InvalidArgumentsError;
+
+impl fmt::Display for InvalidArgumentsError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "expected one command line argument: number of iterations"
+        )
+    }
+}
+
+impl error::Error for InvalidArgumentsError {}
+
+fn parse_args() -> Result<Args> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        return Err(InvalidArgumentsError.into());
+    }
+    let iter: u64 = args[1].parse()?;
+    Ok(Args { iter })
+}
+
+fn process(iter: u64) -> Result<()> {
+    let samples: Vec<Sample> = serde_json::from_reader(io::stdin())?;
+    let ds = Dataset::new(samples);
+    let rs = ds.count(iter).to_sums();
+    serde_json::to_writer(io::stdout(), &rs)?;
+    Ok(())
+}
+
+fn do_all() -> Result<()> {
+    let args = parse_args()?;
+    process(args.iter)
 }
 
 fn main() {
-    {
-        let n = 100;
-        let mut samples = Vec::new();
-        for i in 0..n {
-            samples.push(sample(1, vec![st(1, i as usize)]));
+    match do_all() {
+        Ok(()) => {}
+        Err(e) => {
+            eprintln!(
+                "{} {} {}",
+                style(format!("{NAME}:")).blue(),
+                style("error:").red().bold(),
+                e
+            );
+            process::exit(1);
         }
-        let ds = Dataset::new(samples);
-        ds.count(100_000);
-    }
-    {
-        let n = 10;
-        let mut samples = Vec::new();
-        for i in 0..n {
-            samples.push(sample(1, vec![st(1, i as usize)]));
-        }
-        let ds = Dataset::new(samples);
-        ds.count_exact();
     }
 }
