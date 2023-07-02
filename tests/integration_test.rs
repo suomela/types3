@@ -1,4 +1,4 @@
-use std::{path::PathBuf, fs};
+use std::{fs, path::PathBuf};
 use types3::{Driver, Sample};
 
 fn slurp(filename: &str) -> String {
