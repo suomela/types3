@@ -10,8 +10,8 @@ fn slurp(filename: &str) -> String {
 #[test]
 fn example_1() {
     let iter = 10000;
-    let input = slurp("examples/in1.json");
-    let expected = slurp("examples/out1.json");
+    let input = slurp("tests/data/in1.json");
+    let expected = slurp("tests/data/out1.json");
     let samples: Vec<Sample> = serde_json::from_str(&input).unwrap();
     let driver = Driver::new(samples);
     let result = driver.count(iter).to_sums();
