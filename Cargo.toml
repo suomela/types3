@@ -5,6 +5,8 @@ authors = ["Jukka Suomela"]
 edition = "2021"
 description = "Type accumulation curves"
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/suomela/types3"
 
 [dependencies]
 clap = { version = "4.3.10", features = ["derive"] }
