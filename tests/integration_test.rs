@@ -15,6 +15,6 @@ fn example_1() {
     let samples: Vec<Sample> = serde_json::from_str(&input).unwrap();
     let driver = Driver::new(samples);
     let result = driver.count(iter).to_sums();
-    let output = serde_json::to_string(&result).unwrap();
+    let output = serde_json::to_string_pretty(&result).unwrap();
     assert_eq!(output, expected);
 }

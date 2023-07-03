@@ -17,6 +17,9 @@ struct Args {
     /// Show progress
     #[arg(short, long)]
     verbose: bool,
+    /// Pretty print results
+    #[arg(short, long)]
+    pretty: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -54,7 +57,11 @@ fn process(args: &Args) -> Result<()> {
     msg(args.verbose, "Write", &args.outfile);
     let file = fs::File::create(&args.outfile)?;
     let writer = io::BufWriter::new(file);
-    serde_json::to_writer(writer, &result)?;
+    if args.pretty {
+        serde_json::to_writer_pretty(writer, &result)?;
+    } else {
+        serde_json::to_writer(writer, &result)?;
+    }
     msg(
         args.verbose,
         "Finished",
