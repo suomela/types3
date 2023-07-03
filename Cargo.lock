@@ -149,13 +149,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "density-curve"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "either"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -442,7 +435,6 @@ dependencies = [
  "clap",
  "console",
  "crossbeam-channel",
- "density-curve",
  "indicatif",
  "itertools",
  "num_cpus",

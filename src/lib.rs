@@ -1,3 +1,5 @@
+mod density_curve;
+
 use core::ops::Range;
 use crossbeam_channel::TryRecvError;
 use indicatif::{ProgressBar, ProgressStyle};
