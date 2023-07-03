@@ -162,7 +162,7 @@ impl Driver {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = CounterSet::new();
+        let mut global = CounterSet::new(false);
         let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -170,7 +170,7 @@ impl Driver {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = CounterSet::new();
+                    let mut rs = CounterSet::new(false);
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -199,7 +199,7 @@ impl Driver {
 
     pub fn count_random_seq(&self, iter: u64) -> CounterSet {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-        let mut rs = CounterSet::new();
+        let mut rs = CounterSet::new(false);
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
         }
@@ -217,7 +217,7 @@ impl Driver {
         }
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = CounterSet::new();
+        let mut global = CounterSet::new(true);
         let bar = self.progress_bar(njobs, nthreads, "Exact");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -225,7 +225,7 @@ impl Driver {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = CounterSet::new();
+                    let mut rs = CounterSet::new(true);
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -253,7 +253,7 @@ impl Driver {
     }
 
     pub fn count_exact_seq(&self) -> CounterSet {
-        let mut rs = CounterSet::new();
+        let mut rs = CounterSet::new(true);
         self.count_exact_start(&mut rs, &[]);
         rs
     }
@@ -396,15 +396,17 @@ pub struct CounterSet {
     types_by_words: CounterPair,
     tokens_by_words: CounterPair,
     total: u64,
+    exact: bool,
 }
 
 impl CounterSet {
-    fn new() -> CounterSet {
+    fn new(exact: bool) -> CounterSet {
         CounterSet {
             types_by_tokens: CounterPair::new(),
             types_by_words: CounterPair::new(),
             tokens_by_words: CounterPair::new(),
             total: 0,
+            exact,
         }
     }
 
@@ -421,13 +423,8 @@ impl CounterSet {
             types_by_words: self.types_by_words.to_sums(),
             tokens_by_words: self.tokens_by_words.to_sums(),
             total: self.total,
+            exact: self.exact,
         }
-    }
-}
-
-impl Default for CounterSet {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -449,6 +446,7 @@ pub struct SumSet {
     pub types_by_words: SumPair,
     pub tokens_by_words: SumPair,
     pub total: u64,
+    pub exact: bool,
 }
 
 impl SumSet {

@@ -59,9 +59,10 @@ fn process(args: &Args) -> Result<()> {
         args.verbose,
         "Finished",
         &format!(
-            "{} iterations, {} result points",
+            "{} iterations, {}, {} result points",
             result.total,
-            result.total_points()
+            if result.exact { "exact" } else { "not exact" },
+            result.total_points(),
         ),
     );
     Ok(())
