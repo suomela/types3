@@ -65,6 +65,10 @@ struct Counter {
 
 impl Driver {
     pub fn new(samples: Vec<Sample>) -> Driver {
+        Driver::new_with_settings(samples, false)
+    }
+
+    pub fn new_with_settings(samples: Vec<Sample>, progress: bool) -> Driver {
         let mut total_types = 0;
         let mut total_tokens = 0;
         let mut total_words = 0;
@@ -81,22 +85,8 @@ impl Driver {
             total_words,
             total_tokens,
             total_types: total_types as u64,
-            progress: false,
+            progress,
         }
-    }
-
-    pub fn new_with_progress(samples: Vec<Sample>) -> Driver {
-        let mut driver = Driver::new(samples);
-        driver.enable_progress();
-        driver
-    }
-
-    pub fn enable_progress(&mut self) {
-        self.progress = true;
-    }
-
-    pub fn disable_progress(&mut self) {
-        self.progress = false;
     }
 
     fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {

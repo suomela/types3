@@ -1,11 +1,13 @@
 [package]
 name = "types3"
 version = "0.1.0"
+authors = ["Jukka Suomela"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Type accumulation curves"
+license = "MIT"
 
 [dependencies]
+clap = { version = "4.3.10", features = ["derive"] }
 console = "0.15.7"
 crossbeam-channel = "0.5.8"
 density-curve = { version = "0.1.0", path = "../density-curve" }
