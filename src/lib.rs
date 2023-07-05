@@ -65,7 +65,7 @@ pub struct Driver {
 type Seen = Vec<bool>;
 
 #[derive(Clone)]
-struct Counter {
+struct Count {
     types: u64,
     tokens: u64,
     words: u64,
@@ -317,7 +317,7 @@ impl Driver {
         for e in seen.iter_mut() {
             *e = false;
         }
-        let mut c = Counter {
+        let mut c = Count {
             types: 0,
             tokens: 0,
             words: 0,
