@@ -738,6 +738,14 @@ mod tests {
         }
     }
 
+    fn st2(count: u64, id: usize) -> SToken {
+        SToken {
+            count,
+            id,
+            flavor: 2,
+        }
+    }
+
     fn sl(y: Coord, sums: &[SumPoint]) -> SumLine {
         SumLine {
             y,
@@ -1295,7 +1303,7 @@ mod tests {
     }
 
     #[test]
-    fn exact_binary_flavor_2() {
+    fn exact_binary_flavor_2_overlap() {
         let ds = Driver::new(vec![
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st1(1, 0)]),
@@ -1370,6 +1378,105 @@ mod tests {
             assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
             assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(4, 6)]));
             assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 2), sp(4, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[1].ftypes_by_ftokens.lower,
+            &rs.by_flavor[1].ftypes_by_ftokens.upper,
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 2);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(2, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 6)]));
+        }
+        for s in [&rs.by_flavor[1].ftypes_by_types.lower] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 2), sp(3, 4)]));
+        }
+        for s in [&rs.by_flavor[1].ftypes_by_types.upper] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 3), sp(3, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[1].ftypes_by_words.lower,
+            &rs.by_flavor[1].ftypes_by_words.upper,
+            &rs.by_flavor[1].ftypes_by_tokens.lower,
+            &rs.by_flavor[1].ftypes_by_tokens.upper,
+            &rs.by_flavor[1].ftokens_by_words.lower,
+            &rs.by_flavor[1].ftokens_by_words.upper,
+            &rs.by_flavor[1].ftokens_by_tokens.lower,
+            &rs.by_flavor[1].ftokens_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 2), sp(3, 4), sp(4, 6)]));
+        }
+    }
+
+    #[test]
+    fn exact_binary_flavor_3_distinct() {
+        let ds = Driver::new(vec![
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st1(1, 1)]),
+            sample(1, vec![st2(1, 2)]),
+        ]);
+        assert_eq!(ds.total_types, 3);
+        assert_eq!(ds.total_flavors, 3);
+        let rs = ds.count_exact_seq().to_sums();
+        assert_eq!(1 * 2 * 3, rs.total);
+        for s in [
+            rs.tokens_by_words.lower,
+            rs.tokens_by_words.upper,
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 6)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 6)]));
+        }
+        for i in 0..3 {
+            for s in [
+                &rs.by_flavor[i].ftypes_by_ftokens.lower,
+                &rs.by_flavor[i].ftypes_by_ftokens.upper,
+            ] {
+                assert_eq!(s.ny, 2);
+                assert_eq!(s.nx, 2);
+                assert_eq!(s.lines.len(), 2);
+                assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(2, 6)]));
+                assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 6)]));
+            }
+            for s in [
+                &rs.by_flavor[i].ftypes_by_types.lower,
+                &rs.by_flavor[i].ftypes_by_types.upper,
+                &rs.by_flavor[i].ftypes_by_words.lower,
+                &rs.by_flavor[i].ftypes_by_words.upper,
+                &rs.by_flavor[i].ftypes_by_tokens.lower,
+                &rs.by_flavor[i].ftypes_by_tokens.upper,
+                &rs.by_flavor[i].ftokens_by_words.lower,
+                &rs.by_flavor[i].ftokens_by_words.upper,
+                &rs.by_flavor[i].ftokens_by_tokens.lower,
+                &rs.by_flavor[i].ftokens_by_tokens.upper,
+            ] {
+                assert_eq!(s.ny, 2);
+                assert_eq!(s.nx, 4);
+                assert_eq!(s.lines.len(), 2);
+                assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+                assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 2), sp(3, 4), sp(4, 6)]));
+            }
         }
     }
 }
