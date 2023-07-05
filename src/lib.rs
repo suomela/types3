@@ -27,7 +27,7 @@ pub enum Method {
 
 enum Progress {
     Tick,
-    Done(Box<CounterState>),
+    Done(Box<RawResult>),
 }
 
 #[derive(Deserialize, Serialize)]
@@ -126,29 +126,29 @@ impl Driver {
         Method::Exact
     }
 
-    pub fn count(&self, iter: u64) -> CounterState {
+    pub fn count(&self, iter: u64) -> RawResult {
         self.count_method(self.algorithm_heuristic(iter))
     }
 
-    pub fn count_seq(&self, iter: u64) -> CounterState {
+    pub fn count_seq(&self, iter: u64) -> RawResult {
         self.count_method_seq(self.algorithm_heuristic(iter))
     }
 
-    pub fn count_method(&self, method: Method) -> CounterState {
+    pub fn count_method(&self, method: Method) -> RawResult {
         match method {
             Method::Exact => self.count_exact(),
             Method::Random(iter) => self.count_random(iter),
         }
     }
 
-    pub fn count_method_seq(&self, method: Method) -> CounterState {
+    pub fn count_method_seq(&self, method: Method) -> RawResult {
         match method {
             Method::Exact => self.count_exact_seq(),
             Method::Random(iter) => self.count_random_seq(iter),
         }
     }
 
-    pub fn count_random(&self, iter: u64) -> CounterState {
+    pub fn count_random(&self, iter: u64) -> RawResult {
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in 0..RANDOM_JOBS {
             s1.send(job).expect("send succeeds");
@@ -156,7 +156,7 @@ impl Driver {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = CounterState::new(false, self.total_flavors);
+        let mut global = RawResult::new(false, self.total_flavors);
         let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -164,7 +164,7 @@ impl Driver {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = CounterState::new(false, self.total_flavors);
+                    let mut rs = RawResult::new(false, self.total_flavors);
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -191,16 +191,16 @@ impl Driver {
         global
     }
 
-    pub fn count_random_seq(&self, iter: u64) -> CounterState {
+    pub fn count_random_seq(&self, iter: u64) -> RawResult {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-        let mut rs = CounterState::new(false, self.total_flavors);
+        let mut rs = RawResult::new(false, self.total_flavors);
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
         }
         rs
     }
 
-    pub fn count_exact(&self) -> CounterState {
+    pub fn count_exact(&self) -> RawResult {
         let n = self.samples.len();
         let depth = self.choose_exact_job_depth();
         let (s1, r1) = crossbeam_channel::unbounded();
@@ -211,7 +211,7 @@ impl Driver {
         }
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = CounterState::new(true, self.total_flavors);
+        let mut global = RawResult::new(true, self.total_flavors);
         let bar = self.progress_bar(njobs, nthreads, "Exact");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -219,7 +219,7 @@ impl Driver {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = CounterState::new(true, self.total_flavors);
+                    let mut rs = RawResult::new(true, self.total_flavors);
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -246,13 +246,13 @@ impl Driver {
         global
     }
 
-    pub fn count_exact_seq(&self) -> CounterState {
-        let mut rs = CounterState::new(true, self.total_flavors);
+    pub fn count_exact_seq(&self) -> RawResult {
+        let mut rs = RawResult::new(true, self.total_flavors);
         self.count_exact_start(&mut rs, &[]);
         rs
     }
 
-    fn count_exact_start(&self, rs: &mut CounterState, start: &[usize]) {
+    fn count_exact_start(&self, rs: &mut RawResult, start: &[usize]) {
         let n = self.samples.len();
         let mut idx = vec![0; n];
         let mut used = vec![false; n];
@@ -277,7 +277,7 @@ impl Driver {
 
     fn count_exact_rec(
         &self,
-        rs: &mut CounterState,
+        rs: &mut RawResult,
         idx: &mut [usize],
         i: usize,
         ls: &mut LocalState,
@@ -294,7 +294,7 @@ impl Driver {
         }
     }
 
-    fn count_random_job(&self, rs: &mut CounterState, job: u64, iter_per_job: u64) {
+    fn count_random_job(&self, rs: &mut RawResult, job: u64, iter_per_job: u64) {
         let n = self.samples.len();
         let mut idx = vec![0; n];
         for (i, v) in idx.iter_mut().enumerate() {
@@ -308,7 +308,7 @@ impl Driver {
         }
     }
 
-    fn update_counters(&self, cs: &mut CounterState, idx: &[usize], ls: &mut LocalState) {
+    fn update_counters(&self, cs: &mut RawResult, idx: &[usize], ls: &mut LocalState) {
         ls.reset();
         for i in idx {
             ls.feed_sample(&self.samples[*i]);
@@ -319,23 +319,23 @@ impl Driver {
 }
 
 struct FCountHelper {
-    ftypes: u64,
-    ftokens: u64,
+    types: u64,
+    tokens: u64,
     seen: Vec<bool>,
 }
 
 impl FCountHelper {
     fn new(total_types: usize) -> FCountHelper {
         FCountHelper {
-            ftypes: 0,
-            ftokens: 0,
+            types: 0,
+            tokens: 0,
             seen: vec![false; total_types],
         }
     }
 
     fn reset(&mut self) {
-        self.ftypes = 0;
-        self.ftokens = 0;
+        self.types = 0;
+        self.tokens = 0;
         for e in self.seen.iter_mut() {
             *e = false;
         }
@@ -343,17 +343,16 @@ impl FCountHelper {
 
     fn feed_token(&mut self, t: &SToken) {
         if !self.seen[t.id] {
-            self.ftypes += 1;
+            self.types += 1;
             self.seen[t.id] = true;
         }
-        self.ftokens += t.count;
+        self.tokens += t.count;
     }
 }
 
 struct CountHelper {
     types: u64,
     tokens: u64,
-    words: u64,
     seen: Vec<bool>,
 }
 
@@ -362,7 +361,6 @@ impl CountHelper {
         CountHelper {
             types: 0,
             tokens: 0,
-            words: 0,
             seen: vec![false; total_types],
         }
     }
@@ -370,7 +368,6 @@ impl CountHelper {
     fn reset(&mut self) {
         self.types = 0;
         self.tokens = 0;
-        self.words = 0;
         for e in self.seen.iter_mut() {
             *e = false;
         }
@@ -388,6 +385,7 @@ impl CountHelper {
 struct LocalState {
     c: CountHelper,
     fc: Vec<FCountHelper>,
+    words: u64,
 }
 
 impl LocalState {
@@ -397,6 +395,7 @@ impl LocalState {
             fc: (0..total_flavors)
                 .map(|_| FCountHelper::new(total_types))
                 .collect(),
+            words: 0,
         }
     }
 
@@ -405,6 +404,7 @@ impl LocalState {
         for x in self.fc.iter_mut() {
             x.reset();
         }
+        self.words = 0;
     }
 
     fn feed_token(&mut self, t: &SToken) {
@@ -418,7 +418,7 @@ impl LocalState {
         for t in &sample.tokens {
             self.feed_token(t);
         }
-        self.c.words += sample.words;
+        self.words += sample.words;
     }
 }
 
@@ -533,12 +533,11 @@ impl FCounterSet {
         }
     }
 
-    fn feed(&mut self, c: &CountHelper, fc: &FCountHelper) {
+    fn feed(&mut self, words: u64, c: &CountHelper, fc: &FCountHelper) {
         let types = c.types;
         let tokens = c.tokens;
-        let words = c.words;
-        let ftypes = fc.ftypes;
-        let ftokens = fc.ftokens;
+        let ftypes = fc.types;
+        let ftokens = fc.tokens;
         self.ftypes_by_types.feed(ftypes, types);
         self.ftypes_by_tokens.feed(ftypes, tokens);
         self.ftypes_by_ftokens.feed(ftypes, ftokens);
@@ -578,10 +577,9 @@ impl CounterSet {
         self.tokens_by_words.merge(&other.tokens_by_words);
     }
 
-    fn feed(&mut self, c: &CountHelper) {
+    fn feed(&mut self, words: u64, c: &CountHelper) {
         let types = c.types;
         let tokens = c.tokens;
-        let words = c.words;
         self.tokens_by_words.feed(tokens, words);
         self.types_by_words.feed(types, words);
         self.types_by_tokens.feed(types, tokens);
@@ -594,16 +592,16 @@ impl CounterSet {
     }
 }
 
-pub struct CounterState {
+pub struct RawResult {
     c: CounterSet,
     fc: Vec<FCounterSet>,
     total: u64,
     exact: bool,
 }
 
-impl CounterState {
-    fn new(exact: bool, nflavors: usize) -> CounterState {
-        CounterState {
+impl RawResult {
+    fn new(exact: bool, nflavors: usize) -> RawResult {
+        RawResult {
             c: CounterSet::new(),
             fc: (0..nflavors).map(|_| FCounterSet::new()).collect(),
             total: 0,
@@ -611,7 +609,7 @@ impl CounterState {
         }
     }
 
-    fn merge(&mut self, other: &CounterState) {
+    fn merge(&mut self, other: &RawResult) {
         self.c.merge(&other.c);
         for i in 0..self.fc.len() {
             self.fc[i].merge(&other.fc[i]);
@@ -620,9 +618,9 @@ impl CounterState {
     }
 
     fn feed(&mut self, ls: &LocalState) {
-        self.c.feed(&ls.c);
+        self.c.feed(ls.words, &ls.c);
         for (i, fc) in self.fc.iter_mut().enumerate() {
-            fc.feed(&ls.c, &ls.fc[i]);
+            fc.feed(ls.words, &ls.c, &ls.fc[i]);
         }
     }
 
