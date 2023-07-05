@@ -318,38 +318,6 @@ impl Driver {
     }
 }
 
-struct FCountHelper {
-    types: u64,
-    tokens: u64,
-    seen: Vec<bool>,
-}
-
-impl FCountHelper {
-    fn new(total_types: usize) -> FCountHelper {
-        FCountHelper {
-            types: 0,
-            tokens: 0,
-            seen: vec![false; total_types],
-        }
-    }
-
-    fn reset(&mut self) {
-        self.types = 0;
-        self.tokens = 0;
-        for e in self.seen.iter_mut() {
-            *e = false;
-        }
-    }
-
-    fn feed_token(&mut self, t: &SToken) {
-        if !self.seen[t.id] {
-            self.types += 1;
-            self.seen[t.id] = true;
-        }
-        self.tokens += t.count;
-    }
-}
-
 struct CountHelper {
     types: u64,
     tokens: u64,
@@ -384,7 +352,7 @@ impl CountHelper {
 
 struct LocalState {
     c: CountHelper,
-    fc: Vec<FCountHelper>,
+    fc: Vec<CountHelper>,
     words: u64,
 }
 
@@ -393,7 +361,7 @@ impl LocalState {
         LocalState {
             c: CountHelper::new(total_types),
             fc: (0..total_flavors)
-                .map(|_| FCountHelper::new(total_types))
+                .map(|_| CountHelper::new(total_types))
                 .collect(),
             words: 0,
         }
@@ -533,7 +501,7 @@ impl FCounterSet {
         }
     }
 
-    fn feed(&mut self, words: u64, c: &CountHelper, fc: &FCountHelper) {
+    fn feed(&mut self, words: u64, c: &CountHelper, fc: &CountHelper) {
         let types = c.types;
         let tokens = c.tokens;
         let ftypes = fc.types;
