@@ -88,7 +88,8 @@ impl Driver {
     fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {
         if self.progress {
             let bar = ProgressBar::new(len);
-            let style = ProgressStyle::with_template("{prefix:>12.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left").unwrap();
+            let templ = "{prefix:>12.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left";
+            let style = ProgressStyle::with_template(templ).unwrap();
             bar.set_style(style);
             bar.set_prefix(what.to_owned());
             let nsamples = self.samples.len();
