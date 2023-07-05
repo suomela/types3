@@ -124,20 +124,6 @@ impl FCountHelper {
         }
     }
 
-    fn add_box(&self, c: &CountHelper, cs: &mut FCounterSet) {
-        let ftypes = self.cur.ftypes;
-        let ftokens = self.cur.ftokens;
-        let types = c.cur.types;
-        let tokens = c.cur.tokens;
-        let words = c.cur.words;
-        cs.ftypes_by_types.add_box(ftypes, types);
-        cs.ftypes_by_tokens.add_box(ftypes, tokens);
-        cs.ftypes_by_ftokens.add_box(ftypes, ftokens);
-        cs.ftypes_by_words.add_box(ftypes, words);
-        cs.ftokens_by_tokens.add_box(ftokens, tokens);
-        cs.ftokens_by_words.add_box(ftokens, words);
-    }
-
     fn feed_token(&mut self, t: &SToken) {
         if !self.seen[t.id] {
             self.cur.ftypes += 1;
@@ -165,15 +151,6 @@ impl CountHelper {
         for e in self.seen.iter_mut() {
             *e = false;
         }
-    }
-
-    fn add_box(&mut self, cs: &mut CounterSet) {
-        let types = self.cur.types;
-        let tokens = self.cur.tokens;
-        let words = self.cur.words;
-        cs.tokens_by_words.add_box(tokens, words);
-        cs.types_by_words.add_box(types, words);
-        cs.types_by_tokens.add_box(types, tokens);
     }
 
     fn feed_token(&mut self, t: &SToken) {
@@ -205,13 +182,6 @@ impl LocalState {
         for x in self.fc.iter_mut() {
             x.reset();
         }
-    }
-
-    fn add_box(&mut self, cs: &mut CounterSet) {
-        for (i, x) in self.fc.iter_mut().enumerate() {
-            x.add_box(&self.c, &mut cs.by_flavor[i]);
-        }
-        self.c.add_box(cs);
     }
 
     fn feed_token(&mut self, t: &SToken) {
@@ -480,7 +450,7 @@ impl Driver {
         ls.reset();
         for i in idx {
             ls.feed_sample(&self.samples[*i]);
-            ls.add_box(cs);
+            cs.add_box(ls);
         }
         cs.add_end();
         cs.total += 1;
@@ -578,6 +548,20 @@ impl FCounterSet {
         }
     }
 
+    fn add_box(&mut self, fc: &FCountHelper, c: &CountHelper) {
+        let ftypes = fc.cur.ftypes;
+        let ftokens = fc.cur.ftokens;
+        let types = c.cur.types;
+        let tokens = c.cur.tokens;
+        let words = c.cur.words;
+        self.ftypes_by_types.add_box(ftypes, types);
+        self.ftypes_by_tokens.add_box(ftypes, tokens);
+        self.ftypes_by_ftokens.add_box(ftypes, ftokens);
+        self.ftypes_by_words.add_box(ftypes, words);
+        self.ftokens_by_tokens.add_box(ftokens, tokens);
+        self.ftokens_by_words.add_box(ftokens, words);
+    }
+
     fn add_end(&mut self) {
         self.ftypes_by_types.add_end();
         self.ftypes_by_tokens.add_end();
@@ -626,6 +610,18 @@ impl CounterSet {
             by_flavor: (0..nflavors).map(|_| FCounterSet::new()).collect(),
             total: 0,
             exact,
+        }
+    }
+
+    fn add_box(&mut self, ls: &LocalState) {
+        let types = ls.c.cur.types;
+        let tokens = ls.c.cur.tokens;
+        let words = ls.c.cur.words;
+        self.tokens_by_words.add_box(tokens, words);
+        self.types_by_words.add_box(types, words);
+        self.types_by_tokens.add_box(types, tokens);
+        for (i, x) in self.by_flavor.iter_mut().enumerate() {
+            x.add_box(&ls.fc[i], &ls.c);
         }
     }
 
