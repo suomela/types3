@@ -114,7 +114,7 @@ impl Driver {
         i
     }
 
-    pub fn algorithm_heuristic(&self, iter: u64) -> Method {
+    fn algorithm_heuristic(&self, iter: u64) -> Method {
         let n = self.samples.len();
         let mut f = 1;
         for i in 0..n {
@@ -318,15 +318,15 @@ impl Driver {
     }
 }
 
-struct CountHelper {
+struct Seen {
     types: u64,
     tokens: u64,
     seen: Vec<bool>,
 }
 
-impl CountHelper {
-    fn new(total_types: usize) -> CountHelper {
-        CountHelper {
+impl Seen {
+    fn new(total_types: usize) -> Seen {
+        Seen {
             types: 0,
             tokens: 0,
             seen: vec![false; total_types],
@@ -351,18 +351,16 @@ impl CountHelper {
 }
 
 struct LocalState {
-    c: CountHelper,
-    fc: Vec<CountHelper>,
+    c: Seen,
+    fc: Vec<Seen>,
     words: u64,
 }
 
 impl LocalState {
     fn new(total_types: usize, total_flavors: usize) -> LocalState {
         LocalState {
-            c: CountHelper::new(total_types),
-            fc: (0..total_flavors)
-                .map(|_| CountHelper::new(total_types))
-                .collect(),
+            c: Seen::new(total_types),
+            fc: (0..total_flavors).map(|_| Seen::new(total_types)).collect(),
             words: 0,
         }
     }
@@ -390,7 +388,7 @@ impl LocalState {
     }
 }
 
-struct CounterPair {
+struct CurveTracker {
     lower: density_curve::Counter,
     upper: density_curve::Counter,
     x: u64,
@@ -398,9 +396,9 @@ struct CounterPair {
     u: u64,
 }
 
-impl CounterPair {
-    fn new() -> CounterPair {
-        CounterPair {
+impl CurveTracker {
+    fn new() -> CurveTracker {
+        CurveTracker {
             lower: density_curve::Counter::new(),
             upper: density_curve::Counter::new(),
             x: 0,
@@ -409,7 +407,7 @@ impl CounterPair {
         }
     }
 
-    fn merge(&mut self, other: &CounterPair) {
+    fn merge(&mut self, other: &CurveTracker) {
         debug_assert!(self.x == 0);
         debug_assert!(self.l == 0);
         debug_assert!(self.u == 0);
@@ -446,42 +444,36 @@ impl CounterPair {
         self.u = 0;
     }
 
-    fn to_sums(&self) -> SumPair {
-        SumPair {
+    fn to_sums(&self) -> Curve {
+        Curve {
             lower: self.lower.to_sums(),
             upper: self.upper.to_sums(),
         }
     }
 }
 
-impl Default for CounterPair {
-    fn default() -> Self {
-        Self::new()
-    }
+struct FlavorTrackers {
+    ftypes_by_types: CurveTracker,
+    ftypes_by_tokens: CurveTracker,
+    ftypes_by_ftokens: CurveTracker,
+    ftypes_by_words: CurveTracker,
+    ftokens_by_tokens: CurveTracker,
+    ftokens_by_words: CurveTracker,
 }
 
-struct FCounterSet {
-    ftypes_by_types: CounterPair,
-    ftypes_by_tokens: CounterPair,
-    ftypes_by_ftokens: CounterPair,
-    ftypes_by_words: CounterPair,
-    ftokens_by_tokens: CounterPair,
-    ftokens_by_words: CounterPair,
-}
-
-impl FCounterSet {
-    fn new() -> FCounterSet {
-        FCounterSet {
-            ftypes_by_types: CounterPair::new(),
-            ftypes_by_tokens: CounterPair::new(),
-            ftypes_by_ftokens: CounterPair::new(),
-            ftypes_by_words: CounterPair::new(),
-            ftokens_by_tokens: CounterPair::new(),
-            ftokens_by_words: CounterPair::new(),
+impl FlavorTrackers {
+    fn new() -> FlavorTrackers {
+        FlavorTrackers {
+            ftypes_by_types: CurveTracker::new(),
+            ftypes_by_tokens: CurveTracker::new(),
+            ftypes_by_ftokens: CurveTracker::new(),
+            ftypes_by_words: CurveTracker::new(),
+            ftokens_by_tokens: CurveTracker::new(),
+            ftokens_by_words: CurveTracker::new(),
         }
     }
 
-    fn merge(&mut self, other: &FCounterSet) {
+    fn merge(&mut self, other: &FlavorTrackers) {
         self.ftypes_by_types.merge(&other.ftypes_by_types);
         self.ftypes_by_tokens.merge(&other.ftypes_by_tokens);
         self.ftypes_by_ftokens.merge(&other.ftypes_by_ftokens);
@@ -490,8 +482,8 @@ impl FCounterSet {
         self.ftokens_by_words.merge(&other.ftokens_by_words);
     }
 
-    pub fn to_sums(&self) -> FSumSet {
-        FSumSet {
+    fn to_sums(&self) -> FlavorResult {
+        FlavorResult {
             ftypes_by_types: self.ftypes_by_types.to_sums(),
             ftypes_by_tokens: self.ftypes_by_tokens.to_sums(),
             ftypes_by_ftokens: self.ftypes_by_ftokens.to_sums(),
@@ -501,7 +493,7 @@ impl FCounterSet {
         }
     }
 
-    fn feed(&mut self, words: u64, c: &CountHelper, fc: &CountHelper) {
+    fn feed(&mut self, words: u64, c: &Seen, fc: &Seen) {
         let types = c.types;
         let tokens = c.tokens;
         let ftypes = fc.types;
@@ -524,28 +516,28 @@ impl FCounterSet {
     }
 }
 
-struct CounterSet {
-    types_by_tokens: CounterPair,
-    types_by_words: CounterPair,
-    tokens_by_words: CounterPair,
+struct OverallTrackers {
+    types_by_tokens: CurveTracker,
+    types_by_words: CurveTracker,
+    tokens_by_words: CurveTracker,
 }
 
-impl CounterSet {
-    fn new() -> CounterSet {
-        CounterSet {
-            types_by_tokens: CounterPair::new(),
-            types_by_words: CounterPair::new(),
-            tokens_by_words: CounterPair::new(),
+impl OverallTrackers {
+    fn new() -> OverallTrackers {
+        OverallTrackers {
+            types_by_tokens: CurveTracker::new(),
+            types_by_words: CurveTracker::new(),
+            tokens_by_words: CurveTracker::new(),
         }
     }
 
-    fn merge(&mut self, other: &CounterSet) {
+    fn merge(&mut self, other: &OverallTrackers) {
         self.types_by_tokens.merge(&other.types_by_tokens);
         self.types_by_words.merge(&other.types_by_words);
         self.tokens_by_words.merge(&other.tokens_by_words);
     }
 
-    fn feed(&mut self, words: u64, c: &CountHelper) {
+    fn feed(&mut self, words: u64, c: &Seen) {
         let types = c.types;
         let tokens = c.tokens;
         self.tokens_by_words.feed(tokens, words);
@@ -561,8 +553,8 @@ impl CounterSet {
 }
 
 pub struct RawResult {
-    c: CounterSet,
-    fc: Vec<FCounterSet>,
+    c: OverallTrackers,
+    fc: Vec<FlavorTrackers>,
     total: u64,
     exact: bool,
 }
@@ -570,8 +562,8 @@ pub struct RawResult {
 impl RawResult {
     fn new(exact: bool, nflavors: usize) -> RawResult {
         RawResult {
-            c: CounterSet::new(),
-            fc: (0..nflavors).map(|_| FCounterSet::new()).collect(),
+            c: OverallTrackers::new(),
+            fc: (0..nflavors).map(|_| FlavorTrackers::new()).collect(),
             total: 0,
             exact,
         }
@@ -600,8 +592,8 @@ impl RawResult {
         self.total += 1;
     }
 
-    pub fn to_sums(&self) -> SumSet {
-        SumSet {
+    pub fn to_sums(&self) -> Result {
+        Result {
             types_by_tokens: self.c.types_by_tokens.to_sums(),
             types_by_words: self.c.types_by_words.to_sums(),
             tokens_by_words: self.c.tokens_by_words.to_sums(),
@@ -613,28 +605,28 @@ impl RawResult {
 }
 
 #[derive(Serialize)]
-pub struct SumPair {
+pub struct Curve {
     pub lower: density_curve::Sums,
     pub upper: density_curve::Sums,
 }
 
-impl SumPair {
+impl Curve {
     pub fn total_points(&self) -> usize {
         self.lower.total_points() + self.upper.total_points()
     }
 }
 
 #[derive(Serialize)]
-pub struct FSumSet {
-    ftypes_by_types: SumPair,
-    ftypes_by_tokens: SumPair,
-    ftypes_by_ftokens: SumPair,
-    ftypes_by_words: SumPair,
-    ftokens_by_tokens: SumPair,
-    ftokens_by_words: SumPair,
+pub struct FlavorResult {
+    pub ftypes_by_types: Curve,
+    pub ftypes_by_tokens: Curve,
+    pub ftypes_by_ftokens: Curve,
+    pub ftypes_by_words: Curve,
+    pub ftokens_by_tokens: Curve,
+    pub ftokens_by_words: Curve,
 }
 
-impl FSumSet {
+impl FlavorResult {
     pub fn total_points(&self) -> usize {
         self.ftypes_by_types.total_points()
             + self.ftypes_by_tokens.total_points()
@@ -646,16 +638,16 @@ impl FSumSet {
 }
 
 #[derive(Serialize)]
-pub struct SumSet {
-    pub types_by_tokens: SumPair,
-    pub types_by_words: SumPair,
-    pub tokens_by_words: SumPair,
-    pub by_flavor: Vec<FSumSet>,
+pub struct Result {
+    pub types_by_tokens: Curve,
+    pub types_by_words: Curve,
+    pub tokens_by_words: Curve,
+    pub by_flavor: Vec<FlavorResult>,
     pub total: u64,
     pub exact: bool,
 }
 
-impl SumSet {
+impl Result {
     pub fn total_points(&self) -> usize {
         let bfsum: usize = self.by_flavor.iter().map(|x| x.total_points()).sum();
         self.types_by_tokens.total_points()
