@@ -1,5 +1,5 @@
 [
-    {"words":1, "tokens": [{"count":1, "id":0}]},
-    {"words":1, "tokens": [{"count":1, "id":1}]},
-    {"words":1, "tokens": [{"count":1, "id":2}]}
+    {"words":1, "tokens": [{"count":1, "id":0, "flavor":0}]},
+    {"words":1, "tokens": [{"count":1, "id":1, "flavor":0}]},
+    {"words":1, "tokens": [{"count":1, "id":2, "flavor":0}]}
 ]

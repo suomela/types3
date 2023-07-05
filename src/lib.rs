@@ -35,6 +35,7 @@ enum Progress {
 pub struct SToken {
     pub count: u64,
     pub id: usize,
+    pub flavor: usize,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -49,11 +50,16 @@ pub struct Samples {
 }
 
 pub struct Driver {
-    pub samples: Vec<Sample>,
-    pub total_words: u64,
-    pub total_tokens: u64,
-    pub total_types: u64,
-    pub progress: bool,
+    /// Input data.
+    samples: Vec<Sample>,
+    /// All types have identifiers in `0..total_types`.
+    total_types: usize,
+    /// All flavors have identifiers in `0..total_flavors`.
+    /// However, as a special case we set `total_flavors = 0` if all tokens have flavor 0;
+    /// this effectively disables flavor-specific counters.
+    total_flavors: usize,
+    /// Print progress bar.
+    progress: bool,
 }
 
 type Seen = Vec<bool>;
@@ -71,22 +77,21 @@ impl Driver {
     }
 
     pub fn new_with_settings(samples: Vec<Sample>, progress: bool) -> Driver {
-        let mut total_types = 0;
-        let mut total_tokens = 0;
-        let mut total_words = 0;
+        let mut max_type = 0;
+        let mut max_flavor = 0;
         for sample in &samples {
             assert!(sample.tokens.len() as u64 <= sample.words);
-            total_words += sample.words;
-            for stoken in &sample.tokens {
-                total_tokens += stoken.count;
-                total_types = total_types.max(1 + stoken.id);
+            for token in &sample.tokens {
+                max_type = max_type.max(token.id);
+                max_flavor = max_flavor.max(token.flavor);
             }
         }
+        let total_types = max_type + 1;
+        let total_flavors = if max_flavor == 0 { 0 } else { max_flavor + 1 };
         Driver {
             samples,
-            total_words,
-            total_tokens,
-            total_types: total_types as u64,
+            total_types,
+            total_flavors,
             progress,
         }
     }
@@ -162,7 +167,7 @@ impl Driver {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = CounterSet::new(false);
+        let mut global = CounterSet::new(false, self.total_flavors);
         let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -170,7 +175,7 @@ impl Driver {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = CounterSet::new(false);
+                    let mut rs = CounterSet::new(false, self.total_flavors);
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -199,7 +204,7 @@ impl Driver {
 
     pub fn count_random_seq(&self, iter: u64) -> CounterSet {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-        let mut rs = CounterSet::new(false);
+        let mut rs = CounterSet::new(false, self.total_flavors);
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
         }
@@ -217,7 +222,7 @@ impl Driver {
         }
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = CounterSet::new(true);
+        let mut global = CounterSet::new(true, self.total_flavors);
         let bar = self.progress_bar(njobs, nthreads, "Exact");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -225,7 +230,7 @@ impl Driver {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
-                    let mut rs = CounterSet::new(true);
+                    let mut rs = CounterSet::new(true, self.total_flavors);
                     loop {
                         match r1.try_recv() {
                             Ok(job) => {
@@ -253,7 +258,7 @@ impl Driver {
     }
 
     pub fn count_exact_seq(&self) -> CounterSet {
-        let mut rs = CounterSet::new(true);
+        let mut rs = CounterSet::new(true, self.total_flavors);
         self.count_exact_start(&mut rs, &[]);
         rs
     }
@@ -277,7 +282,7 @@ impl Driver {
             }
         }
         assert_eq!(i, n);
-        let mut seen = vec![false; self.total_types as usize];
+        let mut seen = vec![false; self.total_types];
         self.count_exact_rec(rs, &mut idx, start.len(), &mut seen);
     }
 
@@ -300,7 +305,7 @@ impl Driver {
         for (i, v) in idx.iter_mut().enumerate() {
             *v = i;
         }
-        let mut seen = vec![false; self.total_types as usize];
+        let mut seen = vec![false; self.total_types];
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
         for _ in 0..iter_per_job {
             idx.shuffle(&mut rng);
@@ -391,20 +396,64 @@ impl Default for CounterPair {
     }
 }
 
+pub struct FCounterSet {
+    ftypes_by_types: CounterPair,
+    ftypes_by_tokens: CounterPair,
+    ftypes_by_ftokens: CounterPair,
+    ftypes_by_words: CounterPair,
+    ftokens_by_tokens: CounterPair,
+    ftokens_by_words: CounterPair,
+}
+
+impl FCounterSet {
+    fn new() -> FCounterSet {
+        FCounterSet {
+            ftypes_by_types: CounterPair::new(),
+            ftypes_by_tokens: CounterPair::new(),
+            ftypes_by_ftokens: CounterPair::new(),
+            ftypes_by_words: CounterPair::new(),
+            ftokens_by_tokens: CounterPair::new(),
+            ftokens_by_words: CounterPair::new(),
+        }
+    }
+
+    fn merge(&mut self, other: &FCounterSet) {
+        self.ftypes_by_types.merge(&other.ftypes_by_types);
+        self.ftypes_by_tokens.merge(&other.ftypes_by_tokens);
+        self.ftypes_by_ftokens.merge(&other.ftypes_by_ftokens);
+        self.ftypes_by_words.merge(&other.ftypes_by_words);
+        self.ftokens_by_tokens.merge(&other.ftokens_by_tokens);
+        self.ftokens_by_words.merge(&other.ftokens_by_words);
+    }
+
+    pub fn to_sums(&self) -> FSumSet {
+        FSumSet {
+            ftypes_by_types: self.ftypes_by_types.to_sums(),
+            ftypes_by_tokens: self.ftypes_by_tokens.to_sums(),
+            ftypes_by_ftokens: self.ftypes_by_ftokens.to_sums(),
+            ftypes_by_words: self.ftypes_by_words.to_sums(),
+            ftokens_by_tokens: self.ftokens_by_tokens.to_sums(),
+            ftokens_by_words: self.ftokens_by_words.to_sums(),
+        }
+    }
+}
+
 pub struct CounterSet {
     types_by_tokens: CounterPair,
     types_by_words: CounterPair,
     tokens_by_words: CounterPair,
+    by_flavor: Vec<FCounterSet>,
     total: u64,
     exact: bool,
 }
 
 impl CounterSet {
-    fn new(exact: bool) -> CounterSet {
+    fn new(exact: bool, nflavors: usize) -> CounterSet {
         CounterSet {
             types_by_tokens: CounterPair::new(),
             types_by_words: CounterPair::new(),
             tokens_by_words: CounterPair::new(),
+            by_flavor: (0..nflavors).map(|_| FCounterSet::new()).collect(),
             total: 0,
             exact,
         }
@@ -414,6 +463,9 @@ impl CounterSet {
         self.types_by_tokens.merge(&other.types_by_tokens);
         self.types_by_words.merge(&other.types_by_words);
         self.tokens_by_words.merge(&other.tokens_by_words);
+        for i in 0..self.by_flavor.len() {
+            self.by_flavor[i].merge(&other.by_flavor[i]);
+        }
         self.total += other.total;
     }
 
@@ -422,6 +474,7 @@ impl CounterSet {
             types_by_tokens: self.types_by_tokens.to_sums(),
             types_by_words: self.types_by_words.to_sums(),
             tokens_by_words: self.tokens_by_words.to_sums(),
+            by_flavor: self.by_flavor.iter().map(|x| x.to_sums()).collect(),
             total: self.total,
             exact: self.exact,
         }
@@ -441,10 +494,21 @@ impl SumPair {
 }
 
 #[derive(Serialize)]
+pub struct FSumSet {
+    ftypes_by_types: SumPair,
+    ftypes_by_tokens: SumPair,
+    ftypes_by_ftokens: SumPair,
+    ftypes_by_words: SumPair,
+    ftokens_by_tokens: SumPair,
+    ftokens_by_words: SumPair,
+}
+
+#[derive(Serialize)]
 pub struct SumSet {
     pub types_by_tokens: SumPair,
     pub types_by_words: SumPair,
     pub tokens_by_words: SumPair,
+    pub by_flavor: Vec<FSumSet>,
     pub total: u64,
     pub exact: bool,
 }
@@ -467,7 +531,11 @@ mod tests {
     }
 
     fn st(count: u64, id: usize) -> SToken {
-        SToken { count, id }
+        SToken {
+            count,
+            id,
+            flavor: 0,
+        }
     }
 
     fn sl(y: Coord, sums: &[SumPoint]) -> SumLine {
@@ -488,8 +556,6 @@ mod tests {
             sample(1, vec![st(1, 1)]),
             sample(1, vec![st(1, 2)]),
         ]);
-        assert_eq!(ds.total_words, 3);
-        assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 3);
         let rs = ds.count_exact_seq().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
@@ -518,8 +584,6 @@ mod tests {
             sample(1, vec![st(1, 1)]),
             sample(1, vec![st(1, 2)]),
         ]);
-        assert_eq!(ds.total_words, 3);
-        assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 3);
         let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
@@ -548,8 +612,6 @@ mod tests {
             sample(1000, vec![st(100, 20), st(100, 21), st(100, 22)]),
             sample(1000, vec![st(100, 30), st(100, 31), st(100, 32)]),
         ]);
-        assert_eq!(ds.total_words, 3000);
-        assert_eq!(ds.total_tokens, 900);
         assert_eq!(ds.total_types, 33);
         let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
@@ -610,8 +672,6 @@ mod tests {
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 0)]),
         ]);
-        assert_eq!(ds.total_words, 3);
-        assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 1);
         let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
@@ -645,8 +705,6 @@ mod tests {
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 1)]),
         ]);
-        assert_eq!(ds.total_words, 3);
-        assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 2);
         let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
@@ -681,8 +739,6 @@ mod tests {
             sample(1, vec![st(1, 0)]),
             sample(1, vec![st(1, 1)]),
         ]);
-        assert_eq!(ds.total_words, 3);
-        assert_eq!(ds.total_tokens, 3);
         assert_eq!(ds.total_types, 2);
         let iter = 5000;
         let rs = ds.count_random(iter).to_sums();
@@ -728,9 +784,7 @@ mod tests {
             fact *= i + 1;
         }
         let ds = Driver::new(samples);
-        assert_eq!(ds.total_words, n);
-        assert_eq!(ds.total_tokens, n);
-        assert_eq!(ds.total_types, n);
+        assert_eq!(ds.total_types, n as usize);
         let rs = ds.count_exact().to_sums();
         assert_eq!(fact, rs.total);
         for s in [
@@ -761,8 +815,6 @@ mod tests {
             fact *= i + 1;
         }
         let ds = Driver::new(samples);
-        assert_eq!(ds.total_words, n);
-        assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
         let rs = ds.count_exact().to_sums();
         assert_eq!(fact, rs.total);
@@ -797,9 +849,7 @@ mod tests {
             samples.push(sample(1, vec![st(1, i as usize)]));
         }
         let ds = Driver::new(samples);
-        assert_eq!(ds.total_words, n);
-        assert_eq!(ds.total_tokens, n);
-        assert_eq!(ds.total_types, n);
+        assert_eq!(ds.total_types, n as usize);
         let rs = ds.count_random(iter).to_sums();
         assert!(rs.total >= iter);
         assert!(rs.total < iter + RANDOM_JOBS);
@@ -829,8 +879,6 @@ mod tests {
             samples.push(sample(1, vec![st(1, 0)]));
         }
         let ds = Driver::new(samples);
-        assert_eq!(ds.total_words, n);
-        assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
         let rs = ds.count_random(iter).to_sums();
         assert!(rs.total >= iter);
@@ -866,8 +914,6 @@ mod tests {
             samples.push(sample(1, vec![st(1, 0)]));
         }
         let ds = Driver::new(samples);
-        assert_eq!(ds.total_words, n);
-        assert_eq!(ds.total_tokens, n);
         assert_eq!(ds.total_types, 1);
         let rs = ds.count(iter).to_sums();
         for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
