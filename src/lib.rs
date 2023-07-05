@@ -1,7 +1,6 @@
 mod density_curve;
 
 use crossbeam_channel::TryRecvError;
-use density_curve::CRange;
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
@@ -107,7 +106,6 @@ impl Count {
 
 struct FCountHelper {
     cur: FCount,
-    prev: FCount,
     seen: Vec<bool>,
 }
 
@@ -115,68 +113,29 @@ impl FCountHelper {
     fn new(total_types: usize) -> FCountHelper {
         FCountHelper {
             cur: FCount::new(),
-            prev: FCount::new(),
             seen: vec![false; total_types],
         }
     }
 
     fn reset(&mut self) {
         self.cur.reset();
-        self.prev.reset();
         for e in self.seen.iter_mut() {
             *e = false;
         }
     }
 
-    fn ftype_range(&self) -> CRange {
-        (self.prev.ftypes, self.cur.ftypes)
-    }
-
-    fn ftoken_range(&self) -> CRange {
-        (self.prev.ftokens, self.cur.ftokens)
-    }
-
-    fn add_start(&self, c: &CountHelper, cs: &mut FCounterSet) {
+    fn add_box(&self, c: &CountHelper, cs: &mut FCounterSet) {
         let ftypes = self.cur.ftypes;
         let ftokens = self.cur.ftokens;
         let types = c.cur.types;
         let tokens = c.cur.tokens;
         let words = c.cur.words;
-        cs.ftypes_by_types.add_start(ftypes, types);
-        cs.ftypes_by_tokens.add_start(ftypes, tokens);
-        cs.ftypes_by_ftokens.add_start(ftypes, ftokens);
-        cs.ftypes_by_words.add_start(ftypes, words);
-        cs.ftokens_by_tokens.add_start(ftokens, tokens);
-        cs.ftokens_by_words.add_start(ftokens, words);
-    }
-
-    fn add_box(&mut self, c: &CountHelper, cs: &mut FCounterSet) {
-        let ftypes = self.ftype_range();
-        let ftokens = self.ftoken_range();
-        let types = c.type_range();
-        let tokens = c.token_range();
-        let words = c.word_range();
         cs.ftypes_by_types.add_box(ftypes, types);
         cs.ftypes_by_tokens.add_box(ftypes, tokens);
         cs.ftypes_by_ftokens.add_box(ftypes, ftokens);
         cs.ftypes_by_words.add_box(ftypes, words);
         cs.ftokens_by_tokens.add_box(ftokens, tokens);
         cs.ftokens_by_words.add_box(ftokens, words);
-        self.prev = self.cur;
-    }
-
-    fn add_end(&self, c: &CountHelper, cs: &mut FCounterSet) {
-        let ftypes = self.cur.ftypes;
-        let ftokens = self.cur.ftokens;
-        let types = c.cur.types;
-        let tokens = c.cur.tokens;
-        let words = c.cur.words;
-        cs.ftypes_by_types.add_end(ftypes, types);
-        cs.ftypes_by_tokens.add_end(ftypes, tokens);
-        cs.ftypes_by_ftokens.add_end(ftypes, ftokens);
-        cs.ftypes_by_words.add_end(ftypes, words);
-        cs.ftokens_by_tokens.add_end(ftokens, tokens);
-        cs.ftokens_by_words.add_end(ftokens, words);
     }
 
     fn feed_token(&mut self, t: &SToken) {
@@ -190,7 +149,6 @@ impl FCountHelper {
 
 struct CountHelper {
     cur: Count,
-    prev: Count,
     seen: Vec<bool>,
 }
 
@@ -198,57 +156,24 @@ impl CountHelper {
     fn new(total_types: usize) -> CountHelper {
         CountHelper {
             cur: Count::new(),
-            prev: Count::new(),
             seen: vec![false; total_types],
         }
     }
 
     fn reset(&mut self) {
         self.cur.reset();
-        self.prev.reset();
         for e in self.seen.iter_mut() {
             *e = false;
         }
     }
 
-    fn type_range(&self) -> CRange {
-        (self.prev.types, self.cur.types)
-    }
-
-    fn token_range(&self) -> CRange {
-        (self.prev.tokens, self.cur.tokens)
-    }
-
-    fn word_range(&self) -> CRange {
-        (self.prev.words, self.cur.words)
-    }
-
-    fn add_start(&self, cs: &mut CounterSet) {
+    fn add_box(&mut self, cs: &mut CounterSet) {
         let types = self.cur.types;
         let tokens = self.cur.tokens;
         let words = self.cur.words;
-        cs.tokens_by_words.add_start(tokens, words);
-        cs.types_by_words.add_start(types, words);
-        cs.types_by_tokens.add_start(types, tokens);
-    }
-
-    fn add_box(&mut self, cs: &mut CounterSet) {
-        let types = self.type_range();
-        let tokens = self.token_range();
-        let words = self.word_range();
         cs.tokens_by_words.add_box(tokens, words);
         cs.types_by_words.add_box(types, words);
         cs.types_by_tokens.add_box(types, tokens);
-        self.prev = self.cur;
-    }
-
-    fn add_end(&self, cs: &mut CounterSet) {
-        let types = self.cur.types;
-        let tokens = self.cur.tokens;
-        let words = self.cur.words;
-        cs.tokens_by_words.add_end(tokens, words);
-        cs.types_by_words.add_end(types, words);
-        cs.types_by_tokens.add_end(types, tokens);
     }
 
     fn feed_token(&mut self, t: &SToken) {
@@ -282,28 +207,11 @@ impl LocalState {
         }
     }
 
-    fn add_start(&self, cs: &mut CounterSet) {
-        for (i, x) in self.fc.iter().enumerate() {
-            x.add_start(&self.c, &mut cs.by_flavor[i]);
-        }
-        self.c.add_start(cs);
-    }
-
     fn add_box(&mut self, cs: &mut CounterSet) {
         for (i, x) in self.fc.iter_mut().enumerate() {
             x.add_box(&self.c, &mut cs.by_flavor[i]);
         }
-        // Order important: this must come last!
-        // CountHelper::add_box will reset c.prev,
-        // which is used above in FCountHelper::add_box calls!
         self.c.add_box(cs);
-    }
-
-    fn add_end(&self, cs: &mut CounterSet) {
-        for (i, x) in self.fc.iter().enumerate() {
-            x.add_end(&self.c, &mut cs.by_flavor[i]);
-        }
-        self.c.add_end(cs);
     }
 
     fn feed_token(&mut self, t: &SToken) {
@@ -330,7 +238,6 @@ impl Driver {
         let mut max_type = 0;
         let mut max_flavor = 0;
         for sample in &samples {
-            assert!(sample.tokens.len() as u64 <= sample.words);
             for token in &sample.tokens {
                 max_type = max_type.max(token.id);
                 max_flavor = max_flavor.max(token.flavor);
@@ -571,12 +478,11 @@ impl Driver {
 
     fn update_counters(&self, cs: &mut CounterSet, idx: &[usize], ls: &mut LocalState) {
         ls.reset();
-        ls.add_start(cs);
         for i in idx {
             ls.feed_sample(&self.samples[*i]);
             ls.add_box(cs);
         }
-        ls.add_end(cs);
+        cs.add_end();
         cs.total += 1;
     }
 }
@@ -584,6 +490,9 @@ impl Driver {
 struct CounterPair {
     lower: density_curve::Counter,
     upper: density_curve::Counter,
+    x: u64,
+    l: u64,
+    u: u64,
 }
 
 impl CounterPair {
@@ -591,27 +500,47 @@ impl CounterPair {
         CounterPair {
             lower: density_curve::Counter::new(),
             upper: density_curve::Counter::new(),
+            x: 0,
+            l: 0,
+            u: 0,
         }
     }
 
     fn merge(&mut self, other: &CounterPair) {
+        debug_assert!(self.x == 0);
+        debug_assert!(self.l == 0);
+        debug_assert!(self.u == 0);
+        debug_assert!(other.x == 0);
+        debug_assert!(other.l == 0);
+        debug_assert!(other.u == 0);
         self.lower.merge(&other.lower);
         self.upper.merge(&other.upper);
     }
 
-    fn add_start(&mut self, y: u64, x: u64) {
-        self.upper.add(y, (x, x + 1), 1);
+    fn add_box(&mut self, y: u64, x: u64) {
+        debug_assert!(self.l <= self.u);
+        debug_assert!(self.u <= y);
+        debug_assert!(self.x <= x);
+        if x == self.x {
+            self.u = y;
+        } else {
+            self.lower.add(self.l, (self.x, self.x + 1), 1);
+            self.lower.add(self.u, (self.x + 1, x), 1);
+            self.upper.add(self.u, (self.x, self.x + 1), 1);
+            self.upper.add(y, (self.x + 1, x), 1);
+            self.x = x;
+            self.l = y;
+            self.u = y;
+        }
     }
 
-    fn add_end(&mut self, y: u64, x: u64) {
-        self.lower.add(y, (x, x + 1), 1);
-    }
-
-    fn add_box(&mut self, yy: CRange, xx: CRange) {
-        let (y0, y1) = yy;
-        let (x0, x1) = xx;
-        self.lower.add(y0, xx, 1);
-        self.upper.add(y1, (x0 + 1, x1 + 1), 1);
+    fn add_end(&mut self) {
+        debug_assert!(self.l <= self.u);
+        self.lower.add(self.l, (self.x, self.x + 1), 1);
+        self.upper.add(self.u, (self.x, self.x + 1), 1);
+        self.x = 0;
+        self.l = 0;
+        self.u = 0;
     }
 
     fn to_sums(&self) -> SumPair {
@@ -647,6 +576,15 @@ impl FCounterSet {
             ftokens_by_tokens: CounterPair::new(),
             ftokens_by_words: CounterPair::new(),
         }
+    }
+
+    fn add_end(&mut self) {
+        self.ftypes_by_types.add_end();
+        self.ftypes_by_tokens.add_end();
+        self.ftypes_by_ftokens.add_end();
+        self.ftypes_by_words.add_end();
+        self.ftokens_by_tokens.add_end();
+        self.ftokens_by_words.add_end();
     }
 
     fn merge(&mut self, other: &FCounterSet) {
@@ -688,6 +626,15 @@ impl CounterSet {
             by_flavor: (0..nflavors).map(|_| FCounterSet::new()).collect(),
             total: 0,
             exact,
+        }
+    }
+
+    fn add_end(&mut self) {
+        self.tokens_by_words.add_end();
+        self.types_by_words.add_end();
+        self.types_by_tokens.add_end();
+        for fcs in self.by_flavor.iter_mut() {
+            fcs.add_end();
         }
     }
 
@@ -735,6 +682,17 @@ pub struct FSumSet {
     ftokens_by_words: SumPair,
 }
 
+impl FSumSet {
+    pub fn total_points(&self) -> usize {
+        self.ftypes_by_types.total_points()
+            + self.ftypes_by_tokens.total_points()
+            + self.ftypes_by_ftokens.total_points()
+            + self.ftypes_by_words.total_points()
+            + self.ftokens_by_tokens.total_points()
+            + self.ftokens_by_words.total_points()
+    }
+}
+
 #[derive(Serialize)]
 pub struct SumSet {
     pub types_by_tokens: SumPair,
@@ -747,9 +705,11 @@ pub struct SumSet {
 
 impl SumSet {
     pub fn total_points(&self) -> usize {
+        let bfsum: usize = self.by_flavor.iter().map(|x| x.total_points()).sum();
         self.types_by_tokens.total_points()
             + self.types_by_words.total_points()
             + self.tokens_by_words.total_points()
+            + bfsum
     }
 }
 
@@ -767,6 +727,14 @@ mod tests {
             count,
             id,
             flavor: 0,
+        }
+    }
+
+    fn st1(count: u64, id: usize) -> SToken {
+        SToken {
+            count,
+            id,
+            flavor: 1,
         }
     }
 
@@ -1291,5 +1259,117 @@ mod tests {
     #[test]
     fn auto_binary_same_50_5000() {
         auto_binary_same_helper(50, 5000);
+    }
+
+    #[test]
+    fn exact_with_empties() {
+        let ds = Driver::new(vec![
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![]),
+            sample(1, vec![st(1, 1)]),
+        ]);
+        assert_eq!(ds.total_types, 2);
+        let rs = ds.count_exact().to_sums();
+        assert_eq!(1 * 2 * 3, rs.total);
+        for s in [
+            rs.tokens_by_words.lower,
+            rs.tokens_by_words.upper,
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 2), sp(4, 6)]));
+        }
+        for s in [rs.types_by_tokens.lower, rs.types_by_tokens.upper] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+    }
+
+    #[test]
+    fn exact_binary_flavor_2() {
+        let ds = Driver::new(vec![
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st1(1, 0)]),
+            sample(1, vec![st(1, 1)]),
+        ]);
+        assert_eq!(ds.total_types, 2);
+        assert_eq!(ds.total_flavors, 2);
+        let rs = ds.count_exact_seq().to_sums();
+        assert_eq!(1 * 2 * 3, rs.total);
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 6)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 6)]));
+        }
+        for s in [
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4), sp(4, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[0].ftypes_by_ftokens.lower,
+            &rs.by_flavor[0].ftypes_by_ftokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+        for s in [&rs.by_flavor[0].ftypes_by_types.lower] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4)]));
+        }
+        for s in [&rs.by_flavor[0].ftypes_by_types.upper] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 5), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[0].ftypes_by_words.lower,
+            &rs.by_flavor[0].ftypes_by_words.upper,
+            &rs.by_flavor[0].ftypes_by_tokens.lower,
+            &rs.by_flavor[0].ftypes_by_tokens.upper,
+            &rs.by_flavor[0].ftokens_by_words.lower,
+            &rs.by_flavor[0].ftokens_by_words.upper,
+            &rs.by_flavor[0].ftokens_by_tokens.lower,
+            &rs.by_flavor[0].ftokens_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 2), sp(4, 6)]));
+        }
     }
 }
