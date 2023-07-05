@@ -27,7 +27,7 @@ pub enum Method {
 
 enum Progress {
     Tick,
-    Done(Box<CounterSet>),
+    Done(Box<CounterState>),
 }
 
 #[derive(Deserialize, Serialize)]
@@ -59,6 +59,263 @@ pub struct Driver {
     total_flavors: usize,
     /// Print progress bar.
     progress: bool,
+}
+
+impl Driver {
+    pub fn new(samples: Vec<Sample>) -> Driver {
+        Driver::new_with_settings(samples, false)
+    }
+
+    pub fn new_with_settings(samples: Vec<Sample>, progress: bool) -> Driver {
+        let mut max_type = 0;
+        let mut max_flavor = 0;
+        for sample in &samples {
+            for token in &sample.tokens {
+                max_type = max_type.max(token.id);
+                max_flavor = max_flavor.max(token.flavor);
+            }
+        }
+        let total_types = max_type + 1;
+        let total_flavors = if max_flavor == 0 { 0 } else { max_flavor + 1 };
+        Driver {
+            samples,
+            total_types,
+            total_flavors,
+            progress,
+        }
+    }
+
+    fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {
+        if self.progress {
+            let bar = ProgressBar::new(len);
+            let style = ProgressStyle::with_template("{prefix:>12.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left").unwrap();
+            bar.set_style(style);
+            bar.set_prefix(what.to_owned());
+            let nsamples = self.samples.len();
+            let sampleword = if nsamples == 1 { "sample" } else { "samples" };
+            let threadword = if nthreads == 1 { "thread" } else { "threads" };
+            bar.set_message(format!(
+                "{nsamples:5} {sampleword} · {nthreads} {threadword}"
+            ));
+            bar
+        } else {
+            ProgressBar::hidden()
+        }
+    }
+
+    fn choose_exact_job_depth(&self) -> usize {
+        let n = self.samples.len();
+        let mut f = 1;
+        let mut i = 0;
+        while i < n && f < MIN_EXACT_JOBS {
+            f *= (n - i) as u64;
+            i += 1;
+        }
+        i
+    }
+
+    pub fn algorithm_heuristic(&self, iter: u64) -> Method {
+        let n = self.samples.len();
+        let mut f = 1;
+        for i in 0..n {
+            f *= (i + 1) as u64;
+            if f > EXACT_THRESHOLD * iter {
+                return Method::Random(iter);
+            }
+        }
+        Method::Exact
+    }
+
+    pub fn count(&self, iter: u64) -> CounterState {
+        self.count_method(self.algorithm_heuristic(iter))
+    }
+
+    pub fn count_seq(&self, iter: u64) -> CounterState {
+        self.count_method_seq(self.algorithm_heuristic(iter))
+    }
+
+    pub fn count_method(&self, method: Method) -> CounterState {
+        match method {
+            Method::Exact => self.count_exact(),
+            Method::Random(iter) => self.count_random(iter),
+        }
+    }
+
+    pub fn count_method_seq(&self, method: Method) -> CounterState {
+        match method {
+            Method::Exact => self.count_exact_seq(),
+            Method::Random(iter) => self.count_random_seq(iter),
+        }
+    }
+
+    pub fn count_random(&self, iter: u64) -> CounterState {
+        let (s1, r1) = crossbeam_channel::unbounded();
+        for job in 0..RANDOM_JOBS {
+            s1.send(job).expect("send succeeds");
+        }
+        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
+        drop(s1);
+        let nthreads = num_cpus::get();
+        let mut global = CounterState::new(false, self.total_flavors);
+        let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
+        thread::scope(|scope| {
+            let (s2, r2) = crossbeam_channel::unbounded();
+            for _ in 0..nthreads {
+                let r1 = r1.clone();
+                let s2 = s2.clone();
+                scope.spawn(move || {
+                    let mut rs = CounterState::new(false, self.total_flavors);
+                    loop {
+                        match r1.try_recv() {
+                            Ok(job) => {
+                                self.count_random_job(&mut rs, job, iter_per_job);
+                                s2.send(Progress::Tick).expect("send succeeds");
+                            }
+                            Err(TryRecvError::Empty) => unreachable!(),
+                            Err(TryRecvError::Disconnected) => break,
+                        }
+                    }
+                    s2.send(Progress::Done(Box::new(rs)))
+                        .expect("send succeeds");
+                });
+            }
+            drop(s2);
+            while let Ok(msg) = r2.recv() {
+                match msg {
+                    Progress::Tick => bar.inc(1),
+                    Progress::Done(rs) => global.merge(&rs),
+                }
+            }
+            bar.finish();
+        });
+        global
+    }
+
+    pub fn count_random_seq(&self, iter: u64) -> CounterState {
+        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
+        let mut rs = CounterState::new(false, self.total_flavors);
+        for job in 0..RANDOM_JOBS {
+            self.count_random_job(&mut rs, job, iter_per_job);
+        }
+        rs
+    }
+
+    pub fn count_exact(&self) -> CounterState {
+        let n = self.samples.len();
+        let depth = self.choose_exact_job_depth();
+        let (s1, r1) = crossbeam_channel::unbounded();
+        let mut njobs = 0;
+        for job in (0..n).permutations(depth) {
+            s1.send(job).expect("send succeeds");
+            njobs += 1;
+        }
+        drop(s1);
+        let nthreads = num_cpus::get();
+        let mut global = CounterState::new(true, self.total_flavors);
+        let bar = self.progress_bar(njobs, nthreads, "Exact");
+        thread::scope(|scope| {
+            let (s2, r2) = crossbeam_channel::unbounded();
+            for _ in 0..nthreads {
+                let r1 = r1.clone();
+                let s2 = s2.clone();
+                scope.spawn(move || {
+                    let mut rs = CounterState::new(true, self.total_flavors);
+                    loop {
+                        match r1.try_recv() {
+                            Ok(job) => {
+                                self.count_exact_start(&mut rs, &job);
+                                s2.send(Progress::Tick).expect("send succeeds");
+                            }
+                            Err(TryRecvError::Empty) => unreachable!(),
+                            Err(TryRecvError::Disconnected) => break,
+                        }
+                    }
+                    s2.send(Progress::Done(Box::new(rs)))
+                        .expect("send succeeds");
+                });
+            }
+            drop(s2);
+            while let Ok(msg) = r2.recv() {
+                match msg {
+                    Progress::Tick => bar.inc(1),
+                    Progress::Done(rs) => global.merge(&rs),
+                }
+            }
+            bar.finish();
+        });
+        global
+    }
+
+    pub fn count_exact_seq(&self) -> CounterState {
+        let mut rs = CounterState::new(true, self.total_flavors);
+        self.count_exact_start(&mut rs, &[]);
+        rs
+    }
+
+    fn count_exact_start(&self, rs: &mut CounterState, start: &[usize]) {
+        let n = self.samples.len();
+        let mut idx = vec![0; n];
+        let mut used = vec![false; n];
+        let mut i = 0;
+        for &e in start {
+            debug_assert!(!used[e]);
+            used[e] = true;
+            idx[i] = e;
+            i += 1;
+        }
+        for (e, u) in used.iter_mut().enumerate() {
+            if !*u {
+                *u = true;
+                idx[i] = e;
+                i += 1;
+            }
+        }
+        assert_eq!(i, n);
+        let mut ls = LocalState::new(self.total_types, self.total_flavors);
+        self.count_exact_rec(rs, &mut idx, start.len(), &mut ls);
+    }
+
+    fn count_exact_rec(
+        &self,
+        rs: &mut CounterState,
+        idx: &mut [usize],
+        i: usize,
+        ls: &mut LocalState,
+    ) {
+        let n = self.samples.len();
+        if i == n {
+            self.update_counters(rs, idx, ls);
+        } else {
+            for j in i..n {
+                idx.swap(i, j);
+                self.count_exact_rec(rs, idx, i + 1, ls);
+                idx.swap(i, j);
+            }
+        }
+    }
+
+    fn count_random_job(&self, rs: &mut CounterState, job: u64, iter_per_job: u64) {
+        let n = self.samples.len();
+        let mut idx = vec![0; n];
+        for (i, v) in idx.iter_mut().enumerate() {
+            *v = i;
+        }
+        let mut ls = LocalState::new(self.total_types, self.total_flavors);
+        let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
+        for _ in 0..iter_per_job {
+            idx.shuffle(&mut rng);
+            self.update_counters(rs, &idx, &mut ls);
+        }
+    }
+
+    fn update_counters(&self, cs: &mut CounterState, idx: &[usize], ls: &mut LocalState) {
+        ls.reset();
+        for i in idx {
+            ls.feed_sample(&self.samples[*i]);
+            cs.feed(ls);
+        }
+        cs.finish();
+    }
 }
 
 struct FCountHelper {
@@ -165,264 +422,6 @@ impl LocalState {
     }
 }
 
-impl Driver {
-    pub fn new(samples: Vec<Sample>) -> Driver {
-        Driver::new_with_settings(samples, false)
-    }
-
-    pub fn new_with_settings(samples: Vec<Sample>, progress: bool) -> Driver {
-        let mut max_type = 0;
-        let mut max_flavor = 0;
-        for sample in &samples {
-            for token in &sample.tokens {
-                max_type = max_type.max(token.id);
-                max_flavor = max_flavor.max(token.flavor);
-            }
-        }
-        let total_types = max_type + 1;
-        let total_flavors = if max_flavor == 0 { 0 } else { max_flavor + 1 };
-        Driver {
-            samples,
-            total_types,
-            total_flavors,
-            progress,
-        }
-    }
-
-    fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {
-        if self.progress {
-            let bar = ProgressBar::new(len);
-            let style = ProgressStyle::with_template("{prefix:>12.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left").unwrap();
-            bar.set_style(style);
-            bar.set_prefix(what.to_owned());
-            let nsamples = self.samples.len();
-            let sampleword = if nsamples == 1 { "sample" } else { "samples" };
-            let threadword = if nthreads == 1 { "thread" } else { "threads" };
-            bar.set_message(format!(
-                "{nsamples:5} {sampleword} · {nthreads} {threadword}"
-            ));
-            bar
-        } else {
-            ProgressBar::hidden()
-        }
-    }
-
-    fn choose_exact_job_depth(&self) -> usize {
-        let n = self.samples.len();
-        let mut f = 1;
-        let mut i = 0;
-        while i < n && f < MIN_EXACT_JOBS {
-            f *= (n - i) as u64;
-            i += 1;
-        }
-        i
-    }
-
-    pub fn algorithm_heuristic(&self, iter: u64) -> Method {
-        let n = self.samples.len();
-        let mut f = 1;
-        for i in 0..n {
-            f *= (i + 1) as u64;
-            if f > EXACT_THRESHOLD * iter {
-                return Method::Random(iter);
-            }
-        }
-        Method::Exact
-    }
-
-    pub fn count(&self, iter: u64) -> CounterSet {
-        self.count_method(self.algorithm_heuristic(iter))
-    }
-
-    pub fn count_seq(&self, iter: u64) -> CounterSet {
-        self.count_method_seq(self.algorithm_heuristic(iter))
-    }
-
-    pub fn count_method(&self, method: Method) -> CounterSet {
-        match method {
-            Method::Exact => self.count_exact(),
-            Method::Random(iter) => self.count_random(iter),
-        }
-    }
-
-    pub fn count_method_seq(&self, method: Method) -> CounterSet {
-        match method {
-            Method::Exact => self.count_exact_seq(),
-            Method::Random(iter) => self.count_random_seq(iter),
-        }
-    }
-
-    pub fn count_random(&self, iter: u64) -> CounterSet {
-        let (s1, r1) = crossbeam_channel::unbounded();
-        for job in 0..RANDOM_JOBS {
-            s1.send(job).expect("send succeeds");
-        }
-        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-        drop(s1);
-        let nthreads = num_cpus::get();
-        let mut global = CounterSet::new(false, self.total_flavors);
-        let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
-        thread::scope(|scope| {
-            let (s2, r2) = crossbeam_channel::unbounded();
-            for _ in 0..nthreads {
-                let r1 = r1.clone();
-                let s2 = s2.clone();
-                scope.spawn(move || {
-                    let mut rs = CounterSet::new(false, self.total_flavors);
-                    loop {
-                        match r1.try_recv() {
-                            Ok(job) => {
-                                self.count_random_job(&mut rs, job, iter_per_job);
-                                s2.send(Progress::Tick).expect("send succeeds");
-                            }
-                            Err(TryRecvError::Empty) => unreachable!(),
-                            Err(TryRecvError::Disconnected) => break,
-                        }
-                    }
-                    s2.send(Progress::Done(Box::new(rs)))
-                        .expect("send succeeds");
-                });
-            }
-            drop(s2);
-            while let Ok(msg) = r2.recv() {
-                match msg {
-                    Progress::Tick => bar.inc(1),
-                    Progress::Done(rs) => global.merge(&rs),
-                }
-            }
-            bar.finish();
-        });
-        global
-    }
-
-    pub fn count_random_seq(&self, iter: u64) -> CounterSet {
-        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-        let mut rs = CounterSet::new(false, self.total_flavors);
-        for job in 0..RANDOM_JOBS {
-            self.count_random_job(&mut rs, job, iter_per_job);
-        }
-        rs
-    }
-
-    pub fn count_exact(&self) -> CounterSet {
-        let n = self.samples.len();
-        let depth = self.choose_exact_job_depth();
-        let (s1, r1) = crossbeam_channel::unbounded();
-        let mut njobs = 0;
-        for job in (0..n).permutations(depth) {
-            s1.send(job).expect("send succeeds");
-            njobs += 1;
-        }
-        drop(s1);
-        let nthreads = num_cpus::get();
-        let mut global = CounterSet::new(true, self.total_flavors);
-        let bar = self.progress_bar(njobs, nthreads, "Exact");
-        thread::scope(|scope| {
-            let (s2, r2) = crossbeam_channel::unbounded();
-            for _ in 0..nthreads {
-                let r1 = r1.clone();
-                let s2 = s2.clone();
-                scope.spawn(move || {
-                    let mut rs = CounterSet::new(true, self.total_flavors);
-                    loop {
-                        match r1.try_recv() {
-                            Ok(job) => {
-                                self.count_exact_start(&mut rs, &job);
-                                s2.send(Progress::Tick).expect("send succeeds");
-                            }
-                            Err(TryRecvError::Empty) => unreachable!(),
-                            Err(TryRecvError::Disconnected) => break,
-                        }
-                    }
-                    s2.send(Progress::Done(Box::new(rs)))
-                        .expect("send succeeds");
-                });
-            }
-            drop(s2);
-            while let Ok(msg) = r2.recv() {
-                match msg {
-                    Progress::Tick => bar.inc(1),
-                    Progress::Done(rs) => global.merge(&rs),
-                }
-            }
-            bar.finish();
-        });
-        global
-    }
-
-    pub fn count_exact_seq(&self) -> CounterSet {
-        let mut rs = CounterSet::new(true, self.total_flavors);
-        self.count_exact_start(&mut rs, &[]);
-        rs
-    }
-
-    fn count_exact_start(&self, rs: &mut CounterSet, start: &[usize]) {
-        let n = self.samples.len();
-        let mut idx = vec![0; n];
-        let mut used = vec![false; n];
-        let mut i = 0;
-        for &e in start {
-            debug_assert!(!used[e]);
-            used[e] = true;
-            idx[i] = e;
-            i += 1;
-        }
-        for (e, u) in used.iter_mut().enumerate() {
-            if !*u {
-                *u = true;
-                idx[i] = e;
-                i += 1;
-            }
-        }
-        assert_eq!(i, n);
-        let mut ls = LocalState::new(self.total_types, self.total_flavors);
-        self.count_exact_rec(rs, &mut idx, start.len(), &mut ls);
-    }
-
-    fn count_exact_rec(
-        &self,
-        rs: &mut CounterSet,
-        idx: &mut [usize],
-        i: usize,
-        ls: &mut LocalState,
-    ) {
-        let n = self.samples.len();
-        if i == n {
-            self.update_counters(rs, idx, ls);
-        } else {
-            for j in i..n {
-                idx.swap(i, j);
-                self.count_exact_rec(rs, idx, i + 1, ls);
-                idx.swap(i, j);
-            }
-        }
-    }
-
-    fn count_random_job(&self, rs: &mut CounterSet, job: u64, iter_per_job: u64) {
-        let n = self.samples.len();
-        let mut idx = vec![0; n];
-        for (i, v) in idx.iter_mut().enumerate() {
-            *v = i;
-        }
-        let mut ls = LocalState::new(self.total_types, self.total_flavors);
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
-        for _ in 0..iter_per_job {
-            idx.shuffle(&mut rng);
-            self.update_counters(rs, &idx, &mut ls);
-        }
-    }
-
-    fn update_counters(&self, cs: &mut CounterSet, idx: &[usize], ls: &mut LocalState) {
-        ls.reset();
-        for i in idx {
-            ls.feed_sample(&self.samples[*i]);
-            cs.add_box(ls);
-        }
-        cs.add_end();
-        cs.total += 1;
-    }
-}
-
 struct CounterPair {
     lower: density_curve::Counter,
     upper: density_curve::Counter,
@@ -453,7 +452,7 @@ impl CounterPair {
         self.upper.merge(&other.upper);
     }
 
-    fn add_box(&mut self, y: u64, x: u64) {
+    fn feed(&mut self, y: u64, x: u64) {
         debug_assert!(self.l <= self.u);
         debug_assert!(self.u <= y);
         debug_assert!(self.x <= x);
@@ -470,7 +469,7 @@ impl CounterPair {
         }
     }
 
-    fn add_end(&mut self) {
+    fn finish(&mut self) {
         debug_assert!(self.l <= self.u);
         self.lower.add(self.l, (self.x, self.x + 1), 1);
         self.upper.add(self.u, (self.x, self.x + 1), 1);
@@ -493,7 +492,7 @@ impl Default for CounterPair {
     }
 }
 
-pub struct FCounterSet {
+struct FCounterSet {
     ftypes_by_types: CounterPair,
     ftypes_by_tokens: CounterPair,
     ftypes_by_ftokens: CounterPair,
@@ -512,29 +511,6 @@ impl FCounterSet {
             ftokens_by_tokens: CounterPair::new(),
             ftokens_by_words: CounterPair::new(),
         }
-    }
-
-    fn add_box(&mut self, fc: &FCountHelper, c: &CountHelper) {
-        let ftypes = fc.ftypes;
-        let ftokens = fc.ftokens;
-        let types = c.types;
-        let tokens = c.tokens;
-        let words = c.words;
-        self.ftypes_by_types.add_box(ftypes, types);
-        self.ftypes_by_tokens.add_box(ftypes, tokens);
-        self.ftypes_by_ftokens.add_box(ftypes, ftokens);
-        self.ftypes_by_words.add_box(ftypes, words);
-        self.ftokens_by_tokens.add_box(ftokens, tokens);
-        self.ftokens_by_words.add_box(ftokens, words);
-    }
-
-    fn add_end(&mut self) {
-        self.ftypes_by_types.add_end();
-        self.ftypes_by_tokens.add_end();
-        self.ftypes_by_ftokens.add_end();
-        self.ftypes_by_words.add_end();
-        self.ftokens_by_tokens.add_end();
-        self.ftokens_by_words.add_end();
     }
 
     fn merge(&mut self, other: &FCounterSet) {
@@ -556,47 +532,43 @@ impl FCounterSet {
             ftokens_by_words: self.ftokens_by_words.to_sums(),
         }
     }
+
+    fn feed(&mut self, c: &CountHelper, fc: &FCountHelper) {
+        let types = c.types;
+        let tokens = c.tokens;
+        let words = c.words;
+        let ftypes = fc.ftypes;
+        let ftokens = fc.ftokens;
+        self.ftypes_by_types.feed(ftypes, types);
+        self.ftypes_by_tokens.feed(ftypes, tokens);
+        self.ftypes_by_ftokens.feed(ftypes, ftokens);
+        self.ftypes_by_words.feed(ftypes, words);
+        self.ftokens_by_tokens.feed(ftokens, tokens);
+        self.ftokens_by_words.feed(ftokens, words);
+    }
+
+    fn finish(&mut self) {
+        self.ftypes_by_types.finish();
+        self.ftypes_by_tokens.finish();
+        self.ftypes_by_ftokens.finish();
+        self.ftypes_by_words.finish();
+        self.ftokens_by_tokens.finish();
+        self.ftokens_by_words.finish();
+    }
 }
 
-pub struct CounterSet {
+struct CounterSet {
     types_by_tokens: CounterPair,
     types_by_words: CounterPair,
     tokens_by_words: CounterPair,
-    by_flavor: Vec<FCounterSet>,
-    total: u64,
-    exact: bool,
 }
 
 impl CounterSet {
-    fn new(exact: bool, nflavors: usize) -> CounterSet {
+    fn new() -> CounterSet {
         CounterSet {
             types_by_tokens: CounterPair::new(),
             types_by_words: CounterPair::new(),
             tokens_by_words: CounterPair::new(),
-            by_flavor: (0..nflavors).map(|_| FCounterSet::new()).collect(),
-            total: 0,
-            exact,
-        }
-    }
-
-    fn add_box(&mut self, ls: &LocalState) {
-        let types = ls.c.types;
-        let tokens = ls.c.tokens;
-        let words = ls.c.words;
-        self.tokens_by_words.add_box(tokens, words);
-        self.types_by_words.add_box(types, words);
-        self.types_by_tokens.add_box(types, tokens);
-        for (i, x) in self.by_flavor.iter_mut().enumerate() {
-            x.add_box(&ls.fc[i], &ls.c);
-        }
-    }
-
-    fn add_end(&mut self) {
-        self.tokens_by_words.add_end();
-        self.types_by_words.add_end();
-        self.types_by_tokens.add_end();
-        for fcs in self.by_flavor.iter_mut() {
-            fcs.add_end();
         }
     }
 
@@ -604,18 +576,70 @@ impl CounterSet {
         self.types_by_tokens.merge(&other.types_by_tokens);
         self.types_by_words.merge(&other.types_by_words);
         self.tokens_by_words.merge(&other.tokens_by_words);
-        for i in 0..self.by_flavor.len() {
-            self.by_flavor[i].merge(&other.by_flavor[i]);
+    }
+
+    fn feed(&mut self, c: &CountHelper) {
+        let types = c.types;
+        let tokens = c.tokens;
+        let words = c.words;
+        self.tokens_by_words.feed(tokens, words);
+        self.types_by_words.feed(types, words);
+        self.types_by_tokens.feed(types, tokens);
+    }
+
+    fn finish(&mut self) {
+        self.tokens_by_words.finish();
+        self.types_by_words.finish();
+        self.types_by_tokens.finish();
+    }
+}
+
+pub struct CounterState {
+    c: CounterSet,
+    fc: Vec<FCounterSet>,
+    total: u64,
+    exact: bool,
+}
+
+impl CounterState {
+    fn new(exact: bool, nflavors: usize) -> CounterState {
+        CounterState {
+            c: CounterSet::new(),
+            fc: (0..nflavors).map(|_| FCounterSet::new()).collect(),
+            total: 0,
+            exact,
+        }
+    }
+
+    fn merge(&mut self, other: &CounterState) {
+        self.c.merge(&other.c);
+        for i in 0..self.fc.len() {
+            self.fc[i].merge(&other.fc[i]);
         }
         self.total += other.total;
     }
 
+    fn feed(&mut self, ls: &LocalState) {
+        self.c.feed(&ls.c);
+        for (i, fc) in self.fc.iter_mut().enumerate() {
+            fc.feed(&ls.c, &ls.fc[i]);
+        }
+    }
+
+    fn finish(&mut self) {
+        self.c.finish();
+        for fc in self.fc.iter_mut() {
+            fc.finish();
+        }
+        self.total += 1;
+    }
+
     pub fn to_sums(&self) -> SumSet {
         SumSet {
-            types_by_tokens: self.types_by_tokens.to_sums(),
-            types_by_words: self.types_by_words.to_sums(),
-            tokens_by_words: self.tokens_by_words.to_sums(),
-            by_flavor: self.by_flavor.iter().map(|x| x.to_sums()).collect(),
+            types_by_tokens: self.c.types_by_tokens.to_sums(),
+            types_by_words: self.c.types_by_words.to_sums(),
+            tokens_by_words: self.c.tokens_by_words.to_sums(),
+            by_flavor: self.fc.iter().map(|x| x.to_sums()).collect(),
             total: self.total,
             exact: self.exact,
         }
