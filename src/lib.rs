@@ -1311,7 +1311,7 @@ mod tests {
         ]);
         assert_eq!(ds.total_types, 2);
         assert_eq!(ds.total_flavors, 2);
-        let rs = ds.count_exact_seq().to_sums();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
         for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
             assert_eq!(s.ny, 4);
@@ -1430,7 +1430,7 @@ mod tests {
         ]);
         assert_eq!(ds.total_types, 3);
         assert_eq!(ds.total_flavors, 3);
-        let rs = ds.count_exact_seq().to_sums();
+        let rs = ds.count_exact().to_sums();
         assert_eq!(1 * 2 * 3, rs.total);
         for s in [
             rs.tokens_by_words.lower,
