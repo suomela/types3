@@ -61,39 +61,52 @@ pub struct Driver {
     progress: bool,
 }
 
-#[derive(Clone, Copy)]
-struct FCount {
+struct FCountHelper {
     ftypes: u64,
     ftokens: u64,
+    seen: Vec<bool>,
 }
 
-impl FCount {
-    fn new() -> FCount {
-        FCount {
+impl FCountHelper {
+    fn new(total_types: usize) -> FCountHelper {
+        FCountHelper {
             ftypes: 0,
             ftokens: 0,
+            seen: vec![false; total_types],
         }
     }
 
     fn reset(&mut self) {
         self.ftypes = 0;
         self.ftokens = 0;
+        for e in self.seen.iter_mut() {
+            *e = false;
+        }
+    }
+
+    fn feed_token(&mut self, t: &SToken) {
+        if !self.seen[t.id] {
+            self.ftypes += 1;
+            self.seen[t.id] = true;
+        }
+        self.ftokens += t.count;
     }
 }
 
-#[derive(Clone, Copy)]
-struct Count {
+struct CountHelper {
     types: u64,
     tokens: u64,
     words: u64,
+    seen: Vec<bool>,
 }
 
-impl Count {
-    fn new() -> Count {
-        Count {
+impl CountHelper {
+    fn new(total_types: usize) -> CountHelper {
+        CountHelper {
             types: 0,
             tokens: 0,
             words: 0,
+            seen: vec![false; total_types],
         }
     }
 
@@ -101,24 +114,6 @@ impl Count {
         self.types = 0;
         self.tokens = 0;
         self.words = 0;
-    }
-}
-
-struct FCountHelper {
-    cur: FCount,
-    seen: Vec<bool>,
-}
-
-impl FCountHelper {
-    fn new(total_types: usize) -> FCountHelper {
-        FCountHelper {
-            cur: FCount::new(),
-            seen: vec![false; total_types],
-        }
-    }
-
-    fn reset(&mut self) {
-        self.cur.reset();
         for e in self.seen.iter_mut() {
             *e = false;
         }
@@ -126,39 +121,10 @@ impl FCountHelper {
 
     fn feed_token(&mut self, t: &SToken) {
         if !self.seen[t.id] {
-            self.cur.ftypes += 1;
+            self.types += 1;
             self.seen[t.id] = true;
         }
-        self.cur.ftokens += t.count;
-    }
-}
-
-struct CountHelper {
-    cur: Count,
-    seen: Vec<bool>,
-}
-
-impl CountHelper {
-    fn new(total_types: usize) -> CountHelper {
-        CountHelper {
-            cur: Count::new(),
-            seen: vec![false; total_types],
-        }
-    }
-
-    fn reset(&mut self) {
-        self.cur.reset();
-        for e in self.seen.iter_mut() {
-            *e = false;
-        }
-    }
-
-    fn feed_token(&mut self, t: &SToken) {
-        if !self.seen[t.id] {
-            self.cur.types += 1;
-            self.seen[t.id] = true;
-        }
-        self.cur.tokens += t.count;
+        self.tokens += t.count;
     }
 }
 
@@ -195,7 +161,7 @@ impl LocalState {
         for t in &sample.tokens {
             self.feed_token(t);
         }
-        self.c.cur.words += sample.words;
+        self.c.words += sample.words;
     }
 }
 
@@ -549,11 +515,11 @@ impl FCounterSet {
     }
 
     fn add_box(&mut self, fc: &FCountHelper, c: &CountHelper) {
-        let ftypes = fc.cur.ftypes;
-        let ftokens = fc.cur.ftokens;
-        let types = c.cur.types;
-        let tokens = c.cur.tokens;
-        let words = c.cur.words;
+        let ftypes = fc.ftypes;
+        let ftokens = fc.ftokens;
+        let types = c.types;
+        let tokens = c.tokens;
+        let words = c.words;
         self.ftypes_by_types.add_box(ftypes, types);
         self.ftypes_by_tokens.add_box(ftypes, tokens);
         self.ftypes_by_ftokens.add_box(ftypes, ftokens);
@@ -614,9 +580,9 @@ impl CounterSet {
     }
 
     fn add_box(&mut self, ls: &LocalState) {
-        let types = ls.c.cur.types;
-        let tokens = ls.c.cur.tokens;
-        let words = ls.c.cur.words;
+        let types = ls.c.types;
+        let tokens = ls.c.tokens;
+        let words = ls.c.words;
         self.tokens_by_words.add_box(tokens, words);
         self.types_by_words.add_box(types, words);
         self.types_by_tokens.add_box(types, tokens);
