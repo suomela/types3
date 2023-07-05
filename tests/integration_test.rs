@@ -18,3 +18,15 @@ fn example_1() {
     let output = serde_json::to_string_pretty(&result).unwrap();
     assert_eq!(output, expected);
 }
+
+#[test]
+fn example_2() {
+    let iter = 10000;
+    let input = slurp("tests/data/in2.json");
+    let expected = slurp("tests/data/out2.json");
+    let samples: Vec<Sample> = serde_json::from_str(&input).unwrap();
+    let driver = Driver::new(samples);
+    let result = driver.count(iter).to_sums();
+    let output = serde_json::to_string_pretty(&result).unwrap();
+    assert_eq!(output, expected);
+}
