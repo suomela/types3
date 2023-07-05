@@ -1,7 +1,7 @@
 mod density_curve;
 
-use core::ops::Range;
 use crossbeam_channel::TryRecvError;
+use density_curve::CRange;
 use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
@@ -62,13 +62,263 @@ pub struct Driver {
     progress: bool,
 }
 
-type Seen = Vec<bool>;
+#[derive(Clone, Copy)]
+struct FCount {
+    ftypes: u64,
+    ftokens: u64,
+}
 
-#[derive(Clone)]
+impl FCount {
+    fn new() -> FCount {
+        FCount {
+            ftypes: 0,
+            ftokens: 0,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.ftypes = 0;
+        self.ftokens = 0;
+    }
+}
+
+#[derive(Clone, Copy)]
 struct Count {
     types: u64,
     tokens: u64,
     words: u64,
+}
+
+impl Count {
+    fn new() -> Count {
+        Count {
+            types: 0,
+            tokens: 0,
+            words: 0,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.types = 0;
+        self.tokens = 0;
+        self.words = 0;
+    }
+}
+
+struct FCountHelper {
+    cur: FCount,
+    prev: FCount,
+    seen: Vec<bool>,
+}
+
+impl FCountHelper {
+    fn new(total_types: usize) -> FCountHelper {
+        FCountHelper {
+            cur: FCount::new(),
+            prev: FCount::new(),
+            seen: vec![false; total_types],
+        }
+    }
+
+    fn reset(&mut self) {
+        self.cur.reset();
+        self.prev.reset();
+        for e in self.seen.iter_mut() {
+            *e = false;
+        }
+    }
+
+    fn ftype_range(&self) -> CRange {
+        (self.prev.ftypes, self.cur.ftypes)
+    }
+
+    fn ftoken_range(&self) -> CRange {
+        (self.prev.ftokens, self.cur.ftokens)
+    }
+
+    fn add_start(&self, c: &CountHelper, cs: &mut FCounterSet) {
+        let ftypes = self.cur.ftypes;
+        let ftokens = self.cur.ftokens;
+        let types = c.cur.types;
+        let tokens = c.cur.tokens;
+        let words = c.cur.words;
+        cs.ftypes_by_types.add_start(ftypes, types);
+        cs.ftypes_by_tokens.add_start(ftypes, tokens);
+        cs.ftypes_by_ftokens.add_start(ftypes, ftokens);
+        cs.ftypes_by_words.add_start(ftypes, words);
+        cs.ftokens_by_tokens.add_start(ftokens, tokens);
+        cs.ftokens_by_words.add_start(ftokens, words);
+    }
+
+    fn add_box(&mut self, c: &CountHelper, cs: &mut FCounterSet) {
+        let ftypes = self.ftype_range();
+        let ftokens = self.ftoken_range();
+        let types = c.type_range();
+        let tokens = c.token_range();
+        let words = c.word_range();
+        cs.ftypes_by_types.add_box(ftypes, types);
+        cs.ftypes_by_tokens.add_box(ftypes, tokens);
+        cs.ftypes_by_ftokens.add_box(ftypes, ftokens);
+        cs.ftypes_by_words.add_box(ftypes, words);
+        cs.ftokens_by_tokens.add_box(ftokens, tokens);
+        cs.ftokens_by_words.add_box(ftokens, words);
+        self.prev = self.cur;
+    }
+
+    fn add_end(&self, c: &CountHelper, cs: &mut FCounterSet) {
+        let ftypes = self.cur.ftypes;
+        let ftokens = self.cur.ftokens;
+        let types = c.cur.types;
+        let tokens = c.cur.tokens;
+        let words = c.cur.words;
+        cs.ftypes_by_types.add_end(ftypes, types);
+        cs.ftypes_by_tokens.add_end(ftypes, tokens);
+        cs.ftypes_by_ftokens.add_end(ftypes, ftokens);
+        cs.ftypes_by_words.add_end(ftypes, words);
+        cs.ftokens_by_tokens.add_end(ftokens, tokens);
+        cs.ftokens_by_words.add_end(ftokens, words);
+    }
+
+    fn feed_token(&mut self, t: &SToken) {
+        if !self.seen[t.id] {
+            self.cur.ftypes += 1;
+            self.seen[t.id] = true;
+        }
+        self.cur.ftokens += t.count;
+    }
+}
+
+struct CountHelper {
+    cur: Count,
+    prev: Count,
+    seen: Vec<bool>,
+}
+
+impl CountHelper {
+    fn new(total_types: usize) -> CountHelper {
+        CountHelper {
+            cur: Count::new(),
+            prev: Count::new(),
+            seen: vec![false; total_types],
+        }
+    }
+
+    fn reset(&mut self) {
+        self.cur.reset();
+        self.prev.reset();
+        for e in self.seen.iter_mut() {
+            *e = false;
+        }
+    }
+
+    fn type_range(&self) -> CRange {
+        (self.prev.types, self.cur.types)
+    }
+
+    fn token_range(&self) -> CRange {
+        (self.prev.tokens, self.cur.tokens)
+    }
+
+    fn word_range(&self) -> CRange {
+        (self.prev.words, self.cur.words)
+    }
+
+    fn add_start(&self, cs: &mut CounterSet) {
+        let types = self.cur.types;
+        let tokens = self.cur.tokens;
+        let words = self.cur.words;
+        cs.tokens_by_words.add_start(tokens, words);
+        cs.types_by_words.add_start(types, words);
+        cs.types_by_tokens.add_start(types, tokens);
+    }
+
+    fn add_box(&mut self, cs: &mut CounterSet) {
+        let types = self.type_range();
+        let tokens = self.token_range();
+        let words = self.word_range();
+        cs.tokens_by_words.add_box(tokens, words);
+        cs.types_by_words.add_box(types, words);
+        cs.types_by_tokens.add_box(types, tokens);
+        self.prev = self.cur;
+    }
+
+    fn add_end(&self, cs: &mut CounterSet) {
+        let types = self.cur.types;
+        let tokens = self.cur.tokens;
+        let words = self.cur.words;
+        cs.tokens_by_words.add_end(tokens, words);
+        cs.types_by_words.add_end(types, words);
+        cs.types_by_tokens.add_end(types, tokens);
+    }
+
+    fn feed_token(&mut self, t: &SToken) {
+        if !self.seen[t.id] {
+            self.cur.types += 1;
+            self.seen[t.id] = true;
+        }
+        self.cur.tokens += t.count;
+    }
+}
+
+struct LocalState {
+    c: CountHelper,
+    fc: Vec<FCountHelper>,
+}
+
+impl LocalState {
+    fn new(total_types: usize, total_flavors: usize) -> LocalState {
+        LocalState {
+            c: CountHelper::new(total_types),
+            fc: (0..total_flavors)
+                .map(|_| FCountHelper::new(total_types))
+                .collect(),
+        }
+    }
+
+    fn reset(&mut self) {
+        self.c.reset();
+        for x in self.fc.iter_mut() {
+            x.reset();
+        }
+    }
+
+    fn add_start(&self, cs: &mut CounterSet) {
+        for (i, x) in self.fc.iter().enumerate() {
+            x.add_start(&self.c, &mut cs.by_flavor[i]);
+        }
+        self.c.add_start(cs);
+    }
+
+    fn add_box(&mut self, cs: &mut CounterSet) {
+        for (i, x) in self.fc.iter_mut().enumerate() {
+            x.add_box(&self.c, &mut cs.by_flavor[i]);
+        }
+        // Order important: this must come last!
+        // CountHelper::add_box will reset c.prev,
+        // which is used above in FCountHelper::add_box calls!
+        self.c.add_box(cs);
+    }
+
+    fn add_end(&self, cs: &mut CounterSet) {
+        for (i, x) in self.fc.iter().enumerate() {
+            x.add_end(&self.c, &mut cs.by_flavor[i]);
+        }
+        self.c.add_end(cs);
+    }
+
+    fn feed_token(&mut self, t: &SToken) {
+        self.c.feed_token(t);
+        if !self.fc.is_empty() {
+            self.fc[t.flavor].feed_token(t);
+        }
+    }
+
+    fn feed_sample(&mut self, sample: &Sample) {
+        for t in &sample.tokens {
+            self.feed_token(t);
+        }
+        self.c.cur.words += sample.words;
+    }
 }
 
 impl Driver {
@@ -282,18 +532,24 @@ impl Driver {
             }
         }
         assert_eq!(i, n);
-        let mut seen = vec![false; self.total_types];
-        self.count_exact_rec(rs, &mut idx, start.len(), &mut seen);
+        let mut ls = LocalState::new(self.total_types, self.total_flavors);
+        self.count_exact_rec(rs, &mut idx, start.len(), &mut ls);
     }
 
-    fn count_exact_rec(&self, rs: &mut CounterSet, idx: &mut [usize], i: usize, seen: &mut Seen) {
+    fn count_exact_rec(
+        &self,
+        rs: &mut CounterSet,
+        idx: &mut [usize],
+        i: usize,
+        ls: &mut LocalState,
+    ) {
         let n = self.samples.len();
         if i == n {
-            self.update_counters(rs, idx, seen);
+            self.update_counters(rs, idx, ls);
         } else {
             for j in i..n {
                 idx.swap(i, j);
-                self.count_exact_rec(rs, idx, i + 1, seen);
+                self.count_exact_rec(rs, idx, i + 1, ls);
                 idx.swap(i, j);
             }
         }
@@ -305,49 +561,23 @@ impl Driver {
         for (i, v) in idx.iter_mut().enumerate() {
             *v = i;
         }
-        let mut seen = vec![false; self.total_types];
+        let mut ls = LocalState::new(self.total_types, self.total_flavors);
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
         for _ in 0..iter_per_job {
             idx.shuffle(&mut rng);
-            self.update_counters(rs, &idx, &mut seen);
+            self.update_counters(rs, &idx, &mut ls);
         }
     }
 
-    fn update_counters(&self, rs: &mut CounterSet, idx: &[usize], seen: &mut Seen) {
-        for e in seen.iter_mut() {
-            *e = false;
-        }
-        let mut c = Count {
-            types: 0,
-            tokens: 0,
-            words: 0,
-        };
-        rs.tokens_by_words.add_start(c.tokens, c.words);
-        rs.types_by_words.add_start(c.types, c.words);
-        rs.types_by_tokens.add_start(c.types, c.tokens);
+    fn update_counters(&self, cs: &mut CounterSet, idx: &[usize], ls: &mut LocalState) {
+        ls.reset();
+        ls.add_start(cs);
         for i in idx {
-            let prev = c.clone();
-            let sample = &self.samples[*i];
-            for t in &sample.tokens {
-                if !seen[t.id] {
-                    c.types += 1;
-                    seen[t.id] = true;
-                }
-                c.tokens += t.count;
-            }
-            c.words += sample.words;
-            rs.tokens_by_words
-                .add_box(prev.tokens..c.tokens, prev.words..c.words);
-            rs.types_by_words
-                .add_box(prev.types..c.types, prev.words..c.words);
-            rs.types_by_tokens
-                .add_box(prev.types..c.types, prev.tokens..c.tokens);
+            ls.feed_sample(&self.samples[*i]);
+            ls.add_box(cs);
         }
-        rs.tokens_by_words.add_end(c.tokens, c.words);
-        rs.types_by_words.add_end(c.types, c.words);
-        rs.types_by_tokens.add_end(c.types, c.tokens);
-
-        rs.total += 1;
+        ls.add_end(cs);
+        cs.total += 1;
     }
 }
 
@@ -370,16 +600,18 @@ impl CounterPair {
     }
 
     fn add_start(&mut self, y: u64, x: u64) {
-        self.upper.add(y, x..x + 1, 1);
+        self.upper.add(y, (x, x + 1), 1);
     }
 
     fn add_end(&mut self, y: u64, x: u64) {
-        self.lower.add(y, x..x + 1, 1);
+        self.lower.add(y, (x, x + 1), 1);
     }
 
-    fn add_box(&mut self, yy: Range<u64>, xx: Range<u64>) {
-        self.upper.add(yy.end, xx.start + 1..xx.end + 1, 1);
-        self.lower.add(yy.start, xx, 1);
+    fn add_box(&mut self, yy: CRange, xx: CRange) {
+        let (y0, y1) = yy;
+        let (x0, x1) = xx;
+        self.lower.add(y0, xx, 1);
+        self.upper.add(y1, (x0 + 1, x1 + 1), 1);
     }
 
     fn to_sums(&self) -> SumPair {

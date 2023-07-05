@@ -1,9 +1,9 @@
-use core::ops::Range;
 use serde::Serialize;
 use std::{cmp::Ordering, collections::HashMap};
 
 pub type Coord = u64;
 pub type Value = i64;
+pub type CRange = (Coord, Coord);
 
 #[derive(Debug)]
 pub struct Counter {
@@ -17,9 +17,8 @@ impl Counter {
         }
     }
 
-    pub fn add(&mut self, y: Coord, xx: Range<Coord>, v: Value) {
-        let x0 = xx.start;
-        let x1 = xx.end;
+    pub fn add(&mut self, y: Coord, xx: CRange, v: Value) {
+        let (x0, x1) = xx;
         *self.values.entry((y, x0)).or_insert(0) += v;
         *self.values.entry((y, x1)).or_insert(0) -= v;
     }
@@ -372,12 +371,12 @@ mod tests {
     #[test]
     fn counter_basic() {
         let mut counter = Counter::new();
-        counter.add(111, 4000..4444, 1);
-        counter.add(111, 3333..4000, 999);
-        counter.add(222, 3111..4111, 9999);
-        counter.add(111, 4000..4444, 998);
-        counter.add(333, 5555..6666, 1);
-        counter.add(333, 5555..6666, -1);
+        counter.add(111, (4000, 4444), 1);
+        counter.add(111, (3333, 4000), 999);
+        counter.add(222, (3111, 4111), 9999);
+        counter.add(111, (4000, 4444), 998);
+        counter.add(333, (5555, 6666), 1);
+        counter.add(333, (5555, 6666), -1);
         let lines = counter.to_rawlines();
         assert_eq!(lines.ny, 223);
         assert_eq!(lines.nx, 4444);
@@ -399,12 +398,12 @@ mod tests {
     #[test]
     fn counter_sums_basic() {
         let mut counter = Counter::new();
-        counter.add(111, 4000..4444, 1);
-        counter.add(111, 3333..4000, 999);
-        counter.add(222, 3111..4111, 9999);
-        counter.add(111, 4000..4444, 998);
-        counter.add(333, 5555..6666, 1);
-        counter.add(333, 5555..6666, -1);
+        counter.add(111, (4000, 4444), 1);
+        counter.add(111, (3333, 4000), 999);
+        counter.add(222, (3111, 4111), 9999);
+        counter.add(111, (4000, 4444), 998);
+        counter.add(333, (5555, 6666), 1);
+        counter.add(333, (5555, 6666), -1);
         let sums = counter.to_sums();
         assert_eq!(sums.ny, 223);
         assert_eq!(sums.nx, 4444);
@@ -430,9 +429,9 @@ mod tests {
     #[test]
     fn counter_sums_one_curve() {
         let mut counter = Counter::new();
-        counter.add(0, 0..100, 1);
-        counter.add(10, 100..200, 1);
-        counter.add(20, 200..300, 1);
+        counter.add(0, (0, 100), 1);
+        counter.add(10, (100, 200), 1);
+        counter.add(20, (200, 300), 1);
 
         let sums = counter.to_sums();
         assert_eq!(sums.ny, 21);
@@ -449,9 +448,9 @@ mod tests {
     #[test]
     fn counter_sums_one_fat_curve() {
         let mut counter = Counter::new();
-        counter.add(0, 0..100, 1000);
-        counter.add(10, 100..200, 1000);
-        counter.add(20, 200..300, 1000);
+        counter.add(0, (0, 100), 1000);
+        counter.add(10, (100, 200), 1000);
+        counter.add(20, (200, 300), 1000);
 
         let sums = counter.to_sums();
         assert_eq!(sums.ny, 21);
@@ -468,11 +467,11 @@ mod tests {
     #[test]
     fn counter_sums_two_curves() {
         let mut counter = Counter::new();
-        counter.add(0, 0..100, 1);
-        counter.add(10, 100..200, 1);
-        counter.add(20, 200..300, 1);
-        counter.add(0, 0..150, 1);
-        counter.add(30, 150..300, 1);
+        counter.add(0, (0, 100), 1);
+        counter.add(10, (100, 200), 1);
+        counter.add(20, (200, 300), 1);
+        counter.add(0, (0, 150), 1);
+        counter.add(30, (150, 300), 1);
 
         let sums = counter.to_sums();
         assert_eq!(sums.ny, 31);
@@ -492,11 +491,11 @@ mod tests {
     fn counter_merge() {
         let mut counter1 = Counter::new();
         let mut counter2 = Counter::new();
-        counter1.add(0, 0..100, 1);
-        counter2.add(10, 100..200, 1);
-        counter1.add(20, 200..300, 1);
-        counter2.add(0, 0..150, 1);
-        counter1.add(30, 150..300, 1);
+        counter1.add(0, (0, 100), 1);
+        counter2.add(10, (100, 200), 1);
+        counter1.add(20, (200, 300), 1);
+        counter2.add(0, (0, 150), 1);
+        counter1.add(30, (150, 300), 1);
 
         let mut counter = Counter::new();
         counter.merge(&counter1);
