@@ -1,5 +1,7 @@
 use clap::Parser;
 use console::style;
+use itertools::Itertools;
+use std::collections::HashSet;
 use std::{error, fs, process, result};
 use types3::input::*;
 
@@ -31,10 +33,31 @@ fn error(prefix: &str, tail: &str) {
     process::exit(1);
 }
 
+fn calc(args: &Args, input: &Input) {
+    let mut lemmas = HashSet::new();
+    for s in &input.samples {
+        for t in &s.tokens {
+            lemmas.insert(t.lemma.to_owned());
+        }
+    }
+    let mut lemmas = lemmas.into_iter().collect_vec();
+    lemmas.sort();
+    msg(
+        args.verbose,
+        "Input",
+        &format!(
+            "{} samples, {} distinct lemmas",
+            input.samples.len(),
+            lemmas.len()
+        ),
+    );
+}
+
 fn process(args: &Args) -> Result<()> {
     msg(args.verbose, "Read", &args.infile);
     let indata = fs::read_to_string(&args.infile)?;
-    let _: Input = serde_json::from_str(&indata)?;
+    let input: Input = serde_json::from_str(&indata)?;
+    calc(args, &input);
     Ok(())
 }
 

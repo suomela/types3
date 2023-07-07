@@ -2,23 +2,23 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize)]
-pub struct Token {
-    lemma: String,
-    descr: HashMap<String, String>,
-    metadata: HashMap<String, String>,
+pub struct IToken {
+    pub lemma: String,
+    pub descr: HashMap<String, String>,
+    pub metadata: HashMap<String, String>,
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct Sample {
-    id: String,
-    year: u16,
-    descr: HashMap<String, String>,
-    metadata: HashMap<String, String>,
-    words: u64,
-    tokens: Vec<Token>,
+pub struct ISample {
+    pub id: String,
+    pub year: u16,
+    pub descr: HashMap<String, String>,
+    pub metadata: HashMap<String, String>,
+    pub words: u64,
+    pub tokens: Vec<IToken>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct Input {
-    samples: Vec<Sample>,
+    pub samples: Vec<ISample>,
 }
