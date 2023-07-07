@@ -35,9 +35,8 @@ fn error(prefix: &str, tail: &str) {
 
 fn process(args: &Args) -> Result<()> {
     msg(args.verbose, "Read", &args.infile);
-    let file = fs::File::open(&args.infile)?;
-    let reader = io::BufReader::new(file);
-    let samples: Vec<Sample> = serde_json::from_reader(reader)?;
+    let indata = fs::read_to_string(&args.infile)?;
+    let samples: Vec<Sample> = serde_json::from_str(&indata)?;
     let driver = Driver::new_with_settings(samples, args.verbose);
     let result = driver.count(args.iter).to_sums();
     msg(args.verbose, "Write", &args.outfile);

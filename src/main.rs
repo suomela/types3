@@ -1,6 +1,6 @@
 use clap::Parser;
 use console::style;
-use std::{error, fs, io, process, result};
+use std::{error, fs, process, result};
 use types3::input::*;
 
 const DEFAULT_ITER: u64 = 100_000;
@@ -33,9 +33,8 @@ fn error(prefix: &str, tail: &str) {
 
 fn process(args: &Args) -> Result<()> {
     msg(args.verbose, "Read", &args.infile);
-    let file = fs::File::open(&args.infile)?;
-    let reader = io::BufReader::new(file);
-    let _: Input = serde_json::from_reader(reader)?;
+    let indata = fs::read_to_string(&args.infile)?;
+    let _: Input = serde_json::from_str(&indata)?;
     Ok(())
 }
 
