@@ -1,5 +1,5 @@
 use std::{fs, path::PathBuf};
-use types3::{Driver, Sample};
+use types3::calculation::{Driver, Sample};
 
 fn slurp(filename: &str) -> String {
     let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

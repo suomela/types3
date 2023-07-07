@@ -1,23 +1,25 @@
 use clap::Parser;
 use console::style;
 use std::{error, fs, io, process, result};
-use types3::input::*;
-
-const DEFAULT_ITER: u64 = 100_000;
+use types3::calculation::{Driver, Sample};
 
 type Result<T> = result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Parser)]
 #[command(author, version, about)]
 struct Args {
+    /// Number of iterations
+    iter: u64,
     /// Input file
     infile: String,
-    /// Number of iterations
-    #[arg(short, long, default_value_t = DEFAULT_ITER)]
-    iter: u64,
+    /// Output file
+    outfile: String,
     /// Show progress
     #[arg(short, long)]
     verbose: bool,
+    /// Pretty print results
+    #[arg(short, long)]
+    pretty: bool,
 }
 
 fn msg(verbose: bool, prefix: &str, tail: &str) {
@@ -35,7 +37,27 @@ fn process(args: &Args) -> Result<()> {
     msg(args.verbose, "Read", &args.infile);
     let file = fs::File::open(&args.infile)?;
     let reader = io::BufReader::new(file);
-    let _: Input = serde_json::from_reader(reader)?;
+    let samples: Vec<Sample> = serde_json::from_reader(reader)?;
+    let driver = Driver::new_with_settings(samples, args.verbose);
+    let result = driver.count(args.iter).to_sums();
+    msg(args.verbose, "Write", &args.outfile);
+    let file = fs::File::create(&args.outfile)?;
+    let writer = io::BufWriter::new(file);
+    if args.pretty {
+        serde_json::to_writer_pretty(writer, &result)?;
+    } else {
+        serde_json::to_writer(writer, &result)?;
+    }
+    msg(
+        args.verbose,
+        "Finished",
+        &format!(
+            "{} iterations, {}, {} result points",
+            result.total,
+            if result.exact { "exact" } else { "not exact" },
+            result.total_points(),
+        ),
+    );
     Ok(())
 }
 
