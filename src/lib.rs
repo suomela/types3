@@ -1,3 +1,3 @@
 pub mod calculation;
-pub mod input;
 mod density_curve;
+pub mod input;
