@@ -1,7 +1,7 @@
 use clap::Parser;
 use console::style;
 use itertools::Itertools;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::{error, fs, process, result};
 use types3::input::*;
 
@@ -35,20 +35,29 @@ fn error(prefix: &str, tail: &str) {
 
 fn calc(args: &Args, input: &Input) {
     let mut lemmas = HashSet::new();
+    let mut flavors: HashMap<String, HashSet<String>> = HashMap::new();
     for s in &input.samples {
         for t in &s.tokens {
             lemmas.insert(t.lemma.to_owned());
+            for (k, v) in &t.metadata {
+                flavors
+                    .entry(k.to_owned())
+                    .or_insert(HashSet::new())
+                    .insert(v.to_owned());
+            }
         }
     }
     let mut lemmas = lemmas.into_iter().collect_vec();
     lemmas.sort();
+
     msg(
         args.verbose,
         "Input",
         &format!(
-            "{} samples, {} distinct lemmas",
+            "{} samples, {} distinct lemmas, {} flavor tags",
             input.samples.len(),
-            lemmas.len()
+            lemmas.len(),
+            flavors.len(),
         ),
     );
 }
