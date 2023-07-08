@@ -166,7 +166,7 @@ impl Driver {
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         drop(s1);
         let nthreads = num_cpus::get();
-        let mut global = RawResult::new(false, self.total_flavors);
+        let mut to_merge = Vec::new();
         let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
@@ -193,11 +193,18 @@ impl Driver {
             while let Ok(msg) = r2.recv() {
                 match msg {
                     Progress::Tick => bar.inc(1),
-                    Progress::Done(rs) => global.merge(&rs),
+                    Progress::Done(rs) => to_merge.push(rs),
                 }
             }
-            bar.finish();
         });
+        bar.finish();
+        let bar = self.progress_bar(to_merge.len() as u64, nthreads, "Merge");
+        let mut global = RawResult::new(false, self.total_flavors);
+        for rs in to_merge {
+            global.merge(&rs);
+            bar.tick();
+        }
+        bar.finish();
         global
     }
 
