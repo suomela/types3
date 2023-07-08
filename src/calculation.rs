@@ -29,11 +29,24 @@ enum Progress {
     Done(Box<RawResult>),
 }
 
+type Flavors = u64;
+
+fn num_flavors(x: Flavors) -> usize {
+    (Flavors::BITS - x.leading_zeros()) as usize
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct SToken {
     pub count: u64,
     pub id: usize,
-    pub flavor: usize,
+    /// Bit vector: set of flavors
+    pub flavors: Flavors,
+}
+
+impl SToken {
+    fn num_flavors(&self) -> usize {
+        num_flavors(self.flavors)
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -52,9 +65,7 @@ pub struct Driver {
     samples: Vec<Sample>,
     /// All types have identifiers in `0..total_types`.
     total_types: usize,
-    /// All flavors have identifiers in `0..total_flavors`.
-    /// However, as a special case we set `total_flavors = 0` if all tokens have flavor 0;
-    /// this effectively disables flavor-specific counters.
+    /// Flavors are indicated with bits `0..total_flavors`.
     total_flavors: usize,
     /// Print progress bar.
     progress: bool,
@@ -67,15 +78,14 @@ impl Driver {
 
     pub fn new_with_settings(samples: Vec<Sample>, progress: bool) -> Driver {
         let mut max_type = 0;
-        let mut max_flavor = 0;
+        let mut total_flavors = 0;
         for sample in &samples {
             for token in &sample.tokens {
                 max_type = max_type.max(token.id);
-                max_flavor = max_flavor.max(token.flavor);
+                total_flavors = total_flavors.max(token.num_flavors() as usize);
             }
         }
         let total_types = max_type + 1;
-        let total_flavors = if max_flavor == 0 { 0 } else { max_flavor + 1 };
         Driver {
             samples,
             total_types,
@@ -375,8 +385,11 @@ impl LocalState {
 
     fn feed_token(&mut self, t: &SToken) {
         self.c.feed_token(t);
-        if !self.fc.is_empty() {
-            self.fc[t.flavor].feed_token(t);
+        let mut f = t.flavors;
+        while f != 0 {
+            let flavor = f.trailing_zeros();
+            self.fc[flavor as usize].feed_token(t);
+            f = f ^ (1 << flavor);
         }
     }
 
@@ -670,7 +683,15 @@ mod tests {
         SToken {
             count,
             id,
-            flavor: 0,
+            flavors: 0,
+        }
+    }
+
+    fn st0(count: u64, id: usize) -> SToken {
+        SToken {
+            count,
+            id,
+            flavors: 1,
         }
     }
 
@@ -678,7 +699,7 @@ mod tests {
         SToken {
             count,
             id,
-            flavor: 1,
+            flavors: 2,
         }
     }
 
@@ -686,7 +707,7 @@ mod tests {
         SToken {
             count,
             id,
-            flavor: 2,
+            flavors: 4,
         }
     }
 
@@ -1249,9 +1270,9 @@ mod tests {
     #[test]
     fn exact_binary_flavor_2_overlap() {
         let ds = Driver::new(vec![
-            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st0(1, 0)]),
             sample(1, vec![st1(1, 0)]),
-            sample(1, vec![st(1, 1)]),
+            sample(1, vec![st0(1, 1)]),
         ]);
         assert_eq!(ds.total_types, 2);
         assert_eq!(ds.total_flavors, 2);
@@ -1368,7 +1389,7 @@ mod tests {
     #[test]
     fn exact_binary_flavor_3_distinct() {
         let ds = Driver::new(vec![
-            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st0(1, 0)]),
             sample(1, vec![st1(1, 1)]),
             sample(1, vec![st2(1, 2)]),
         ]);
