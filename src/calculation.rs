@@ -82,7 +82,7 @@ impl Driver {
         for sample in &samples {
             for token in &sample.tokens {
                 max_type = max_type.max(token.id);
-                total_flavors = total_flavors.max(token.num_flavors() as usize);
+                total_flavors = total_flavors.max(token.num_flavors());
             }
         }
         let total_types = max_type + 1;
@@ -389,7 +389,7 @@ impl LocalState {
         while f != 0 {
             let flavor = f.trailing_zeros();
             self.fc[flavor as usize].feed_token(t);
-            f = f ^ (1 << flavor);
+            f ^= 1 << flavor;
         }
     }
 
@@ -691,7 +691,7 @@ mod tests {
         SToken {
             count,
             id,
-            flavors: 1,
+            flavors: 0b1,
         }
     }
 
@@ -699,7 +699,7 @@ mod tests {
         SToken {
             count,
             id,
-            flavors: 2,
+            flavors: 0b10,
         }
     }
 
@@ -707,7 +707,15 @@ mod tests {
         SToken {
             count,
             id,
-            flavors: 4,
+            flavors: 0b100,
+        }
+    }
+
+    fn st01(count: u64, id: usize) -> SToken {
+        SToken {
+            count,
+            id,
+            flavors: 0b11,
         }
     }
 
@@ -1268,10 +1276,209 @@ mod tests {
     }
 
     #[test]
+    fn exact_binary_flavor_1_overlap() {
+        let ds = Driver::new(vec![
+            sample(1, vec![st0(1, 0)]),
+            sample(1, vec![st(1, 0)]),
+            sample(1, vec![st0(1, 1)]),
+        ]);
+        assert_eq!(ds.total_types, 2);
+        assert_eq!(ds.total_flavors, 1);
+        let rs = ds.count_exact().to_sums();
+        assert_eq!(1 * 2 * 3, rs.total);
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 6)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 6)]));
+        }
+        for s in [
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4), sp(4, 6)]));
+        }
+        assert_eq!(rs.by_flavor.len(), 1);
+        for s in [
+            &rs.by_flavor[0].ftypes_by_ftokens.lower,
+            &rs.by_flavor[0].ftypes_by_ftokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+        for s in [&rs.by_flavor[0].ftypes_by_types.lower] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4)]));
+        }
+        for s in [&rs.by_flavor[0].ftypes_by_types.upper] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 5), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[0].ftypes_by_words.lower,
+            &rs.by_flavor[0].ftypes_by_words.upper,
+            &rs.by_flavor[0].ftypes_by_tokens.lower,
+            &rs.by_flavor[0].ftypes_by_tokens.upper,
+            &rs.by_flavor[0].ftokens_by_words.lower,
+            &rs.by_flavor[0].ftokens_by_words.upper,
+            &rs.by_flavor[0].ftokens_by_tokens.lower,
+            &rs.by_flavor[0].ftokens_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 2), sp(4, 6)]));
+        }
+    }
+
+    #[test]
     fn exact_binary_flavor_2_overlap() {
         let ds = Driver::new(vec![
             sample(1, vec![st0(1, 0)]),
             sample(1, vec![st1(1, 0)]),
+            sample(1, vec![st0(1, 1)]),
+        ]);
+        assert_eq!(ds.total_types, 2);
+        assert_eq!(ds.total_flavors, 2);
+        let rs = ds.count_exact().to_sums();
+        assert_eq!(1 * 2 * 3, rs.total);
+        for s in [rs.tokens_by_words.lower, rs.tokens_by_words.upper] {
+            assert_eq!(s.ny, 4);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 4);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(4, 6)]));
+            assert_eq!(s.lines[3], sl(4, &[sp(3, 0), sp(4, 6)]));
+        }
+        for s in [
+            rs.types_by_words.lower,
+            rs.types_by_words.upper,
+            rs.types_by_tokens.lower,
+            rs.types_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4), sp(4, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[0].ftypes_by_ftokens.lower,
+            &rs.by_flavor[0].ftypes_by_ftokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+        for s in [&rs.by_flavor[0].ftypes_by_types.lower] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 4)]));
+        }
+        for s in [&rs.by_flavor[0].ftypes_by_types.upper] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 5), sp(3, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[0].ftypes_by_words.lower,
+            &rs.by_flavor[0].ftypes_by_words.upper,
+            &rs.by_flavor[0].ftypes_by_tokens.lower,
+            &rs.by_flavor[0].ftypes_by_tokens.upper,
+            &rs.by_flavor[0].ftokens_by_words.lower,
+            &rs.by_flavor[0].ftokens_by_words.upper,
+            &rs.by_flavor[0].ftokens_by_tokens.lower,
+            &rs.by_flavor[0].ftokens_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 3);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 3);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 4), sp(4, 6)]));
+            assert_eq!(s.lines[2], sl(3, &[sp(2, 0), sp(3, 2), sp(4, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[1].ftypes_by_ftokens.lower,
+            &rs.by_flavor[1].ftypes_by_ftokens.upper,
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 2);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(2, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 6)]));
+        }
+        for s in [&rs.by_flavor[1].ftypes_by_types.lower] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 2), sp(3, 4)]));
+        }
+        for s in [&rs.by_flavor[1].ftypes_by_types.upper] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 3);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(3, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 3), sp(3, 6)]));
+        }
+        for s in [
+            &rs.by_flavor[1].ftypes_by_words.lower,
+            &rs.by_flavor[1].ftypes_by_words.upper,
+            &rs.by_flavor[1].ftypes_by_tokens.lower,
+            &rs.by_flavor[1].ftypes_by_tokens.upper,
+            &rs.by_flavor[1].ftokens_by_words.lower,
+            &rs.by_flavor[1].ftokens_by_words.upper,
+            &rs.by_flavor[1].ftokens_by_tokens.lower,
+            &rs.by_flavor[1].ftokens_by_tokens.upper,
+        ] {
+            assert_eq!(s.ny, 2);
+            assert_eq!(s.nx, 4);
+            assert_eq!(s.lines.len(), 2);
+            assert_eq!(s.lines[0], sl(1, &[sp(0, 0), sp(4, 6)]));
+            assert_eq!(s.lines[1], sl(2, &[sp(1, 0), sp(2, 2), sp(3, 4), sp(4, 6)]));
+        }
+    }
+
+    #[test]
+    fn exact_binary_flavor_2_many() {
+        let ds = Driver::new(vec![
+            sample(1, vec![st01(1, 0)]),
+            sample(1, vec![st(1, 0)]),
             sample(1, vec![st0(1, 1)]),
         ]);
         assert_eq!(ds.total_types, 2);
