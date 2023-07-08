@@ -1,5 +1,6 @@
 use serde::Serialize;
-use std::{cmp::Ordering, collections::HashMap};
+use std::cmp::Ordering;
+use rustc_hash::FxHashMap;
 
 pub type Coord = u64;
 pub type Value = i64;
@@ -7,13 +8,13 @@ pub type CRange = (Coord, Coord);
 
 #[derive(Debug)]
 pub struct Counter {
-    values: HashMap<(Coord, Coord), Value>,
+    values: FxHashMap<(Coord, Coord), Value>,
 }
 
 impl Counter {
     pub fn new() -> Counter {
         Counter {
-            values: HashMap::new(),
+            values: FxHashMap::default(),
         }
     }
 
