@@ -3,7 +3,8 @@ use console::style;
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::{error, fs, process, result};
-use types3::input::*;
+use types3::calculation::{Driver, Flavors, SToken, Sample};
+use types3::input::Input;
 
 const DEFAULT_ITER: u64 = 100_000;
 
@@ -35,29 +36,80 @@ fn error(prefix: &str, tail: &str) {
 
 fn calc(args: &Args, input: &Input) {
     let mut lemmas = HashSet::new();
-    let mut flavors: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut flavors: HashMap<&String, HashSet<&String>> = HashMap::new();
     for s in &input.samples {
         for t in &s.tokens {
-            lemmas.insert(t.lemma.to_owned());
+            lemmas.insert(&t.lemma);
             for (k, v) in &t.metadata {
-                flavors
-                    .entry(k.to_owned())
-                    .or_insert(HashSet::new())
-                    .insert(v.to_owned());
+                flavors.entry(k).or_insert(HashSet::new()).insert(v);
             }
         }
     }
-    let mut lemmas = lemmas.into_iter().collect_vec();
+    let mut lemmas = lemmas.iter().collect_vec();
     lemmas.sort();
-
+    let lemmamap: HashMap<&String, usize> =
+        lemmas.iter().enumerate().map(|(i, &&x)| (x, i)).collect();
+    let mut flavorkeys = flavors.keys().collect_vec();
+    flavorkeys.sort();
+    let mut flavorstart = HashMap::new();
+    let mut flavormap = HashMap::new();
+    let mut flavorcount = 0;
+    for &&x in &flavorkeys {
+        flavorstart.insert(x, flavorcount);
+        let mut flavorvalues = flavors[x].iter().copied().collect_vec();
+        flavorvalues.sort();
+        for y in flavorvalues {
+            flavormap.insert((x, y), flavorcount);
+            flavorcount += 1;
+        }
+    }
     msg(
         args.verbose,
         "Input",
         &format!(
-            "{} samples, {} distinct lemmas, {} flavor tags",
+            "{} samples, {} distinct lemmas, {} flavor tags, {} flavors",
             input.samples.len(),
             lemmas.len(),
-            flavors.len(),
+            flavorkeys.len(),
+            flavorcount,
+        ),
+    );
+    assert!(flavorcount <= Flavors::BITS);
+    let samples = input
+        .samples
+        .iter()
+        .map(|s| {
+            let mut tokencount = HashMap::new();
+            for t in &s.tokens {
+                let id = lemmamap[&t.lemma];
+                let mut flavors = 0;
+                for (k, v) in &t.metadata {
+                    let flavor = flavormap[&(k, v)];
+                    flavors |= 1 << flavor;
+                }
+                *tokencount.entry((id, flavors)).or_insert(0) += 1;
+            }
+            let mut tokens = tokencount
+                .iter()
+                .map(|(&(id, flavors), &count)| SToken { id, flavors, count })
+                .collect_vec();
+            tokens.sort_by_key(|t| t.id);
+            Sample {
+                words: s.words,
+                tokens,
+            }
+        })
+        .collect_vec();
+    let driver = Driver::new_with_settings(samples, args.verbose);
+    let result = driver.count(args.iter).to_sums();
+    msg(
+        args.verbose,
+        "Finished",
+        &format!(
+            "{} iterations, {}, {} result points",
+            result.total,
+            if result.exact { "exact" } else { "not exact" },
+            result.total_points(),
         ),
     );
 }

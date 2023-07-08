@@ -29,7 +29,7 @@ enum Progress {
     Done(Box<RawResult>),
 }
 
-type Flavors = u64;
+pub type Flavors = u64;
 
 fn num_flavors(x: Flavors) -> usize {
     (Flavors::BITS - x.leading_zeros()) as usize
