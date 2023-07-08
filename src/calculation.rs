@@ -202,11 +202,14 @@ impl Driver {
     }
 
     pub fn count_random_seq(&self, iter: u64) -> RawResult {
+        let bar = self.progress_bar(RANDOM_JOBS, 1, "Random");
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         let mut rs = RawResult::new(false, self.total_flavors);
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
+            bar.inc(1);
         }
+        bar.finish();
         rs
     }
 
