@@ -1,6 +1,6 @@
+use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::cmp::Ordering;
-use rustc_hash::FxHashMap;
 
 pub type Coord = u64;
 pub type Value = i64;
@@ -20,13 +20,19 @@ impl Counter {
 
     pub fn add(&mut self, y: Coord, xx: CRange, v: Value) {
         let (x0, x1) = xx;
-        *self.values.entry((y, x0)).or_insert(0) += v;
-        *self.values.entry((y, x1)).or_insert(0) -= v;
+        self.values
+            .entry((y, x0))
+            .and_modify(|e| *e += v)
+            .or_insert(v);
+        self.values
+            .entry((y, x1))
+            .and_modify(|e| *e -= v)
+            .or_insert(-v);
     }
 
     pub fn merge(&mut self, other: &Counter) {
         for (&yx, &v) in &other.values {
-            *self.values.entry(yx).or_insert(0) += v;
+            self.values.entry(yx).and_modify(|e| *e += v).or_insert(v);
         }
     }
 
