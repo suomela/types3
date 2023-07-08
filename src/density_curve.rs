@@ -32,7 +32,9 @@ impl Counter {
 
     pub fn merge(&mut self, other: &Counter) {
         for (&yx, &v) in &other.values {
-            self.values.entry(yx).and_modify(|e| *e += v).or_insert(v);
+            if v != 0 {
+                self.values.entry(yx).and_modify(|e| *e += v).or_insert(v);
+            }
         }
     }
 
