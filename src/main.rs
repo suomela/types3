@@ -1,6 +1,6 @@
 use clap::Parser;
-use console::style;
 use itertools::Itertools;
+use log::{error, info};
 use std::collections::{HashMap, HashSet};
 use std::{error, fs, process, result};
 use types3::calculation::{Driver, Flavors, SToken, Sample};
@@ -18,20 +18,8 @@ struct Args {
     /// Number of iterations
     #[arg(short, long, default_value_t = DEFAULT_ITER)]
     iter: u64,
-    /// Show progress
-    #[arg(short, long)]
-    verbose: bool,
-}
-
-fn msg(verbose: bool, prefix: &str, tail: &str) {
-    if verbose {
-        eprintln!("{} {}", style(format!("{prefix:>12}")).blue().bold(), tail,);
-    }
-}
-
-fn error(prefix: &str, tail: &str) {
-    eprintln!("{} {}", style(format!("{prefix:>12}")).red().bold(), tail,);
-    process::exit(1);
+    #[command(flatten)]
+    verbose: clap_verbosity_flag::Verbosity,
 }
 
 fn calc(args: &Args, input: &Input) {
@@ -63,16 +51,12 @@ fn calc(args: &Args, input: &Input) {
             flavorcount += 1;
         }
     }
-    msg(
-        args.verbose,
-        "Input",
-        &format!(
-            "{} samples, {} distinct lemmas, {} flavor tags, {} flavors",
-            input.samples.len(),
-            lemmas.len(),
-            flavorkeys.len(),
-            flavorcount,
-        ),
+    info!(
+        "input: {} samples, {} distinct lemmas, {} flavor tags, {} flavors",
+        input.samples.len(),
+        lemmas.len(),
+        flavorkeys.len(),
+        flavorcount,
     );
     assert!(flavorcount <= Flavors::BITS);
     let samples = input
@@ -100,22 +84,18 @@ fn calc(args: &Args, input: &Input) {
             }
         })
         .collect_vec();
-    let driver = Driver::new_with_settings(samples, args.verbose);
+    let driver = Driver::new(samples);
     let result = driver.count(args.iter).to_sums();
-    msg(
-        args.verbose,
-        "Finished",
-        &format!(
-            "{} iterations, {}, {} result points",
-            result.total,
-            if result.exact { "exact" } else { "not exact" },
-            result.total_points(),
-        ),
+    info!(
+        "finished: {} iterations, {}, {} result points",
+        result.total,
+        if result.exact { "exact" } else { "not exact" },
+        result.total_points(),
     );
 }
 
 fn process(args: &Args) -> Result<()> {
-    msg(args.verbose, "Read", &args.infile);
+    info!("read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
     calc(args, &input);
@@ -124,8 +104,14 @@ fn process(args: &Args) -> Result<()> {
 
 fn main() {
     let args = Args::parse();
+    pretty_env_logger::formatted_timed_builder()
+        .filter_level(args.verbose.log_level_filter())
+        .init();
     match process(&args) {
         Ok(()) => (),
-        Err(e) => error("Error", &format!("{e}")),
+        Err(e) => {
+            error!("{e}");
+            process::exit(1);
+        }
     }
 }

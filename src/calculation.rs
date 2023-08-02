@@ -1,7 +1,7 @@
 use crate::density_curve;
 use crossbeam_channel::TryRecvError;
-use indicatif::{ProgressBar, ProgressStyle};
 use itertools::Itertools;
+use log::info;
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -22,11 +22,6 @@ const EXACT_THRESHOLD: u64 = 2;
 pub enum Method {
     Exact,
     Random(u64),
-}
-
-enum Progress {
-    Tick,
-    Done(Box<RawResult>),
 }
 
 pub type Flavors = u64;
@@ -67,16 +62,10 @@ pub struct Driver {
     total_types: usize,
     /// Flavors are indicated with bits `0..total_flavors`.
     total_flavors: usize,
-    /// Print progress bar.
-    progress: bool,
 }
 
 impl Driver {
     pub fn new(samples: Vec<Sample>) -> Driver {
-        Driver::new_with_settings(samples, false)
-    }
-
-    pub fn new_with_settings(samples: Vec<Sample>, progress: bool) -> Driver {
         let mut max_type = 0;
         let mut total_flavors = 0;
         for sample in &samples {
@@ -90,26 +79,6 @@ impl Driver {
             samples,
             total_types,
             total_flavors,
-            progress,
-        }
-    }
-
-    fn progress_bar(&self, len: u64, nthreads: usize, what: &str) -> ProgressBar {
-        if self.progress {
-            let bar = ProgressBar::new(len);
-            let templ = "{prefix:>12.blue.bold} {elapsed_precise} {bar:.dim} {pos:>6}/{len:6} {msg} · {eta} left";
-            let style = ProgressStyle::with_template(templ).unwrap();
-            bar.set_style(style);
-            bar.set_prefix(what.to_owned());
-            let nsamples = self.samples.len();
-            let sampleword = if nsamples == 1 { "sample" } else { "samples" };
-            let threadword = if nthreads == 1 { "thread" } else { "threads" };
-            bar.set_message(format!(
-                "{nsamples:5} {sampleword} · {nthreads} {threadword}"
-            ));
-            bar
-        } else {
-            ProgressBar::hidden()
         }
     }
 
@@ -167,10 +136,10 @@ impl Driver {
         drop(s1);
         let nthreads = num_cpus::get();
         let mut to_merge = Vec::new();
-        let bar = self.progress_bar(RANDOM_JOBS, nthreads, "Random");
+        info!("randomized, {RANDOM_JOBS} jobs, {nthreads} threads");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
-            for _ in 0..nthreads {
+            for thread in 0..nthreads {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
@@ -179,44 +148,35 @@ impl Driver {
                         match r1.try_recv() {
                             Ok(job) => {
                                 self.count_random_job(&mut rs, job, iter_per_job);
-                                s2.send(Progress::Tick).expect("send succeeds");
+                                info!("thread {thread}: job {job} done");
                             }
                             Err(TryRecvError::Empty) => unreachable!(),
                             Err(TryRecvError::Disconnected) => break,
                         }
                     }
-                    s2.send(Progress::Done(Box::new(rs)))
-                        .expect("send succeeds");
+                    s2.send(rs).expect("send succeeds");
                 });
             }
             drop(s2);
-            while let Ok(msg) = r2.recv() {
-                match msg {
-                    Progress::Tick => bar.inc(1),
-                    Progress::Done(rs) => to_merge.push(rs),
-                }
+            while let Ok(rs) = r2.recv() {
+                to_merge.push(rs);
             }
         });
-        bar.finish();
-        let bar = self.progress_bar(to_merge.len() as u64, nthreads, "Merge");
         let mut global = RawResult::new(false, self.total_flavors);
         for rs in to_merge {
             global.merge(&rs);
-            bar.tick();
         }
-        bar.finish();
         global
     }
 
     pub fn count_random_seq(&self, iter: u64) -> RawResult {
-        let bar = self.progress_bar(RANDOM_JOBS, 1, "Random");
+        info!("randomized, {RANDOM_JOBS} jobs, 1 thread");
         let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
         let mut rs = RawResult::new(false, self.total_flavors);
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
-            bar.inc(1);
+            info!("job {job} done");
         }
-        bar.finish();
         rs
     }
 
@@ -232,10 +192,10 @@ impl Driver {
         drop(s1);
         let nthreads = num_cpus::get();
         let mut global = RawResult::new(true, self.total_flavors);
-        let bar = self.progress_bar(njobs, nthreads, "Exact");
+        info!("exact, {njobs} jobs, {nthreads} threads");
         thread::scope(|scope| {
             let (s2, r2) = crossbeam_channel::unbounded();
-            for _ in 0..nthreads {
+            for thread in 0..nthreads {
                 let r1 = r1.clone();
                 let s2 = s2.clone();
                 scope.spawn(move || {
@@ -244,24 +204,19 @@ impl Driver {
                         match r1.try_recv() {
                             Ok(job) => {
                                 self.count_exact_start(&mut rs, &job);
-                                s2.send(Progress::Tick).expect("send succeeds");
+                                info!("thread {thread}: job done");
                             }
                             Err(TryRecvError::Empty) => unreachable!(),
                             Err(TryRecvError::Disconnected) => break,
                         }
                     }
-                    s2.send(Progress::Done(Box::new(rs)))
-                        .expect("send succeeds");
+                    s2.send(rs).expect("send succeeds");
                 });
             }
             drop(s2);
-            while let Ok(msg) = r2.recv() {
-                match msg {
-                    Progress::Tick => bar.inc(1),
-                    Progress::Done(rs) => global.merge(&rs),
-                }
+            while let Ok(rs) = r2.recv() {
+                global.merge(&rs);
             }
-            bar.finish();
         });
         global
     }
