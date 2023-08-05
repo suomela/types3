@@ -1,7 +1,7 @@
 use crate::density_curve;
 use crossbeam_channel::TryRecvError;
 use itertools::Itertools;
-use log::info;
+use log::{debug, info};
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
@@ -148,7 +148,7 @@ impl Driver {
                         match r1.try_recv() {
                             Ok(job) => {
                                 self.count_random_job(&mut rs, job, iter_per_job);
-                                info!("thread {thread}: job {job} done");
+                                debug!("thread {thread}: job {job} done");
                             }
                             Err(TryRecvError::Empty) => unreachable!(),
                             Err(TryRecvError::Disconnected) => break,
@@ -175,7 +175,7 @@ impl Driver {
         let mut rs = RawResult::new(false, self.total_flavors);
         for job in 0..RANDOM_JOBS {
             self.count_random_job(&mut rs, job, iter_per_job);
-            info!("job {job} done");
+            debug!("job {job} done");
         }
         rs
     }
@@ -204,7 +204,7 @@ impl Driver {
                         match r1.try_recv() {
                             Ok(job) => {
                                 self.count_exact_start(&mut rs, &job);
-                                info!("thread {thread}: job done");
+                                debug!("thread {thread}: job done");
                             }
                             Err(TryRecvError::Empty) => unreachable!(),
                             Err(TryRecvError::Disconnected) => break,

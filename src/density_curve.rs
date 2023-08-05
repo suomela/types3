@@ -1,3 +1,5 @@
+use itertools::Itertools;
+use log::debug;
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::cmp::Ordering;
@@ -8,74 +10,69 @@ pub type CRange = (Coord, Coord);
 
 #[derive(Debug)]
 pub struct Counter {
-    values: FxHashMap<(Coord, Coord), Value>,
+    values: Vec<FxHashMap<Coord, Value>>,
 }
 
 impl Counter {
     pub fn new() -> Counter {
-        Counter {
-            values: FxHashMap::default(),
-        }
+        Counter { values: Vec::new() }
     }
 
     pub fn add(&mut self, y: Coord, xx: CRange, v: Value) {
+        let y = y as usize;
+        if self.values.len() <= y {
+            self.values.resize_with(y + 1, Default::default);
+        }
         let (x0, x1) = xx;
-        self.values
-            .entry((y, x0))
+        self.values[y]
+            .entry(x0)
             .and_modify(|e| *e += v)
             .or_insert(v);
-        self.values
-            .entry((y, x1))
+        self.values[y]
+            .entry(x1)
             .and_modify(|e| *e -= v)
             .or_insert(-v);
     }
 
     pub fn merge(&mut self, other: &Counter) {
-        for (&yx, &v) in &other.values {
-            if v != 0 {
-                self.values.entry(yx).and_modify(|e| *e += v).or_insert(v);
+        debug!("merge start");
+        if self.values.len() < other.values.len() {
+            self.values
+                .resize_with(other.values.len(), Default::default);
+        }
+        for y in 0..other.values.len() {
+            for (&x, &v) in &other.values[y] {
+                if v != 0 {
+                    self.values[y].entry(x).and_modify(|e| *e += v).or_insert(v);
+                }
             }
         }
+        debug!("merge finished");
     }
 
     pub fn to_rawlines(&self) -> RawLines {
-        let mut points: Vec<_> = self.values.iter().collect();
-        points.sort();
-        let mut lines = Vec::new();
-        let mut ocurline = None;
         let mut ny = 0;
         let mut nx = 0;
-        for (&(y, x), &v) in points {
-            if v == 0 {
+        let mut lines = Vec::new();
+        for y in 0..self.values.len() {
+            let mut values = self.values[y]
+                .iter()
+                .filter_map(|(&x, &v)| {
+                    if v == 0 {
+                        None
+                    } else {
+                        Some(RawPoint { x, v })
+                    }
+                })
+                .collect_vec();
+            if values.is_empty() {
                 continue;
             }
+            let y = y as Coord;
+            values.sort_unstable_by_key(|p| p.x);
             ny = ny.max(y + 1);
-            nx = nx.max(x);
-            let lp = RawPoint { x, v };
-            ocurline = match ocurline {
-                None => Some(RawLine {
-                    y,
-                    values: vec![lp],
-                }),
-                Some(mut curline) => {
-                    if curline.y == y {
-                        curline.values.push(lp);
-                        Some(curline)
-                    } else {
-                        lines.push(curline);
-                        Some(RawLine {
-                            y,
-                            values: vec![lp],
-                        })
-                    }
-                }
-            };
-        }
-        match ocurline {
-            None => {}
-            Some(curline) => {
-                lines.push(curline);
-            }
+            nx = nx.max(values.last().unwrap().x);
+            lines.push(RawLine { y, values });
         }
         RawLines { ny, nx, lines }
     }
