@@ -5,6 +5,7 @@ use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::{error, fs, process, result};
+use types3::calculation::{SToken, Sample};
 use types3::input::{ISample, Input, Year};
 
 const DEFAULT_ITER: u64 = 100_000;
@@ -95,24 +96,90 @@ fn pretty_periods(periods: &[Years]) -> String {
     }
 }
 
-fn get_lemmas(samples: &[ISample]) -> Vec<&String> {
+fn statistics(samples: &[ISample]) {
     let mut lemmas = HashSet::new();
     for s in samples {
         for t in &s.tokens {
             lemmas.insert(&t.lemma);
         }
     }
-    let mut lemmas = lemmas.into_iter().collect_vec();
-    lemmas.sort();
     info!("distinct lemmas: {}", lemmas.len());
-    lemmas
 }
 
-struct Period<'a> {
+struct Period {
     period: Years,
-    samples: Vec<&'a ISample>,
+    samples: Vec<Sample>,
     total_words: u64,
     total_tokens: usize,
+    total_lemmas: usize,
+}
+
+enum Limit {
+    Words(u64),
+    Tokens(usize),
+}
+
+fn limited(args: &Args, period: &Period, limit: Limit) {}
+
+fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
+    periods
+        .into_iter()
+        .map(|period| {
+            let in_period = |s: &&ISample| period.0 <= s.year && s.year < period.1;
+            let samples = samples.iter().filter(in_period).collect_vec();
+            let total_words: u64 = samples.iter().map(|s| s.words).sum();
+            let total_tokens: usize = samples.iter().map(|s| s.tokens.len()).sum();
+
+            let mut lemmas = HashSet::new();
+            for s in &samples {
+                for t in &s.tokens {
+                    lemmas.insert(&t.lemma);
+                }
+            }
+            let mut lemmas = lemmas.into_iter().collect_vec();
+            lemmas.sort();
+            let lemmamap: HashMap<&String, usize> =
+                lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
+            let total_lemmas = lemmas.len();
+
+            let samples = samples
+                .iter()
+                .map(|s| {
+                    let mut tokencount = HashMap::new();
+                    for t in &s.tokens {
+                        let id = lemmamap[&t.lemma];
+                        *tokencount.entry(id).or_insert(0) += 1;
+                    }
+                    let mut tokens = tokencount
+                        .iter()
+                        .map(|(&id, &count)| SToken { id, count })
+                        .collect_vec();
+                    tokens.sort_by_key(|t| t.id);
+                    Sample {
+                        words: s.words,
+                        tokens,
+                    }
+                })
+                .collect_vec();
+
+            let p = Period {
+                period,
+                samples,
+                total_words,
+                total_tokens,
+                total_lemmas,
+            };
+            debug!(
+                "{}: samples: {}, words: {}, tokens: {}, lemmas: {}",
+                pretty_period(&p.period),
+                p.samples.len(),
+                p.total_words,
+                p.total_tokens,
+                p.total_lemmas,
+            );
+            p
+        })
+        .collect_vec()
 }
 
 fn calc(args: &Args, input: &Input) -> Result<()> {
@@ -120,37 +187,29 @@ fn calc(args: &Args, input: &Input) -> Result<()> {
     if input.samples.is_empty() {
         return Err(InvalidInput("no samples".to_owned()).into());
     }
+    statistics(&input.samples);
     let periods = get_periods(args, &input.samples);
-    let lemmas = get_lemmas(&input.samples);
-    let _lemmamap: HashMap<&String, usize> =
-        lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
+    let periods = build_periods(&input.samples, periods);
 
-    let periods = periods
-        .into_iter()
-        .map(|period| {
-            let in_period = |s: &&ISample| period.0 <= s.year && s.year < period.1;
-            let samples = input.samples.iter().filter(in_period).collect_vec();
-            let total_words: u64 = samples.iter().map(|s| s.words).sum();
-            let total_tokens: usize = samples.iter().map(|s| s.tokens.len()).sum();
-            let p = Period {
-                period,
-                samples,
-                total_words,
-                total_tokens,
-            };
-            debug!(
-                "{}: samples: {}, words: {}, tokens: {}",
-                pretty_period(&p.period),
-                p.samples.len(),
-                p.total_words,
-                p.total_tokens
-            );
-            p
-        })
-        .collect_vec();
-    let min_words = periods.iter().map(|p| p.total_words).min().expect("at least one period");
-    debug!("threshold: {} words", min_words);
-    
+    let word_limit = periods
+        .iter()
+        .map(|p| p.total_words)
+        .min()
+        .expect("at least one period");
+    let token_limit = periods
+        .iter()
+        .map(|p| p.total_tokens)
+        .min()
+        .expect("at least one period");
+    debug!("thresholds: {} words, {} tokens", word_limit, token_limit);
+
+    for period in &periods {
+        limited(args, period, Limit::Words(word_limit));
+    }
+    for period in &periods {
+        limited(args, period, Limit::Tokens(token_limit));
+    }
+
     Ok(())
 }
 
