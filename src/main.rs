@@ -5,10 +5,10 @@ use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::{error, fs, process, result};
-use types3::calculation::{SToken, Sample};
+use types3::calculation::{Driver, Limit, SToken, Sample};
 use types3::input::{ISample, Input, Year};
 
-const DEFAULT_ITER: u64 = 100_000;
+const DEFAULT_ITER: u64 = 1_000_000;
 
 type Result<T> = result::Result<T, Box<dyn error::Error>>;
 type Years = (Year, Year);
@@ -30,7 +30,7 @@ struct Args {
     /// Input file
     infile: String,
     /// Number of iterations
-    #[arg(long, default_value_t = DEFAULT_ITER)]
+    #[arg(short, long, default_value_t = DEFAULT_ITER)]
     iter: u64,
     /// Starting offset
     #[arg(long, default_value_t = 0)]
@@ -110,16 +110,21 @@ struct Period {
     period: Years,
     samples: Vec<Sample>,
     total_words: u64,
-    total_tokens: usize,
+    total_tokens: u64,
     total_lemmas: usize,
 }
 
-enum Limit {
-    Words(u64),
-    Tokens(usize),
+fn limited(args: &Args, period: &Period, limit: Limit) {
+    let driver = Driver::new(&period.samples);
+    let r = driver.count(args.iter, limit);
+    debug!(
+        "{}: {} .. {} types / {}",
+        pretty_period(&period.period),
+        r.types_low,
+        r.types_high,
+        limit
+    );
 }
-
-fn limited(args: &Args, period: &Period, limit: Limit) {}
 
 fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
     periods
@@ -128,7 +133,7 @@ fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
             let in_period = |s: &&ISample| period.0 <= s.year && s.year < period.1;
             let samples = samples.iter().filter(in_period).collect_vec();
             let total_words: u64 = samples.iter().map(|s| s.words).sum();
-            let total_tokens: usize = samples.iter().map(|s| s.tokens.len()).sum();
+            let total_tokens: u64 = samples.iter().map(|s| s.tokens.len() as u64).sum();
 
             let mut lemmas = HashSet::new();
             for s in &samples {
