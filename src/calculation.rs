@@ -4,35 +4,24 @@ use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use std::cmp::Ordering;
-use std::fmt;
 use std::thread;
 
 /// Number of tasks for randomized calculation.
 const RANDOM_JOBS: u64 = 1000;
 
-#[derive(Clone, Copy)]
-pub enum Limit {
-    Words(u64),
-    Tokens(u64),
-}
-
-impl fmt::Display for Limit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Limit::Tokens(tokens) => write!(f, "{} tokens", tokens),
-            Limit::Words(words) => write!(f, "{} words", words),
-        }
-    }
-}
-
+#[derive(Clone)]
 pub struct SToken {
     pub count: u64,
     pub id: usize,
 }
 
 pub struct Sample {
-    pub words: u64,
+    pub size: u64,
     pub tokens: Vec<SToken>,
+}
+
+pub fn count(samples: &[Sample], iter: u64, limit: u64) -> Result {
+    Driver::new(samples).count(iter, limit)
 }
 
 pub struct Driver<'a> {
@@ -57,7 +46,7 @@ impl Driver<'_> {
         }
     }
 
-    pub fn count(&self, iter: u64, limit: Limit) -> Result {
+    pub fn count(&self, iter: u64, limit: u64) -> Result {
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in 0..RANDOM_JOBS {
             s1.send(job).expect("send succeeds");
@@ -98,7 +87,7 @@ impl Driver<'_> {
         }
     }
 
-    fn count_job(&self, job: u64, iter_per_job: u64, limit: Limit) -> RawResult {
+    fn count_job(&self, job: u64, iter_per_job: u64, limit: u64) -> RawResult {
         let n = self.samples.len();
         let mut idx = vec![0; n];
         for (i, v) in idx.iter_mut().enumerate() {
@@ -114,12 +103,12 @@ impl Driver<'_> {
         total
     }
 
-    fn calc(&self, idx: &[usize], ls: &mut LocalState, limit: Limit) -> RawResult {
+    fn calc(&self, idx: &[usize], ls: &mut LocalState, limit: u64) -> RawResult {
         ls.reset();
         for i in idx {
             let prev = ls.types;
             ls.feed_sample(&self.samples[*i]);
-            match ls.cmp(limit) {
+            match ls.size.cmp(&limit) {
                 Ordering::Less => (),
                 Ordering::Equal => {
                     return RawResult {
@@ -140,26 +129,23 @@ impl Driver<'_> {
 }
 
 struct LocalState {
-    words: u64,
+    size: u64,
     types: u64,
-    tokens: u64,
     seen: Vec<bool>,
 }
 
 impl LocalState {
     fn new(total_types: usize) -> LocalState {
         LocalState {
-            words: 0,
+            size: 0,
             types: 0,
-            tokens: 0,
             seen: vec![false; total_types],
         }
     }
 
     fn reset(&mut self) {
-        self.words = 0;
+        self.size = 0;
         self.types = 0;
-        self.tokens = 0;
         for e in self.seen.iter_mut() {
             *e = false;
         }
@@ -170,21 +156,13 @@ impl LocalState {
             self.types += 1;
             self.seen[t.id] = true;
         }
-        self.tokens += t.count;
     }
 
     fn feed_sample(&mut self, sample: &Sample) {
         for t in &sample.tokens {
             self.feed_token(t);
         }
-        self.words += sample.words;
-    }
-
-    fn cmp(&self, limit: Limit) -> Ordering {
-        match limit {
-            Limit::Tokens(tokens) => self.tokens.cmp(&tokens),
-            Limit::Words(words) => self.words.cmp(&words),
-        }
+        self.size += sample.size;
     }
 }
 

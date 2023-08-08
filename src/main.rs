@@ -5,7 +5,8 @@ use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::{error, fs, process, result};
-use types3::calculation::{Driver, Limit, SToken, Sample};
+use types3::calculation;
+use types3::calculation::{SToken, Sample};
 use types3::input::{ISample, Input, Year};
 
 const DEFAULT_ITER: u64 = 1_000_000;
@@ -108,15 +109,33 @@ fn statistics(samples: &[ISample]) {
 
 struct Period {
     period: Years,
-    samples: Vec<Sample>,
+    samples_by_words: Vec<Sample>,
+    samples_by_tokens: Vec<Sample>,
     total_words: u64,
     total_tokens: u64,
     total_lemmas: usize,
 }
 
+#[derive(Clone, Copy)]
+pub enum Limit {
+    Words(u64),
+    Tokens(u64),
+}
+
+impl fmt::Display for Limit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Limit::Tokens(tokens) => write!(f, "{} tokens", tokens),
+            Limit::Words(words) => write!(f, "{} words", words),
+        }
+    }
+}
+
 fn limited(args: &Args, period: &Period, limit: Limit) {
-    let driver = Driver::new(&period.samples);
-    let r = driver.count(args.iter, limit);
+    let r = match limit {
+        Limit::Tokens(tokens) => calculation::count(&period.samples_by_tokens, args.iter, tokens),
+        Limit::Words(words) => calculation::count(&period.samples_by_words, args.iter, words),
+    };
     debug!(
         "{}: {:.2}–{:.2} types / {}",
         pretty_period(&period.period),
@@ -147,29 +166,33 @@ fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
                 lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
             let total_lemmas = lemmas.len();
 
-            let samples = samples
-                .iter()
-                .map(|s| {
-                    let mut tokencount = HashMap::new();
-                    for t in &s.tokens {
-                        let id = lemmamap[&t.lemma];
-                        *tokencount.entry(id).or_insert(0) += 1;
-                    }
-                    let mut tokens = tokencount
-                        .iter()
-                        .map(|(&id, &count)| SToken { id, count })
-                        .collect_vec();
-                    tokens.sort_by_key(|t| t.id);
-                    Sample {
-                        words: s.words,
-                        tokens,
-                    }
-                })
-                .collect_vec();
+            let mut samples_by_tokens = Vec::new();
+            let mut samples_by_words = Vec::new();
 
+            for s in samples {
+                let mut tokencount = HashMap::new();
+                for t in &s.tokens {
+                    let id = lemmamap[&t.lemma];
+                    *tokencount.entry(id).or_insert(0) += 1;
+                }
+                let mut tokens = tokencount
+                    .iter()
+                    .map(|(&id, &count)| SToken { id, count })
+                    .collect_vec();
+                tokens.sort_by_key(|t| t.id);
+                samples_by_tokens.push(Sample {
+                    size: s.tokens.len() as u64,
+                    tokens: tokens.clone(),
+                });
+                samples_by_words.push(Sample {
+                    size: s.words,
+                    tokens,
+                });
+            }
             let p = Period {
                 period,
-                samples,
+                samples_by_tokens,
+                samples_by_words,
                 total_words,
                 total_tokens,
                 total_lemmas,
@@ -177,7 +200,7 @@ fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
             debug!(
                 "{}: {} samples, {} words, {} tokens, {} lemmas",
                 pretty_period(&p.period),
-                p.samples.len(),
+                p.samples_by_tokens.len(),
                 p.total_words,
                 p.total_tokens,
                 p.total_lemmas,
