@@ -118,7 +118,7 @@ fn limited(args: &Args, period: &Period, limit: Limit) {
     let driver = Driver::new(&period.samples);
     let r = driver.count(args.iter, limit);
     debug!(
-        "{}: {} .. {} types / {}",
+        "{}: {:.2}–{:.2} types / {}",
         pretty_period(&period.period),
         r.types_low,
         r.types_high,
@@ -175,7 +175,7 @@ fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
                 total_lemmas,
             };
             debug!(
-                "{}: samples: {}, words: {}, tokens: {}, lemmas: {}",
+                "{}: {} samples, {} words, {} tokens, {} lemmas",
                 pretty_period(&p.period),
                 p.samples.len(),
                 p.total_words,
