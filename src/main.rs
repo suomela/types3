@@ -213,8 +213,12 @@ impl fmt::Display for Limit {
 
 fn limited(args: &Args, subset: &Subset, limit: Limit) {
     let r = match limit {
-        Limit::Tokens(tokens) => calculation::count(&subset.samples_by_tokens, args.iter, tokens),
-        Limit::Words(words) => calculation::count(&subset.samples_by_words, args.iter, words),
+        Limit::Tokens(tokens) => {
+            calculation::average_at_limit(&subset.samples_by_tokens, args.iter, tokens)
+        }
+        Limit::Words(words) => {
+            calculation::average_at_limit(&subset.samples_by_words, args.iter, words)
+        }
     };
     debug!(
         "{}: {:.2}–{:.2} types / {}",

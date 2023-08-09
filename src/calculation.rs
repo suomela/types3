@@ -20,8 +20,8 @@ pub struct Sample {
     pub tokens: Vec<SToken>,
 }
 
-pub fn count(samples: &[Sample], iter: u64, limit: u64) -> Result {
-    Driver::new(samples).count(iter, limit)
+pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> Result {
+    Driver::new(samples).average_at_limit(iter, limit)
 }
 
 pub struct Driver<'a> {
@@ -46,7 +46,7 @@ impl Driver<'_> {
         }
     }
 
-    pub fn count(&self, iter: u64, limit: u64) -> Result {
+    pub fn average_at_limit(&self, iter: u64, limit: u64) -> Result {
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in 0..RANDOM_JOBS {
             s1.send(job).expect("send succeeds");
