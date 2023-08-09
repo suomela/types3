@@ -23,6 +23,14 @@ impl fmt::Display for InvalidInput {
     }
 }
 
+fn invalid_input(s: String) -> Box<dyn error::Error> {
+    InvalidInput(s).into()
+}
+
+fn invalid_input_ref(s: &str) -> Box<dyn error::Error> {
+    InvalidInput(s.to_owned()).into()
+}
+
 impl error::Error for InvalidInput {}
 
 #[derive(Parser)]
@@ -101,11 +109,10 @@ fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<Category>> {
                 };
             }
             if values.is_empty() {
-                return Err(InvalidInput(format!(
+                return Err(invalid_input(format!(
                     "there are no samples with metadata key {}",
                     key
-                ))
-                .into());
+                )));
             }
             let mut values = values.into_iter().collect_vec();
             values.sort();
@@ -148,12 +155,26 @@ fn pretty_periods(periods: &[Years]) -> String {
 
 fn statistics(samples: &[ISample]) {
     let mut lemmas = HashSet::new();
+    let mut metadata_keys = HashSet::new();
     for s in samples {
+        for k in s.metadata.keys() {
+            metadata_keys.insert(k);
+        }
         for t in &s.tokens {
             lemmas.insert(&t.lemma);
         }
     }
     info!("distinct lemmas: {}", lemmas.len());
+    let mut metadata_keys = metadata_keys.into_iter().collect_vec();
+    metadata_keys.sort();
+    info!(
+        "metadata categories: {}",
+        if metadata_keys.is_empty() {
+            "-".to_owned()
+        } else {
+            metadata_keys.into_iter().cloned().collect_vec().join(", ")
+        }
+    );
 }
 
 struct Subset {
@@ -275,7 +296,7 @@ fn build_subsets(samples: &[ISample], categories: &[Category], periods: &[Years]
 fn calc(args: &Args, input: &Input) -> Result<()> {
     info!("samples: {}", input.samples.len());
     if input.samples.is_empty() {
-        return Err(InvalidInput("no samples".to_owned()).into());
+        return Err(invalid_input_ref("no samples"));
     }
     statistics(&input.samples);
     let categories = get_categories(args, &input.samples)?;
