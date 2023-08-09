@@ -30,6 +30,9 @@ impl error::Error for InvalidInput {}
 struct Args {
     /// Input file
     infile: String,
+    /// Metadata category
+    #[arg(long)]
+    category: Option<String>,
     /// Number of iterations
     #[arg(short, long, default_value_t = DEFAULT_ITER)]
     iter: u64,
@@ -67,6 +70,52 @@ fn calc_periods(args: &Args, years: &Years) -> Vec<Years> {
         y += args.step;
     }
     periods
+}
+
+#[derive(Clone)]
+enum Category {
+    All,
+    Subset(String, String),
+}
+
+impl Category {
+    fn matches(&self, sample: &ISample) -> bool {
+        match self {
+            Category::All => true,
+            Category::Subset(k, v) => sample.metadata.get(k) == Some(v),
+        }
+    }
+}
+
+fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<Category>> {
+    match &args.category {
+        None => Ok(vec![Category::All]),
+        Some(key) => {
+            let mut values = HashSet::new();
+            for s in samples {
+                match s.metadata.get(key) {
+                    None => (),
+                    Some(val) => {
+                        values.insert(val);
+                    }
+                };
+            }
+            if values.is_empty() {
+                return Err(InvalidInput(format!(
+                    "there are no samples with metadata key {}",
+                    key
+                ))
+                .into());
+            }
+            let mut values = values.into_iter().collect_vec();
+            values.sort();
+            let values = values
+                .into_iter()
+                .map(|val| Category::Subset(key.to_owned(), val.to_owned()))
+                .collect_vec();
+            Ok(values)
+        }
+    }
 }
 
 fn get_periods(args: &Args, samples: &[ISample]) -> Vec<Years> {
@@ -107,13 +156,23 @@ fn statistics(samples: &[ISample]) {
     info!("distinct lemmas: {}", lemmas.len());
 }
 
-struct Period {
+struct Subset {
+    category: Category,
     period: Years,
     samples_by_words: Vec<Sample>,
     samples_by_tokens: Vec<Sample>,
     total_words: u64,
     total_tokens: u64,
     total_lemmas: usize,
+}
+
+impl Subset {
+    fn pretty(&self) -> String {
+        match &self.category {
+            Category::All => pretty_period(&self.period),
+            Category::Subset(k, v) => format!("{}, {} = {}", pretty_period(&self.period), k, v),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -131,26 +190,27 @@ impl fmt::Display for Limit {
     }
 }
 
-fn limited(args: &Args, period: &Period, limit: Limit) {
+fn limited(args: &Args, subset: &Subset, limit: Limit) {
     let r = match limit {
-        Limit::Tokens(tokens) => calculation::count(&period.samples_by_tokens, args.iter, tokens),
-        Limit::Words(words) => calculation::count(&period.samples_by_words, args.iter, words),
+        Limit::Tokens(tokens) => calculation::count(&subset.samples_by_tokens, args.iter, tokens),
+        Limit::Words(words) => calculation::count(&subset.samples_by_words, args.iter, words),
     };
     debug!(
         "{}: {:.2}–{:.2} types / {}",
-        pretty_period(&period.period),
+        subset.pretty(),
         r.types_low,
         r.types_high,
         limit
     );
 }
 
-fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
-    periods
-        .into_iter()
-        .map(|period| {
-            let in_period = |s: &&ISample| period.0 <= s.year && s.year < period.1;
-            let samples = samples.iter().filter(in_period).collect_vec();
+fn build_subsets(samples: &[ISample], categories: &[Category], periods: &[Years]) -> Vec<Subset> {
+    let mut subsets = Vec::new();
+    for category in categories {
+        for period in periods {
+            let relevant =
+                |s: &&ISample| period.0 <= s.year && s.year < period.1 && category.matches(s);
+            let samples = samples.iter().filter(relevant).collect_vec();
             let total_words: u64 = samples.iter().map(|s| s.words).sum();
             let total_tokens: u64 = samples.iter().map(|s| s.tokens.len() as u64).sum();
 
@@ -189,8 +249,9 @@ fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
                     tokens,
                 });
             }
-            let p = Period {
-                period,
+            let s = Subset {
+                category: category.clone(),
+                period: *period,
                 samples_by_tokens,
                 samples_by_words,
                 total_words,
@@ -199,15 +260,16 @@ fn build_periods(samples: &[ISample], periods: Vec<Years>) -> Vec<Period> {
             };
             debug!(
                 "{}: {} samples, {} words, {} tokens, {} lemmas",
-                pretty_period(&p.period),
-                p.samples_by_tokens.len(),
-                p.total_words,
-                p.total_tokens,
-                p.total_lemmas,
+                s.pretty(),
+                s.samples_by_tokens.len(),
+                s.total_words,
+                s.total_tokens,
+                s.total_lemmas,
             );
-            p
-        })
-        .collect_vec()
+            subsets.push(s);
+        }
+    }
+    subsets
 }
 
 fn calc(args: &Args, input: &Input) -> Result<()> {
@@ -216,26 +278,27 @@ fn calc(args: &Args, input: &Input) -> Result<()> {
         return Err(InvalidInput("no samples".to_owned()).into());
     }
     statistics(&input.samples);
+    let categories = get_categories(args, &input.samples)?;
     let periods = get_periods(args, &input.samples);
-    let periods = build_periods(&input.samples, periods);
+    let subsets = build_subsets(&input.samples, &categories, &periods);
 
-    let word_limit = periods
+    let word_limit = subsets
         .iter()
         .map(|p| p.total_words)
         .min()
-        .expect("at least one period");
-    let token_limit = periods
+        .expect("at least one subset");
+    let token_limit = subsets
         .iter()
         .map(|p| p.total_tokens)
         .min()
-        .expect("at least one period");
+        .expect("at least one subset");
     debug!("thresholds: {} words, {} tokens", word_limit, token_limit);
 
-    for period in &periods {
-        limited(args, period, Limit::Words(word_limit));
+    for subset in &subsets {
+        limited(args, subset, Limit::Words(word_limit));
     }
-    for period in &periods {
-        limited(args, period, Limit::Tokens(token_limit));
+    for subset in &subsets {
+        limited(args, subset, Limit::Tokens(token_limit));
     }
 
     Ok(())
