@@ -3,7 +3,7 @@ use crate::input::Year;
 use serde::{Deserialize, Serialize};
 
 pub type Years = (Year, Year);
-pub type Category = Option<(String, String)>;
+pub type OCategory = Option<(String, String)>;
 
 #[derive(Deserialize, Serialize)]
 pub struct OResult {
@@ -16,7 +16,7 @@ pub struct OResult {
 
 #[derive(Deserialize, Serialize)]
 pub struct OCurve {
-    pub category: Category,
+    pub category: OCategory,
     pub results: Vec<OResult>,
 }
 
