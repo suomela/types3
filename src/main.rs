@@ -102,10 +102,7 @@ fn get_categories<'a>(args: &'a Args, samples: &'a [ISample]) -> Result<Vec<Cate
             let mut values = values.into_iter().collect_vec();
             values.sort();
             let valstring = values.iter().join(", ");
-            let categories = values
-                .into_iter()
-                .map(|val| Some((key, val)))
-                .collect_vec();
+            let categories = values.into_iter().map(|val| Some((key, val))).collect_vec();
             info!("categories: {} = {}", key, valstring);
             Ok(categories)
         }
@@ -311,15 +308,9 @@ struct Curve<'a> {
 fn build_curve<'a>(category: Category<'a>, periods: &[Years]) -> Curve<'a> {
     let keys = periods
         .iter()
-        .map(|&period| SubsetKey {
-            category,
-            period,
-        })
+        .map(|&period| SubsetKey { category, period })
         .collect_vec();
-    Curve {
-        category,
-        keys,
-    }
+    Curve { category, keys }
 }
 
 fn build_curves<'a>(categories: &[Category<'a>], periods: &[Years]) -> Vec<Curve<'a>> {
@@ -346,16 +337,16 @@ impl<'a> Calc<'a> {
             return Err(invalid_input_ref("no samples"));
         }
         statistics(&input.samples);
-        let categories: Vec<Category<'a>> = get_categories(args, &input.samples)?;
+        let categories = get_categories(args, &input.samples)?;
         let years = get_years(args, &input.samples);
         let periods = get_periods(args, &years);
-        let curves: Vec<Curve<'a>> = build_curves(&categories, &periods);
-        let mut subset_map: HashMap<SubsetKey<'a>, Subset<'a>> = HashMap::new();
+        let curves = build_curves(&categories, &periods);
+        let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset: Subset<'a> = build_subset(args, &input.samples, *key);
+                let subset = build_subset(args, &input.samples, *key);
                 let point = subset.get_point();
-                let parents: Vec<SubsetKey<'a>> = subset.get_parents(years);
+                let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
                 for parent in &parents {
                     subset_map
@@ -415,7 +406,7 @@ impl<'a> Calc<'a> {
             return;
         }
         let mut points = subset.points.iter().cloned().collect_vec();
-        let key: SubsetKey<'a> = subset.key();
+        let key = subset.key();
         points.sort();
         let results = calculation::compare_with_points(&subset.samples, self.iter, &points);
         for (i, p) in points.into_iter().enumerate() {
