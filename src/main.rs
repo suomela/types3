@@ -3,11 +3,11 @@ use clap_verbosity_flag::{InfoLevel, Verbosity};
 use itertools::Itertools;
 use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
-use std::fmt;
-use std::{error, fs, process, result};
+use std::{error, fmt, fs, io, process, result};
 use types3::calculation;
 use types3::calculation::{Point, PointResult, SToken, Sample};
 use types3::input::{ISample, Input, Year};
+use types3::output::{Category, Output};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -38,6 +38,8 @@ impl error::Error for InvalidInput {}
 struct Args {
     /// Input file
     infile: String,
+    /// Output file
+    outfile: String,
     /// Metadata category
     #[arg(long)]
     category: Option<String>,
@@ -83,18 +85,10 @@ fn calc_periods(args: &Args, years: &Years) -> Vec<(bool, Years)> {
     periods
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-enum Category {
-    All,
-    Subset(String, String),
-}
-
-impl Category {
-    fn matches(&self, sample: &ISample) -> bool {
-        match self {
-            Category::All => true,
-            Category::Subset(k, v) => sample.metadata.get(k) == Some(v),
-        }
+fn matches(category: &Category, sample: &ISample) -> bool {
+    match category {
+        Category::All => true,
+        Category::Subset(k, v) => sample.metadata.get(k) == Some(v),
     }
 }
 
@@ -268,7 +262,7 @@ fn build_subsets(
     for (r1, category) in categories {
         for (r2, period) in periods {
             let filter =
-                |s: &&ISample| period.0 <= s.year && s.year < period.1 && category.matches(s);
+                |s: &&ISample| period.0 <= s.year && s.year < period.1 && matches(category, s);
             let samples = samples.iter().filter(filter).collect_vec();
 
             let mut lemmas = HashSet::new();
@@ -381,7 +375,7 @@ impl Calc {
         })
     }
 
-    fn calc(&self) -> Result<()> {
+    fn calc(&self) -> Result<Output> {
         let mut top_results = HashMap::new();
         let top = self
             .top_keys
@@ -402,10 +396,13 @@ impl Calc {
             .min()
             .expect("at least one subset");
         debug!("size limit: {}", size_limit);
+        let mut output = Output {
+            curves: vec![],
+        };
         for &subset in &relevant {
             self.calc_relevant(subset, size_limit, &top_results);
         }
-        Ok(())
+        Ok(output)
     }
 
     fn calc_top(&self, subset: &Subset, top_results: &mut TopResults) {
@@ -466,7 +463,11 @@ fn process(args: &Args) -> Result<()> {
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
     let calc = Calc::new(args, &input)?;
-    calc.calc()?;
+    let output = calc.calc()?;
+    info!("write: {}", args.outfile);
+    let file = fs::File::create(&args.outfile)?;
+    let writer = io::BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, &output)?;
     Ok(())
 }
 
