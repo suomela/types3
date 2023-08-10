@@ -2,5 +2,6 @@
 
 set -e
 
-pipenv run yapf -ip types3/*.py
+source "venv/bin/activate"
+yapf -ip python/*.py
 cargo fmt

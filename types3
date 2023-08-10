@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+WHERE=$(readlink -f "$0")
+BASEDIR=$(dirname "$WHERE")
+
+$BASEDIR/target/release/types3 "$@"
