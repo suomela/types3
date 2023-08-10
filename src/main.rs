@@ -35,9 +35,9 @@ impl error::Error for InvalidInput {}
 #[derive(Parser)]
 #[command(author, version, about)]
 struct Args {
-    /// Input file
+    /// Input file (JSON)
     infile: String,
-    /// Output file
+    /// Output file (JSON)
     outfile: String,
     /// Metadata category
     #[arg(long)]
@@ -396,19 +396,20 @@ impl<'a> Calc<'a> {
         for subset in self.subset_map.values() {
             self.calc_top(subset, &mut top_results);
         }
-        let size_limit = self.size_limit();
-        debug!("size limit: {} {}", size_limit, self.measure);
+        let limit = self.size_limit();
+        debug!("size limit: {} {}", limit, self.measure);
         let curves = self
             .curves
             .iter()
-            .map(|c| self.calc_curve(c, size_limit, &top_results))
+            .map(|c| self.calc_curve(c, limit, &top_results))
             .collect_vec();
         Ok(Output {
             curves,
             years: self.years,
             periods: self.periods,
-            iter: self.iter,
             measure: self.measure,
+            iter: self.iter,
+            limit,
         })
     }
 
@@ -465,7 +466,6 @@ impl<'a> Calc<'a> {
         debug!("{msg}");
         OResult {
             period: subset.period,
-            limit,
             average_at_limit,
             vs_time,
             vs_categories,

@@ -25,7 +25,6 @@ pub type OCategory = Option<(String, String)>;
 #[derive(Deserialize, Serialize)]
 pub struct OResult {
     pub period: Years,
-    pub limit: u64,
     pub average_at_limit: AvgResult,
     pub vs_time: PointResult,
     pub vs_categories: Option<PointResult>,
@@ -43,5 +42,6 @@ pub struct Output {
     pub years: Years,
     pub periods: Vec<Years>,
     pub measure: Measure,
+    pub limit: u64,
     pub iter: u64,
 }
