@@ -1,6 +1,23 @@
 use crate::calculation::{AvgResult, PointResult};
 use crate::input::Year;
 use serde::{Deserialize, Serialize};
+use std::fmt;
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Measure {
+    Words,
+    Tokens,
+}
+
+impl fmt::Display for Measure {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Measure::Words => write!(f, "words"),
+            Measure::Tokens => write!(f, "tokens"),
+        }
+    }
+}
 
 pub type Years = (Year, Year);
 pub type OCategory = Option<(String, String)>;
@@ -23,5 +40,8 @@ pub struct OCurve {
 #[derive(Deserialize, Serialize)]
 pub struct Output {
     pub curves: Vec<OCurve>,
+    pub years: Years,
     pub periods: Vec<Years>,
+    pub measure: Measure,
+    pub iter: u64,
 }

@@ -7,7 +7,7 @@ use std::{error, fmt, fs, io, process, result};
 use types3::calculation::{self, avg_string, point_string};
 use types3::calculation::{Point, PointResult, SToken, Sample};
 use types3::input::{ISample, Input, Year};
-use types3::output::{OCategory, OCurve, OResult, Output, Years};
+use types3::output::{Measure, OCategory, OCurve, OResult, Output, Years};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -242,7 +242,7 @@ impl<'a> Subset<'a> {
     }
 }
 
-fn build_subset<'a>(args: &Args, samples: &[ISample], key: SubsetKey<'a>) -> Subset<'a> {
+fn build_subset<'a>(measure: Measure, samples: &[ISample], key: SubsetKey<'a>) -> Subset<'a> {
     let category = key.category;
     let period = key.period;
     let filter = |s: &&ISample| period.0 <= s.year && s.year < period.1 && matches(category, s);
@@ -273,10 +273,9 @@ fn build_subset<'a>(args: &Args, samples: &[ISample], key: SubsetKey<'a>) -> Sub
                 .map(|(&id, &count)| SToken { id, count })
                 .collect_vec();
             tokens.sort_by_key(|t| t.id);
-            let size = if args.words {
-                s.words
-            } else {
-                s.tokens.len() as u64
+            let size = match measure {
+                Measure::Tokens => s.tokens.len() as u64,
+                Measure::Words => s.words,
             };
             Sample { size, tokens }
         })
@@ -291,11 +290,12 @@ fn build_subset<'a>(args: &Args, samples: &[ISample], key: SubsetKey<'a>) -> Sub
         points: HashSet::new(),
     };
     debug!(
-        "{}: {} samples, {} types / {} size",
+        "{}: {} samples, {} types / {} {}",
         s.pretty(),
         s.samples.len(),
         s.total_types,
         s.total_size,
+        measure,
     );
     s
 }
@@ -328,10 +328,16 @@ struct Calc<'a> {
     curves: Vec<Curve<'a>>,
     subset_map: HashMap<SubsetKey<'a>, Subset<'a>>,
     iter: u64,
+    measure: Measure,
 }
 
 impl<'a> Calc<'a> {
     fn new(args: &'a Args, input: &'a Input) -> Result<Calc<'a>> {
+        let measure = if args.words {
+            Measure::Words
+        } else {
+            Measure::Tokens
+        };
         info!("samples: {}", input.samples.len());
         if input.samples.is_empty() {
             return Err(invalid_input_ref("no samples"));
@@ -344,14 +350,14 @@ impl<'a> Calc<'a> {
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset = build_subset(args, &input.samples, *key);
+                let subset = build_subset(measure, &input.samples, *key);
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
                 for parent in &parents {
                     subset_map
                         .entry(*parent)
-                        .or_insert_with(|| build_subset(args, &input.samples, *parent))
+                        .or_insert_with(|| build_subset(measure, &input.samples, *parent))
                         .points
                         .insert(point);
                 }
@@ -364,6 +370,7 @@ impl<'a> Calc<'a> {
             curves,
             subset_map,
             iter,
+            measure,
         })
     }
 
@@ -390,14 +397,18 @@ impl<'a> Calc<'a> {
             self.calc_top(subset, &mut top_results);
         }
         let size_limit = self.size_limit();
-        debug!("size limit: {}", size_limit);
+        debug!("size limit: {} {}", size_limit, self.measure);
+        let curves = self
+            .curves
+            .iter()
+            .map(|c| self.calc_curve(c, size_limit, &top_results))
+            .collect_vec();
         Ok(Output {
-            curves: self
-                .curves
-                .iter()
-                .map(|c| self.calc_curve(c, size_limit, &top_results))
-                .collect_vec(),
+            curves,
+            years: self.years,
             periods: self.periods,
+            iter: self.iter,
+            measure: self.measure,
         })
     }
 
@@ -430,9 +441,10 @@ impl<'a> Calc<'a> {
         let mut msg = format!("{}: ", subset.pretty());
         let average_at_limit = calculation::average_at_limit(&subset.samples, self.iter, limit);
         msg.push_str(&format!(
-            "{} types / {} size",
+            "{} types / {} {}",
             avg_string(&average_at_limit),
-            limit
+            limit,
+            self.measure
         ));
         let p = subset.get_point();
         let vs_time = {
