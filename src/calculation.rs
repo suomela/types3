@@ -4,6 +4,7 @@ use log::trace;
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::thread;
 
@@ -103,8 +104,9 @@ impl Driver<'_> {
         total
             .into_iter()
             .map(|x| PointResult {
-                above: x.above as f64 / iter as f64,
-                below: x.below as f64 / iter as f64,
+                above: x.above,
+                below: x.below,
+                iter,
             })
             .collect_vec()
     }
@@ -149,8 +151,9 @@ impl Driver<'_> {
             }
         });
         AvgResult {
-            types_low: total.types_low as f64 / iter as f64,
-            types_high: total.types_high as f64 / iter as f64,
+            types_low: total.types_low,
+            types_high: total.types_high,
+            iter,
         }
     }
 
@@ -289,10 +292,11 @@ impl LocalState {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct AvgResult {
-    pub types_low: f64,
-    pub types_high: f64,
+    pub types_low: u64,
+    pub types_high: u64,
+    pub iter: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -314,10 +318,11 @@ impl RawAvgResult {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct PointResult {
-    pub above: f64,
-    pub below: f64,
+    pub above: u64,
+    pub below: u64,
+    pub iter: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -334,4 +339,35 @@ impl RawPointResult {
         self.above += other.above;
         self.below += other.below;
     }
+}
+
+pub fn avg_string(ar: &AvgResult) -> String {
+    let low = ar.types_low as f64 / ar.iter as f64;
+    let high = ar.types_high as f64 / ar.iter as f64;
+    format!("{:.2}–{:.2}", low, high)
+}
+
+pub fn point_string(pr: &PointResult) -> String {
+    let above = (pr.iter - pr.above) as f64 / pr.iter as f64;
+    let below = (pr.iter - pr.below) as f64 / pr.iter as f64;
+    let s = if above < 0.0001 {
+        "++++"
+    } else if above < 0.001 {
+        "+++"
+    } else if above < 0.01 {
+        "++"
+    } else if above < 0.1 {
+        "+"
+    } else if below < 0.0001 {
+        "----"
+    } else if below < 0.001 {
+        "---"
+    } else if below < 0.01 {
+        "--"
+    } else if below < 0.1 {
+        "-"
+    } else {
+        "0"
+    };
+    s.to_owned()
 }

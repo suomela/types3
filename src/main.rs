@@ -4,15 +4,14 @@ use itertools::Itertools;
 use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
 use std::{error, fmt, fs, io, process, result};
-use types3::calculation;
+use types3::calculation::{self, avg_string, point_string};
 use types3::calculation::{Point, PointResult, SToken, Sample};
 use types3::input::{ISample, Input, Year};
-use types3::output::{Category, Output};
+use types3::output::{Category, OCurve, OResult, Output, Years};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
 type Result<T> = result::Result<T, Box<dyn error::Error>>;
-type Years = (Year, Year);
 
 #[derive(Debug, Clone)]
 struct InvalidInput(String);
@@ -68,23 +67,6 @@ struct Args {
     verbose: Verbosity<InfoLevel>,
 }
 
-fn calc_periods(args: &Args, years: &Years) -> Vec<(bool, Years)> {
-    let mut periods = vec![(false, *years)];
-    let mut y = args.offset;
-    while y + args.step <= years.0 {
-        y += args.step;
-    }
-    loop {
-        let p = (y, y + args.window);
-        periods.push((true, p));
-        if p.1 >= years.1 {
-            break;
-        }
-        y += args.step;
-    }
-    periods
-}
-
 fn matches(category: &Category, sample: &ISample) -> bool {
     match category {
         Category::All => true,
@@ -92,11 +74,10 @@ fn matches(category: &Category, sample: &ISample) -> bool {
     }
 }
 
-fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<(bool, Category)>> {
+fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<Category>> {
     match &args.category {
-        None => Ok(vec![(true, Category::All)]),
+        None => Ok(vec![Category::All]),
         Some(key) => {
-            let mut categories = vec![(false, Category::All)];
             let mut values = HashSet::new();
             for s in samples {
                 match s.metadata.get(key) {
@@ -114,11 +95,12 @@ fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<(bool, Categor
             }
             let mut values = values.into_iter().collect_vec();
             values.sort();
-            categories.extend(
-                values
-                    .into_iter()
-                    .map(|val| (true, Category::Subset(key.to_owned(), val.to_owned()))),
-            );
+            let valstring = values.iter().join(", ");
+            let categories = values
+                .into_iter()
+                .map(|val| Category::Subset(key.to_owned(), val.to_owned()))
+                .collect_vec();
+            info!("categories: {} = {}", key, valstring);
             Ok(categories)
         }
     }
@@ -137,13 +119,21 @@ fn get_years(args: &Args, samples: &[ISample]) -> Years {
     (years.0.max(args.start), years.1.min(args.end + 1))
 }
 
-fn get_periods(args: &Args, years: Years) -> Vec<(bool, Years)> {
-    let periods = calc_periods(args, &years);
-    let relevant = periods
-        .iter()
-        .filter_map(|(r, p)| if *r { Some(*p) } else { None })
-        .collect_vec();
-    info!("periods: {}", pretty_periods(&relevant));
+fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
+    let mut periods = vec![];
+    let mut y = args.offset;
+    while y + args.step <= years.0 {
+        y += args.step;
+    }
+    loop {
+        let p = (y, y + args.window);
+        periods.push(p);
+        if p.1 >= years.1 {
+            break;
+        }
+        y += args.step;
+    }
+    info!("periods: {}", pretty_periods(&periods));
     periods
 }
 
@@ -204,7 +194,6 @@ struct Subset {
     samples: Vec<Sample>,
     total_size: u64,
     total_types: u64,
-    relevant: bool,
     points: HashSet<Point>,
 }
 
@@ -252,82 +241,96 @@ impl Subset {
     }
 }
 
-fn build_subsets(
-    args: &Args,
-    samples: &[ISample],
-    categories: &[(bool, Category)],
-    periods: &[(bool, Years)],
-) -> Vec<Subset> {
-    let mut subsets = Vec::new();
-    for (r1, category) in categories {
-        for (r2, period) in periods {
-            let filter =
-                |s: &&ISample| period.0 <= s.year && s.year < period.1 && matches(category, s);
-            let samples = samples.iter().filter(filter).collect_vec();
+fn build_subset(args: &Args, samples: &[ISample], key: &SubsetKey) -> Subset {
+    let category = &key.category;
+    let period = key.period;
+    let filter = |s: &&ISample| period.0 <= s.year && s.year < period.1 && matches(category, s);
+    let samples = samples.iter().filter(filter).collect_vec();
 
-            let mut lemmas = HashSet::new();
-            for s in &samples {
-                for t in &s.tokens {
-                    lemmas.insert(&t.lemma);
-                }
-            }
-            let mut lemmas = lemmas.into_iter().collect_vec();
-            lemmas.sort();
-            let lemmamap: HashMap<&String, usize> =
-                lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
-            let total_types = lemmas.len() as u64;
-
-            let samples = samples
-                .into_iter()
-                .map(|s| {
-                    let mut tokencount = HashMap::new();
-                    for t in &s.tokens {
-                        let id = lemmamap[&t.lemma];
-                        *tokencount.entry(id).or_insert(0) += 1;
-                    }
-                    let mut tokens = tokencount
-                        .iter()
-                        .map(|(&id, &count)| SToken { id, count })
-                        .collect_vec();
-                    tokens.sort_by_key(|t| t.id);
-                    let size = if args.words {
-                        s.words
-                    } else {
-                        s.tokens.len() as u64
-                    };
-                    Sample { size, tokens }
-                })
-                .collect_vec();
-            let total_size: u64 = samples.iter().map(|s| s.size).sum();
-            let relevant = *r1 && *r2;
-            let s = Subset {
-                category: category.clone(),
-                period: *period,
-                samples,
-                total_size,
-                total_types,
-                relevant,
-                points: HashSet::new(),
-            };
-            debug!(
-                "{}: {} samples, {} types / {} size",
-                s.pretty(),
-                s.samples.len(),
-                s.total_types,
-                s.total_size,
-            );
-            subsets.push(s);
+    let mut lemmas = HashSet::new();
+    for s in &samples {
+        for t in &s.tokens {
+            lemmas.insert(&t.lemma);
         }
     }
-    subsets
+    let mut lemmas = lemmas.into_iter().collect_vec();
+    lemmas.sort();
+    let lemmamap: HashMap<&String, usize> =
+        lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
+    let total_types = lemmas.len() as u64;
+
+    let samples = samples
+        .into_iter()
+        .map(|s| {
+            let mut tokencount = HashMap::new();
+            for t in &s.tokens {
+                let id = lemmamap[&t.lemma];
+                *tokencount.entry(id).or_insert(0) += 1;
+            }
+            let mut tokens = tokencount
+                .iter()
+                .map(|(&id, &count)| SToken { id, count })
+                .collect_vec();
+            tokens.sort_by_key(|t| t.id);
+            let size = if args.words {
+                s.words
+            } else {
+                s.tokens.len() as u64
+            };
+            Sample { size, tokens }
+        })
+        .collect_vec();
+    let total_size: u64 = samples.iter().map(|s| s.size).sum();
+    let s = Subset {
+        category: category.clone(),
+        period,
+        samples,
+        total_size,
+        total_types,
+        points: HashSet::new(),
+    };
+    debug!(
+        "{}: {} samples, {} types / {} size",
+        s.pretty(),
+        s.samples.len(),
+        s.total_types,
+        s.total_size,
+    );
+    s
+}
+
+struct Curve {
+    category: Category,
+    keys: Vec<SubsetKey>,
+}
+
+fn build_curve(category: &Category, periods: &[Years]) -> Curve {
+    let keys = periods
+        .iter()
+        .map(|period| SubsetKey {
+            category: category.clone(),
+            period: *period,
+        })
+        .collect_vec();
+    Curve {
+        category: category.clone(),
+        keys,
+    }
+}
+
+fn build_curves(categories: &[Category], periods: &[Years]) -> Vec<Curve> {
+    categories
+        .iter()
+        .map(|category| build_curve(category, periods))
+        .collect_vec()
 }
 
 type TopResults = HashMap<(SubsetKey, Point), PointResult>;
 
 struct Calc {
     years: Years,
-    relevant_keys: Vec<SubsetKey>,
-    top_keys: Vec<SubsetKey>,
+    periods: Vec<Years>,
+    curves: Vec<Curve>,
     subset_map: HashMap<SubsetKey, Subset>,
     iter: u64,
 }
@@ -341,73 +344,74 @@ impl Calc {
         statistics(&input.samples);
         let categories = get_categories(args, &input.samples)?;
         let years = get_years(args, &input.samples);
-        let periods = get_periods(args, years);
-        let subsets = build_subsets(args, &input.samples, &categories, &periods);
-        let keys = subsets.iter().map(|s| s.key()).collect_vec();
-        let mut subset_map: HashMap<SubsetKey, Subset> =
-            subsets.into_iter().map(|s| (s.key(), s)).collect();
-        let relevant_keys = keys
-            .iter()
-            .cloned()
-            .filter(|k| subset_map[k].relevant)
-            .collect_vec();
-        for k in &relevant_keys {
-            let s = &subset_map[k];
-            let point = s.get_point();
-            let parents = s.get_parents(years);
-            for parent in parents {
-                subset_map.entry(parent).and_modify(|s1| {
-                    s1.points.insert(point);
-                });
+        let periods = get_periods(args, &years);
+        let curves = build_curves(&categories, &periods);
+        let mut subset_map = HashMap::new();
+        for curve in &curves {
+            for key in &curve.keys {
+                let subset = build_subset(args, &input.samples, key);
+                let point = subset.get_point();
+                let parents = subset.get_parents(years);
+                subset_map.insert(key.clone(), subset);
+                for parent in &parents {
+                    subset_map
+                        .entry(parent.clone())
+                        .or_insert_with(|| build_subset(args, &input.samples, parent))
+                        .points
+                        .insert(point);
+                }
             }
         }
-        let top_keys = keys
-            .into_iter()
-            .filter(|k| !subset_map[k].points.is_empty())
-            .collect_vec();
         let iter = args.iter;
         Ok(Calc {
             years,
-            relevant_keys,
-            top_keys,
+            periods,
+            curves,
             subset_map,
             iter,
         })
     }
 
-    fn calc(&self) -> Result<Output> {
-        let mut top_results = HashMap::new();
-        let top = self
-            .top_keys
+    fn size_limit(&self) -> u64 {
+        self.curves
             .iter()
-            .map(|k| &self.subset_map[k])
-            .collect_vec();
-        for &subset in &top {
+            .map(|c| self.curve_size_limit(c))
+            .min()
+            .expect("at least one curve")
+    }
+
+    fn curve_size_limit(&self, curve: &Curve) -> u64 {
+        curve
+            .keys
+            .iter()
+            .map(|k| self.subset_map[k].total_size)
+            .min()
+            .expect("at least one period")
+    }
+
+    fn calc(self) -> Result<Output> {
+        let mut top_results = HashMap::new();
+        for subset in self.subset_map.values() {
             self.calc_top(subset, &mut top_results);
         }
-        let relevant = self
-            .relevant_keys
-            .iter()
-            .map(|k| &self.subset_map[k])
-            .collect_vec();
-        let size_limit = relevant
-            .iter()
-            .map(|p| p.total_size)
-            .min()
-            .expect("at least one subset");
+        let size_limit = self.size_limit();
         debug!("size limit: {}", size_limit);
-        let mut output = Output {
-            curves: vec![],
-        };
-        for &subset in &relevant {
-            self.calc_relevant(subset, size_limit, &top_results);
-        }
-        Ok(output)
+        Ok(Output {
+            curves: self
+                .curves
+                .iter()
+                .map(|c| self.calc_curve(c, size_limit, &top_results))
+                .collect_vec(),
+            periods: self.periods,
+        })
     }
 
     fn calc_top(&self, subset: &Subset, top_results: &mut TopResults) {
-        let key = subset.key();
+        if subset.points.is_empty() {
+            return;
+        }
         let mut points = subset.points.iter().cloned().collect_vec();
+        let key = subset.key();
         points.sort();
         let results = calculation::compare_with_points(&subset.samples, self.iter, &points);
         for (i, p) in points.into_iter().enumerate() {
@@ -416,45 +420,49 @@ impl Calc {
         debug!("{}: calculated {} points", subset.pretty(), results.len());
     }
 
-    fn calc_relevant(&self, subset: &Subset, limit: u64, top_results: &TopResults) {
+    fn calc_curve(&self, curve: &Curve, limit: u64, top_results: &TopResults) -> OCurve {
+        OCurve {
+            category: curve.category.clone(),
+            results: curve
+                .keys
+                .iter()
+                .map(|k| self.calc_relevant(&self.subset_map[k], limit, top_results))
+                .collect_vec(),
+        }
+    }
+
+    fn calc_relevant(&self, subset: &Subset, limit: u64, top_results: &TopResults) -> OResult {
         let mut msg = format!("{}: ", subset.pretty());
-        let ar = calculation::average_at_limit(&subset.samples, self.iter, limit);
+        let average_at_limit = calculation::average_at_limit(&subset.samples, self.iter, limit);
         msg.push_str(&format!(
-            "{:.2}–{:.2} types / {} size",
-            ar.types_low, ar.types_high, limit
+            "{} types / {} size",
+            avg_string(&average_at_limit),
+            limit
         ));
         let p = subset.get_point();
-        let k = subset.get_parent_period(self.years);
-        let pr = top_results[&(k, p)];
-        msg.push_str(&format!(", {} vs. other time points", symbols(pr)));
-        if subset.category != Category::All {
-            let k = subset.get_parent_category();
+        let vs_time = {
+            let k = subset.get_parent_period(self.years);
             let pr = top_results[&(k, p)];
-            msg.push_str(&format!(", {} vs. other categories", symbols(pr)));
-        }
+            msg.push_str(&format!(", {} vs. other time points", point_string(&pr)));
+            pr
+        };
+        let vs_categories = match subset.category {
+            Category::All => None,
+            _ => {
+                let k = subset.get_parent_category();
+                let pr = top_results[&(k, p)];
+                msg.push_str(&format!(", {} vs. other categories", point_string(&pr)));
+                Some(pr)
+            }
+        };
         debug!("{msg}");
-    }
-}
-
-fn symbols(pr: PointResult) -> &'static str {
-    if pr.above > 0.9999 {
-        "++++"
-    } else if pr.above > 0.999 {
-        "+++"
-    } else if pr.above > 0.99 {
-        "++"
-    } else if pr.above > 0.9 {
-        "+"
-    } else if pr.below > 0.9999 {
-        "----"
-    } else if pr.below > 0.999 {
-        "---"
-    } else if pr.below > 0.99 {
-        "--"
-    } else if pr.below > 0.9 {
-        "-"
-    } else {
-        "0"
+        OResult {
+            period: subset.period,
+            limit,
+            average_at_limit,
+            vs_time,
+            vs_categories,
+        }
     }
 }
 
@@ -462,8 +470,7 @@ fn process(args: &Args) -> Result<()> {
     info!("read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
-    let calc = Calc::new(args, &input)?;
-    let output = calc.calc()?;
+    let output = Calc::new(args, &input)?.calc()?;
     info!("write: {}", args.outfile);
     let file = fs::File::create(&args.outfile)?;
     let writer = io::BufWriter::new(file);
