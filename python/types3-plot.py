@@ -22,6 +22,17 @@ cli.add_argument('outfile', help='Output file (PDF)')
 MAX_SIGNIFICANCE = 4
 
 
+def catname(cats):
+    s = []
+    for cat in cats:
+        if cat is not None:
+            k, v = cat
+            s.append(f'{k} = {v}')
+    if len(s) == 0:
+        s.append('everything')
+    return ', '.join(s)
+
+
 def significance(x, n):
     assert 0 <= x <= n
     p = (n - x) / n
@@ -57,10 +68,11 @@ def plot(args):
     limit = data['limit']
     periods = data['periods']
     curves = data['curves']
+    restriction = data['restrict_samples']
     has_cats = curves[0]['category'] is not None
     nn = len(curves)
 
-    sigmarg = 0.5
+    sigmarg = 0
     h1 = 4
     h2 = 1
     m1 = 0.5
@@ -125,11 +137,9 @@ def plot(args):
     for i, curve in enumerate(curves):
         if curve['category']:
             color = COLORS[i]
-            k, v = curve['category']
-            label = f'{k}: {v}'
         else:
             color = '#000000'
-            label = 'everything'
+        label = catname([restriction, curve['category']])
         points = [get_avg(r) for r in curve['results']]
         xx, yy = zip(*points)
         ax1.plot(xx,
@@ -143,8 +153,15 @@ def plot(args):
 
         def plotter(ax, points):
             xx, yy1, yy2 = zip(*points)
+            ax.fill_between(xx, yy1, yy2, color=color, alpha=0.7, linewidth=0)
+            for i in range(1, MAX_SIGNIFICANCE):
+                ax.fill_between(xx,
+                                -i,
+                                +i,
+                                color='#ffffff',
+                                alpha=0.4,
+                                linewidth=0)
             ax.axhline(0, color='#000000', linewidth=0.8)
-            ax.fill_between(xx, yy1, yy2, color=color, alpha=0.5, linewidth=0)
 
         points = [get_vs(r, 'vs_time') for r in curve['results']]
         plotter(axs2[i], points)

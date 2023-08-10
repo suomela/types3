@@ -16,11 +16,24 @@ type Result<T> = result::Result<T, Box<dyn error::Error>>;
 #[derive(Debug)]
 struct InvalidInput(String);
 
+#[derive(Debug)]
+struct InvalidArgument(String);
+
 impl fmt::Display for InvalidInput {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "invalid input: {}", self.0)
     }
 }
+
+impl fmt::Display for InvalidArgument {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "invalid argument: {}", self.0)
+    }
+}
+
+impl error::Error for InvalidInput {}
+
+impl error::Error for InvalidArgument {}
 
 fn invalid_input(s: String) -> Box<dyn error::Error> {
     InvalidInput(s).into()
@@ -30,7 +43,9 @@ fn invalid_input_ref(s: &str) -> Box<dyn error::Error> {
     InvalidInput(s.to_owned()).into()
 }
 
-impl error::Error for InvalidInput {}
+fn invalid_argument(s: String) -> Box<dyn error::Error> {
+    InvalidArgument(s).into()
+}
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -63,11 +78,14 @@ struct Args {
     /// Step length (years)
     #[arg(long)]
     step: Year,
+    /// Category restriction, of the form key=value
+    #[arg(long)]
+    restrict: Option<String>,
     #[command(flatten)]
     verbose: Verbosity<InfoLevel>,
 }
 
-type Category<'a> = Option<(&'a String, &'a String)>;
+type Category<'a> = Option<(&'a str, &'a str)>;
 
 fn owned_cat(category: Category) -> OCategory {
     category.map(|(k, v)| (k.to_owned(), v.to_owned()))
@@ -76,11 +94,30 @@ fn owned_cat(category: Category) -> OCategory {
 fn matches(category: Category, sample: &ISample) -> bool {
     match category {
         None => true,
-        Some((k, v)) => sample.metadata.get(k) == Some(v),
+        Some((k, v)) => match sample.metadata.get(k) {
+            None => false,
+            Some(v2) => v == v2,
+        },
     }
 }
 
-fn get_categories<'a>(args: &'a Args, samples: &'a [ISample]) -> Result<Vec<Category<'a>>> {
+fn get_restriction(args: &Args) -> Result<Category> {
+    match &args.restrict {
+        None => Ok(None),
+        Some(r) => {
+            let parts = r.split('=').collect_vec();
+            if parts.len() != 2 {
+                return Err(invalid_argument(format!(
+                    "restriction should be of the form 'key=value', got '{r}'"
+                )));
+            }
+            let category = Some((parts[0], parts[1]));
+            Ok(category)
+        }
+    }
+}
+
+fn get_categories<'a>(args: &'a Args, samples: &[&'a ISample]) -> Result<Vec<Category<'a>>> {
     match &args.category {
         None => Ok(vec![None]),
         Some(key) => {
@@ -102,14 +139,17 @@ fn get_categories<'a>(args: &'a Args, samples: &'a [ISample]) -> Result<Vec<Cate
             let mut values = values.into_iter().collect_vec();
             values.sort();
             let valstring = values.iter().join(", ");
-            let categories = values.into_iter().map(|val| Some((key, val))).collect_vec();
+            let categories = values
+                .into_iter()
+                .map(|val| Some((key as &str, val as &str)))
+                .collect_vec();
             info!("categories: {} = {}", key, valstring);
             Ok(categories)
         }
     }
 }
 
-fn get_years(args: &Args, samples: &[ISample]) -> Years {
+fn get_years(args: &Args, samples: &[&ISample]) -> Years {
     let mut years = None;
     for s in samples {
         years = match years {
@@ -152,7 +192,7 @@ fn pretty_periods(periods: &[Years]) -> String {
     }
 }
 
-fn statistics(samples: &[ISample]) {
+fn statistics(samples: &[&ISample]) {
     let mut lemmas = HashSet::new();
     let mut metadata_keys = HashSet::new();
     for s in samples {
@@ -242,11 +282,18 @@ impl<'a> Subset<'a> {
     }
 }
 
-fn build_subset<'a>(measure: Measure, samples: &[ISample], key: SubsetKey<'a>) -> Subset<'a> {
+fn get_samples<'a>(restrict_samples: Category, samples: &'a [ISample]) -> Vec<&'a ISample> {
+    samples
+        .iter()
+        .filter(|s| matches(restrict_samples, s))
+        .collect_vec()
+}
+
+fn build_subset<'a>(measure: Measure, samples: &[&ISample], key: SubsetKey<'a>) -> Subset<'a> {
     let category = key.category;
     let period = key.period;
     let filter = |s: &&ISample| period.0 <= s.year && s.year < period.1 && matches(category, s);
-    let samples = samples.iter().filter(filter).collect_vec();
+    let samples = samples.iter().copied().filter(filter).collect_vec();
 
     let mut lemmas = HashSet::new();
     for s in &samples {
@@ -329,6 +376,7 @@ struct Calc<'a> {
     subset_map: HashMap<SubsetKey<'a>, Subset<'a>>,
     iter: u64,
     measure: Measure,
+    restrict_samples: Category<'a>,
 }
 
 impl<'a> Calc<'a> {
@@ -338,26 +386,29 @@ impl<'a> Calc<'a> {
         } else {
             Measure::Tokens
         };
-        info!("samples: {}", input.samples.len());
-        if input.samples.is_empty() {
-            return Err(invalid_input_ref("no samples"));
+        let restrict_samples = get_restriction(args)?;
+        info!("samples in input: {}", input.samples.len());
+        let samples = get_samples(restrict_samples, &input.samples);
+        info!("samples after filtering: {}", samples.len());
+        if samples.is_empty() {
+            return Err(invalid_input_ref("no samples found"));
         }
-        statistics(&input.samples);
-        let categories = get_categories(args, &input.samples)?;
-        let years = get_years(args, &input.samples);
+        statistics(&samples);
+        let categories = get_categories(args, &samples)?;
+        let years = get_years(args, &samples);
         let periods = get_periods(args, &years);
         let curves = build_curves(&categories, &periods);
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset = build_subset(measure, &input.samples, *key);
+                let subset = build_subset(measure, &samples, *key);
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
                 for parent in &parents {
                     subset_map
                         .entry(*parent)
-                        .or_insert_with(|| build_subset(measure, &input.samples, *parent))
+                        .or_insert_with(|| build_subset(measure, &samples, *parent))
                         .points
                         .insert(point);
                 }
@@ -371,6 +422,7 @@ impl<'a> Calc<'a> {
             subset_map,
             iter,
             measure,
+            restrict_samples,
         })
     }
 
@@ -410,6 +462,7 @@ impl<'a> Calc<'a> {
             measure: self.measure,
             iter: self.iter,
             limit,
+            restrict_samples: owned_cat(self.restrict_samples),
         })
     }
 
