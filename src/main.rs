@@ -69,14 +69,14 @@ struct Args {
 
 fn matches(category: &Category, sample: &ISample) -> bool {
     match category {
-        Category::All => true,
-        Category::Subset(k, v) => sample.metadata.get(k) == Some(v),
+        None => true,
+        Some((k, v)) => sample.metadata.get(k) == Some(v),
     }
 }
 
 fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<Category>> {
     match &args.category {
-        None => Ok(vec![Category::All]),
+        None => Ok(vec![None]),
         Some(key) => {
             let mut values = HashSet::new();
             for s in samples {
@@ -98,7 +98,7 @@ fn get_categories(args: &Args, samples: &[ISample]) -> Result<Vec<Category>> {
             let valstring = values.iter().join(", ");
             let categories = values
                 .into_iter()
-                .map(|val| Category::Subset(key.to_owned(), val.to_owned()))
+                .map(|val| Some((key.to_owned(), val.to_owned())))
                 .collect_vec();
             info!("categories: {} = {}", key, valstring);
             Ok(categories)
@@ -182,8 +182,8 @@ struct SubsetKey {
 impl SubsetKey {
     fn pretty(&self) -> String {
         match &self.category {
-            Category::All => pretty_period(&self.period),
-            Category::Subset(k, v) => format!("{}, {} = {}", pretty_period(&self.period), k, v),
+            None => pretty_period(&self.period),
+            Some((k, v)) => format!("{}, {} = {}", pretty_period(&self.period), k, v),
         }
     }
 }
@@ -224,19 +224,17 @@ impl Subset {
     }
 
     fn get_parent_category(&self) -> SubsetKey {
-        assert!(self.category != Category::All);
+        assert!(self.category.is_some());
         SubsetKey {
-            category: Category::All,
+            category: None,
             period: self.period,
         }
     }
 
     fn get_parents(&self, years: Years) -> Vec<SubsetKey> {
         match self.category {
-            Category::All => vec![self.get_parent_period(years)],
-            Category::Subset(_, _) => {
-                vec![self.get_parent_period(years), self.get_parent_category()]
-            }
+            None => vec![self.get_parent_period(years)],
+            Some(_) => vec![self.get_parent_period(years), self.get_parent_category()],
         }
     }
 }
@@ -447,8 +445,8 @@ impl Calc {
             pr
         };
         let vs_categories = match subset.category {
-            Category::All => None,
-            _ => {
+            None => None,
+            Some(_) => {
                 let k = subset.get_parent_category();
                 let pr = top_results[&(k, p)];
                 msg.push_str(&format!(", {} vs. other categories", point_string(&pr)));

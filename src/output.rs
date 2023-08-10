@@ -3,12 +3,7 @@ use crate::input::Year;
 use serde::{Deserialize, Serialize};
 
 pub type Years = (Year, Year);
-
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize)]
-pub enum Category {
-    All,
-    Subset(String, String),
-}
+pub type Category = Option<(String, String)>;
 
 #[derive(Deserialize, Serialize)]
 pub struct OResult {
