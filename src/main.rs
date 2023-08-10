@@ -13,7 +13,7 @@ const DEFAULT_ITER: u64 = 1_000_000;
 
 type Result<T> = result::Result<T, Box<dyn error::Error>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct InvalidInput(String);
 
 impl fmt::Display for InvalidInput {
@@ -171,7 +171,7 @@ fn statistics(samples: &[ISample]) {
         if metadata_keys.is_empty() {
             "-".to_owned()
         } else {
-            metadata_keys.into_iter().cloned().collect_vec().join(", ")
+            metadata_keys.iter().join(", ")
         }
     );
 }
@@ -405,7 +405,7 @@ impl<'a> Calc<'a> {
         if subset.points.is_empty() {
             return;
         }
-        let mut points = subset.points.iter().cloned().collect_vec();
+        let mut points = subset.points.iter().copied().collect_vec();
         let key = subset.key();
         points.sort();
         let results = calculation::compare_with_points(&subset.samples, self.iter, &points);
