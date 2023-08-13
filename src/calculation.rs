@@ -1,4 +1,4 @@
-use crate::output::{AvgResult,PointResult};
+use crate::output::{AvgResult, PointResult};
 use core::marker::PhantomData;
 use crossbeam_channel::TryRecvError;
 use itertools::Itertools;

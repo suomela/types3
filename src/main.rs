@@ -6,7 +6,9 @@ use std::collections::{HashMap, HashSet};
 use std::{error, fmt, fs, io, process, result};
 use types3::calculation::{self, Point, SToken, Sample};
 use types3::input::{ISample, Input, Year};
-use types3::output::{Measure, OCategory, OCurve, OResult, Output, PointResult, Years, avg_string, point_string};
+use types3::output::{
+    avg_string, point_string, Measure, OCategory, OCurve, OResult, Output, PointResult, Years,
+};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 

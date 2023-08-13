@@ -21,7 +21,6 @@ impl fmt::Display for Measure {
 pub type Years = (Year, Year);
 pub type OCategory = Option<(String, String)>;
 
-
 #[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct AvgResult {
     pub types_low: u64,
