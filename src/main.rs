@@ -2,6 +2,7 @@ use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use itertools::Itertools;
 use log::{debug, error, info};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::{HashMap, HashSet};
 use std::{error, fmt, fs, io, process, result};
 use types3::calculation::{self, Point, SToken, Sample};
@@ -361,7 +362,11 @@ fn get_samples<'a>(
         .collect_vec()
 }
 
-fn build_subset<'a>(measure: Measure, samples: &[CSample<'a>], key: SubsetKey<'a>) -> Subset<'a> {
+fn build_subset<'a>(
+    measure: Measure,
+    samples: &[CSample<'a>],
+    key: SubsetKey<'a>,
+) -> Result<Subset<'a>> {
     let category = key.category;
     let period = key.period;
     let filter =
@@ -414,7 +419,10 @@ fn build_subset<'a>(measure: Measure, samples: &[CSample<'a>], key: SubsetKey<'a
         s.total_size,
         measure,
     );
-    s
+    if total_size == 0 {
+        return Err(invalid_input(format!("{}: zero-size subset", s.pretty())));
+    }
+    Ok(s)
 }
 
 struct Curve<'a> {
@@ -472,16 +480,16 @@ impl<'a> Calc<'a> {
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset = build_subset(measure, &samples, *key);
+                let subset = build_subset(measure, &samples, *key)?;
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
                 for parent in &parents {
-                    subset_map
-                        .entry(*parent)
-                        .or_insert_with(|| build_subset(measure, &samples, *parent))
-                        .points
-                        .insert(point);
+                    let x = match subset_map.entry(*parent) {
+                        Occupied(e) => e.into_mut(),
+                        Vacant(e) => e.insert(build_subset(measure, &samples, *parent)?),
+                    };
+                    x.points.insert(point);
                 }
             }
         }
