@@ -52,6 +52,7 @@ pub struct OCurve {
 #[derive(Deserialize, Serialize)]
 pub struct Output {
     pub restrict_samples: OCategory,
+    pub restrict_tokens: OCategory,
     pub curves: Vec<OCurve>,
     pub years: Years,
     pub periods: Vec<Years>,

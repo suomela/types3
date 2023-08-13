@@ -79,9 +79,12 @@ struct Args {
     /// Step length (years)
     #[arg(long)]
     step: Year,
-    /// Category restriction, of the form key=value
+    /// Sample category restriction, of the form key=value
     #[arg(long)]
-    restrict: Option<String>,
+    restrict_samples: Option<String>,
+    /// Token category restriction, of the form key=value
+    #[arg(long)]
+    restrict_tokens: Option<String>,
     #[command(flatten)]
     verbose: Verbosity<InfoLevel>,
 }
@@ -92,18 +95,18 @@ fn owned_cat(category: Category) -> OCategory {
     category.map(|(k, v)| (k.to_owned(), v.to_owned()))
 }
 
-fn matches(category: Category, sample: &ISample) -> bool {
+fn matches(category: Category, metadata: &HashMap<String, String>) -> bool {
     match category {
         None => true,
-        Some((k, v)) => match sample.metadata.get(k) {
+        Some((k, v)) => match metadata.get(k) {
             None => false,
             Some(v2) => v == v2,
         },
     }
 }
 
-fn get_restriction(args: &Args) -> Result<Category> {
-    match &args.restrict {
+fn parse_restriction(arg: &Option<String>) -> Result<Category> {
+    match arg {
         None => Ok(None),
         Some(r) => {
             let parts = r.split('=').collect_vec();
@@ -118,7 +121,7 @@ fn get_restriction(args: &Args) -> Result<Category> {
     }
 }
 
-fn get_categories<'a>(args: &'a Args, samples: &[&'a ISample]) -> Result<Vec<Category<'a>>> {
+fn get_categories<'a>(args: &'a Args, samples: &[CSample<'a>]) -> Result<Vec<Category<'a>>> {
     match &args.category {
         None => Ok(vec![None]),
         Some(key) => {
@@ -150,7 +153,7 @@ fn get_categories<'a>(args: &'a Args, samples: &[&'a ISample]) -> Result<Vec<Cat
     }
 }
 
-fn get_years(args: &Args, samples: &[&ISample]) -> Years {
+fn get_years(args: &Args, samples: &[CSample]) -> Years {
     let mut years = None;
     for s in samples {
         years = match years {
@@ -193,28 +196,60 @@ fn pretty_periods(periods: &[Years]) -> String {
     }
 }
 
-fn statistics(samples: &[&ISample]) {
+fn explain_metadata_one(k: &str, vv: &HashSet<&str>) -> String {
+    let vals = vv.iter().copied().sorted().collect_vec();
+    format!("{} = {}", k, vals.join(", "))
+}
+
+fn explain_metadata(metadata: &HashMap<&str, HashSet<&str>>) -> String {
+    let keys = metadata.keys().copied().sorted().collect_vec();
+    keys.iter()
+        .map(|k| explain_metadata_one(k, &metadata[k]))
+        .join("; ")
+}
+
+fn statistics(samples: &[ISample]) {
     let mut lemmas = HashSet::new();
-    let mut metadata_keys = HashSet::new();
+    let mut token_metadata: HashMap<&str, HashSet<&str>> = HashMap::new();
+    let mut sample_metadata: HashMap<&str, HashSet<&str>> = HashMap::new();
+    let mut tokencount = 0;
     for s in samples {
-        for k in s.metadata.keys() {
-            metadata_keys.insert(k);
+        for (k, v) in s.metadata.iter() {
+            sample_metadata.entry(k).or_default().insert(v);
         }
         for t in &s.tokens {
+            tokencount += 1;
+            for (k, v) in t.metadata.iter() {
+                token_metadata.entry(k).or_default().insert(v);
+            }
             lemmas.insert(&t.lemma);
         }
     }
-    info!("distinct lemmas: {}", lemmas.len());
-    let mut metadata_keys = metadata_keys.into_iter().collect_vec();
-    metadata_keys.sort();
+    info!("before filtering: samples: {}", samples.len());
+    info!("before filtering: tokens: {}", tokencount);
+    info!("before filtering: distinct lemmas: {}", lemmas.len());
     info!(
-        "metadata categories: {}",
-        if metadata_keys.is_empty() {
-            "-".to_owned()
-        } else {
-            metadata_keys.iter().join(", ")
-        }
+        "token metadata categories: {}",
+        explain_metadata(&token_metadata)
     );
+    info!(
+        "sample metadata categories: {}",
+        explain_metadata(&sample_metadata)
+    );
+}
+
+fn post_statistics(samples: &[CSample]) {
+    let mut lemmas = HashSet::new();
+    let mut tokencount = 0;
+    for s in samples {
+        for lemma in &s.tokens {
+            tokencount += 1;
+            lemmas.insert(lemma);
+        }
+    }
+    info!("after filtering: samples: {}", samples.len());
+    info!("after filtering: tokens: {}", tokencount);
+    info!("after filtering: distinct lemmas: {}", lemmas.len());
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -283,37 +318,71 @@ impl<'a> Subset<'a> {
     }
 }
 
-fn get_samples<'a>(restrict_samples: Category, samples: &'a [ISample]) -> Vec<&'a ISample> {
+struct CSample<'a> {
+    year: Year,
+    metadata: &'a HashMap<String, String>,
+    words: u64,
+    tokens: Vec<&'a str>,
+}
+
+fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
+    CSample {
+        year: s.year,
+        metadata: &s.metadata,
+        words: s.words,
+        tokens: s
+            .tokens
+            .iter()
+            .filter_map(|t| {
+                if matches(restrict_tokens, &t.metadata) {
+                    Some(&t.lemma as &str)
+                } else {
+                    None
+                }
+            })
+            .collect_vec(),
+    }
+}
+
+fn get_samples<'a>(
+    restrict_samples: Category,
+    restrict_tokens: Category,
+    samples: &'a [ISample],
+) -> Vec<CSample<'a>> {
     samples
         .iter()
-        .filter(|s| matches(restrict_samples, s))
+        .filter_map(|s| {
+            if matches(restrict_samples, &s.metadata) {
+                Some(get_sample(restrict_tokens, s))
+            } else {
+                None
+            }
+        })
         .collect_vec()
 }
 
-fn build_subset<'a>(measure: Measure, samples: &[&ISample], key: SubsetKey<'a>) -> Subset<'a> {
+fn build_subset<'a>(measure: Measure, samples: &[CSample<'a>], key: SubsetKey<'a>) -> Subset<'a> {
     let category = key.category;
     let period = key.period;
-    let filter = |s: &&ISample| period.0 <= s.year && s.year < period.1 && matches(category, s);
-    let samples = samples.iter().copied().filter(filter).collect_vec();
+    let filter =
+        |s: &&CSample| period.0 <= s.year && s.year < period.1 && matches(category, s.metadata);
+    let samples = samples.iter().filter(filter).collect_vec();
 
     let mut lemmas = HashSet::new();
     for s in &samples {
-        for t in &s.tokens {
-            lemmas.insert(&t.lemma);
-        }
+        lemmas.extend(&s.tokens);
     }
     let mut lemmas = lemmas.into_iter().collect_vec();
     lemmas.sort();
-    let lemmamap: HashMap<&String, usize> =
-        lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
+    let lemmamap: HashMap<&str, usize> = lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
     let total_types = lemmas.len() as u64;
 
     let samples = samples
         .into_iter()
         .map(|s| {
             let mut tokencount = HashMap::new();
-            for t in &s.tokens {
-                let id = lemmamap[&t.lemma];
+            for lemma in &s.tokens {
+                let id = lemmamap[lemma];
                 *tokencount.entry(id).or_insert(0) += 1;
             }
             let mut tokens = tokencount
@@ -378,6 +447,7 @@ struct Calc<'a> {
     iter: u64,
     measure: Measure,
     restrict_samples: Category<'a>,
+    restrict_tokens: Category<'a>,
 }
 
 impl<'a> Calc<'a> {
@@ -387,14 +457,14 @@ impl<'a> Calc<'a> {
         } else {
             Measure::Tokens
         };
-        let restrict_samples = get_restriction(args)?;
-        info!("samples in input: {}", input.samples.len());
-        let samples = get_samples(restrict_samples, &input.samples);
-        info!("samples after filtering: {}", samples.len());
+        statistics(&input.samples);
+        let restrict_samples = parse_restriction(&args.restrict_samples)?;
+        let restrict_tokens = parse_restriction(&args.restrict_tokens)?;
+        let samples = get_samples(restrict_samples, restrict_tokens, &input.samples);
+        post_statistics(&samples);
         if samples.is_empty() {
             return Err(invalid_input_ref("no samples found"));
         }
-        statistics(&samples);
         let categories = get_categories(args, &samples)?;
         let years = get_years(args, &samples);
         let periods = get_periods(args, &years);
@@ -424,6 +494,7 @@ impl<'a> Calc<'a> {
             iter,
             measure,
             restrict_samples,
+            restrict_tokens,
         })
     }
 
@@ -463,6 +534,7 @@ impl<'a> Calc<'a> {
             measure: self.measure,
             iter: self.iter,
             limit,
+            restrict_tokens: owned_cat(self.restrict_tokens),
             restrict_samples: owned_cat(self.restrict_samples),
         })
     }
