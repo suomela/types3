@@ -12,7 +12,6 @@ use std::thread;
 /// Number of tasks for randomized calculation.
 const RANDOM_JOBS: u64 = 1000;
 
-#[derive(Clone)]
 pub struct SToken {
     pub count: u64,
     pub id: usize,
@@ -287,7 +286,6 @@ trait RawResult {
     fn add(&mut self, other: &Self);
 }
 
-#[derive(Clone, Copy)]
 struct RawAvgResult {
     types_low: u64,
     types_high: u64,
