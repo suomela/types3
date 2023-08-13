@@ -16,18 +16,27 @@ cli.add_argument('--verbose',
                  action='count',
                  default=0,
                  help='Increase verbosity')
+cli.add_argument('--legend',
+                 default='best',
+                 help='Legend placement (e.g. "upper right")')
+cli.add_argument('--long-legend',
+                 action='store_true',
+                 help='Long category descriptions')
 cli.add_argument('infile', help='Input file (JSON)')
 cli.add_argument('outfile', help='Output file (PDF)')
 
 MAX_SIGNIFICANCE = 4
 
 
-def catname(cats):
+def catname(args, cats):
     s = []
     for cat in cats:
         if cat is not None:
             k, v = cat
-            s.append(f'{k} = {v}')
+            if args.long_legend:
+                s.append(f'{k} = {v}')
+            else:
+                s.append(v)
     if len(s) == 0:
         s.append('everything')
     return ', '.join(s)
@@ -68,7 +77,7 @@ def plot(args):
     limit = data['limit']
     periods = data['periods']
     curves = data['curves']
-    restriction = data['restrict_samples']
+    restrictions = [data['restrict_samples'], data['restrict_tokens']]
     has_cats = curves[0]['category'] is not None
     nn = len(curves)
 
@@ -139,7 +148,7 @@ def plot(args):
             color = COLORS[i]
         else:
             color = '#000000'
-        label = catname([restriction, curve['category']])
+        label = catname(args, restrictions + [curve['category']])
         points = [get_avg(r) for r in curve['results']]
         xx, yy = zip(*points)
         ax1.plot(xx,
@@ -171,7 +180,7 @@ def plot(args):
             plotter(axs3[i], points)
 
     ax1.set_ylim((0, ymax * 1.05))
-    ax1.legend(loc='lower left')
+    ax1.legend(loc=args.legend)
     logging.info(f'write: {args.outfile}')
     fig.savefig(args.outfile)
 
