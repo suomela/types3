@@ -1,4 +1,3 @@
-use crate::calculation::{AvgResult, PointResult};
 use crate::input::Year;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -21,6 +20,21 @@ impl fmt::Display for Measure {
 
 pub type Years = (Year, Year);
 pub type OCategory = Option<(String, String)>;
+
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct AvgResult {
+    pub types_low: u64,
+    pub types_high: u64,
+    pub iter: u64,
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct PointResult {
+    pub above: u64,
+    pub below: u64,
+    pub iter: u64,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct OResult {
@@ -45,4 +59,35 @@ pub struct Output {
     pub measure: Measure,
     pub limit: u64,
     pub iter: u64,
+}
+
+pub fn avg_string(ar: &AvgResult) -> String {
+    let low = ar.types_low as f64 / ar.iter as f64;
+    let high = ar.types_high as f64 / ar.iter as f64;
+    format!("{:.2}–{:.2}", low, high)
+}
+
+pub fn point_string(pr: &PointResult) -> String {
+    let above = (pr.iter - pr.above) as f64 / pr.iter as f64;
+    let below = (pr.iter - pr.below) as f64 / pr.iter as f64;
+    let s = if above < 0.0001 {
+        "++++"
+    } else if above < 0.001 {
+        "+++"
+    } else if above < 0.01 {
+        "++"
+    } else if above < 0.1 {
+        "+"
+    } else if below < 0.0001 {
+        "----"
+    } else if below < 0.001 {
+        "---"
+    } else if below < 0.01 {
+        "--"
+    } else if below < 0.1 {
+        "-"
+    } else {
+        "0"
+    };
+    s.to_owned()
 }

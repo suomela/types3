@@ -4,10 +4,9 @@ use itertools::Itertools;
 use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
 use std::{error, fmt, fs, io, process, result};
-use types3::calculation::{self, avg_string, point_string};
-use types3::calculation::{Point, PointResult, SToken, Sample};
+use types3::calculation::{self, Point, SToken, Sample};
 use types3::input::{ISample, Input, Year};
-use types3::output::{Measure, OCategory, OCurve, OResult, Output, Years};
+use types3::output::{Measure, OCategory, OCurve, OResult, Output, PointResult, Years, avg_string, point_string};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 

@@ -1,3 +1,4 @@
+use crate::output::{AvgResult,PointResult};
 use core::marker::PhantomData;
 use crossbeam_channel::TryRecvError;
 use itertools::Itertools;
@@ -5,7 +6,6 @@ use log::trace;
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
-use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::thread;
 
@@ -287,13 +287,6 @@ trait RawResult {
     fn add(&mut self, other: &Self);
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
-pub struct AvgResult {
-    pub types_low: u64,
-    pub types_high: u64,
-    pub iter: u64,
-}
-
 #[derive(Clone, Copy)]
 struct RawAvgResult {
     types_low: u64,
@@ -322,13 +315,6 @@ impl RawAvgResult {
             iter,
         }
     }
-}
-
-#[derive(Clone, Copy, Deserialize, Serialize)]
-pub struct PointResult {
-    pub above: u64,
-    pub below: u64,
-    pub iter: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -371,35 +357,4 @@ impl RawPointResults {
             })
             .collect_vec()
     }
-}
-
-pub fn avg_string(ar: &AvgResult) -> String {
-    let low = ar.types_low as f64 / ar.iter as f64;
-    let high = ar.types_high as f64 / ar.iter as f64;
-    format!("{:.2}–{:.2}", low, high)
-}
-
-pub fn point_string(pr: &PointResult) -> String {
-    let above = (pr.iter - pr.above) as f64 / pr.iter as f64;
-    let below = (pr.iter - pr.below) as f64 / pr.iter as f64;
-    let s = if above < 0.0001 {
-        "++++"
-    } else if above < 0.001 {
-        "+++"
-    } else if above < 0.01 {
-        "++"
-    } else if above < 0.1 {
-        "+"
-    } else if below < 0.0001 {
-        "----"
-    } else if below < 0.001 {
-        "---"
-    } else if below < 0.01 {
-        "--"
-    } else if below < 0.1 {
-        "-"
-    } else {
-        "0"
-    };
-    s.to_owned()
 }
