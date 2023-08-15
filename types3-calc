@@ -5,4 +5,4 @@ set -e
 WHERE=$(readlink -f "$0")
 BASEDIR=$(dirname "$WHERE")
 
-$BASEDIR/target/release/types3 "$@"
+exec $BASEDIR/target/release/types3 "$@"
