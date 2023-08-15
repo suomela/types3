@@ -12,5 +12,5 @@ You will need to have Python and [Rust](https://www.rust-lang.org/tools/install)
 
 Try these:
 
-    ./types3 --help
+    ./types3-calc --help
     ./types3-plot --help
