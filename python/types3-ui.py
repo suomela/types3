@@ -158,7 +158,22 @@ class App:
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=2)
 
+        self.vs_what.trace_add('write', self.update)
+        self.compare.trace_add('write', self.update)
+        self.restrict_samples.trace_add('write', self.update)
+        self.restrict_tokens.trace_add('write', self.update)
+        self.window.trace_add('write', self.update)
+        self.step.trace_add('write', self.update)
+        self.start.trace_add('write', self.update)
+        self.end.trace_add('write', self.update)
+        self.offset.trace_add('write', self.update)
+        self.update()
         logging.info(f'ready')
+
+    def update(self, *x):
+        logging.debug(
+            f'{self.vs_what.get()} {self.compare.get()} {self.restrict_samples.get()} {self.restrict_tokens.get()} {self.window.get()} {self.step.get()} {self.start.get()} {self.end.get()} {self.offset.get()}'
+        )
 
 
 if __name__ == '__main__':
