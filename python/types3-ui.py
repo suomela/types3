@@ -73,92 +73,86 @@ class App:
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
+        mainframe.columnconfigure(1, minsize=100)
+        mainframe.columnconfigure(2, minsize=300)
+        mainframe.columnconfigure(3, minsize=100)
+        mainframe.columnconfigure(4, minsize=100)
+
         row = 1
 
-        ttk.Label(mainframe, text='X axis:').grid(column=1,
-                                                  row=row,
-                                                  sticky=tk.E)
+        e = ttk.Label(mainframe, text='X axis:')
+        e.grid(column=1, row=row, sticky=tk.E)
         self.vs_what = tk.StringVar()
         vs_what_choices = ['tokens', 'words']
-        ttk.OptionMenu(mainframe, self.vs_what, vs_what_choices[0],
-                       *vs_what_choices).grid(column=2, row=row, sticky=tk.W)
+        e = ttk.OptionMenu(mainframe, self.vs_what, vs_what_choices[0],
+                           *vs_what_choices)
+        e.grid(column=2, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe, text='Categories:').grid(column=1,
-                                                      row=row,
-                                                      sticky=tk.E)
+        e = ttk.Label(mainframe, text='Categories:')
+        e.grid(column=1, row=row, sticky=tk.E)
         self.compare = tk.StringVar()
         compare_choices = metadata_top_choices(sample_metadata)
-        ttk.OptionMenu(mainframe, self.compare, compare_choices[0],
-                       *compare_choices).grid(column=2, row=row, sticky=tk.W)
+        e = ttk.OptionMenu(mainframe, self.compare, compare_choices[0],
+                           *compare_choices)
+        e.grid(column=2, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe, text='Sample restriction:').grid(column=1,
-                                                              row=row,
-                                                              sticky=tk.E)
+        e = ttk.Label(mainframe, text='Sample restriction:')
+        e.grid(column=1, row=row, sticky=tk.E)
         self.restrict_samples = tk.StringVar()
         restrict_samples_choices = metadata_choices(sample_metadata)
-        ttk.OptionMenu(mainframe, self.restrict_samples,
-                       restrict_samples_choices[0],
-                       *restrict_samples_choices).grid(column=2,
-                                                       row=row,
-                                                       sticky=tk.W)
+        e = ttk.OptionMenu(mainframe, self.restrict_samples,
+                           restrict_samples_choices[0],
+                           *restrict_samples_choices)
+        e.grid(column=2, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe, text='Token restriction:').grid(column=1,
-                                                             row=row,
-                                                             sticky=tk.E)
+        e = ttk.Label(mainframe, text='Token restriction:')
+        e.grid(column=1, row=row, sticky=tk.E)
         self.restrict_tokens = tk.StringVar()
         restrict_tokens_choices = metadata_choices(token_metadata)
-        ttk.OptionMenu(mainframe, self.restrict_tokens,
-                       restrict_tokens_choices[0],
-                       *restrict_tokens_choices).grid(column=2,
-                                                      row=row,
-                                                      sticky=tk.W)
+        e = ttk.OptionMenu(mainframe, self.restrict_tokens,
+                           restrict_tokens_choices[0],
+                           *restrict_tokens_choices)
+        e.grid(column=2, row=row, sticky=tk.W)
         row += 1
 
         row = 1
 
-        ttk.Label(mainframe, text='Window size:').grid(column=3,
-                                                       row=row,
-                                                       sticky=tk.E)
+        e = ttk.Label(mainframe, text='Window size:')
+        e.grid(column=3, row=row, sticky=tk.E)
         self.window = tk.StringVar(value='10')
         e = ttk.Entry(mainframe, textvariable=self.window, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe, text='Step size:').grid(column=3,
-                                                     row=row,
-                                                     sticky=tk.E)
+        e = ttk.Label(mainframe, text='Step size:')
+        e.grid(column=3, row=row, sticky=tk.E)
         self.step = tk.StringVar(value='10')
         e = ttk.Entry(mainframe, textvariable=self.step, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe, text='Start year (optional):').grid(column=3,
-                                                                 row=row,
-                                                                 sticky=tk.E)
+        e = ttk.Label(mainframe, text='Start year (optional):')
+        e.grid(column=3, row=row, sticky=tk.E)
         self.start = tk.StringVar()
         e = ttk.Entry(mainframe, textvariable=self.start, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe, text='End year (optional):').grid(column=3,
-                                                               row=row,
-                                                               sticky=tk.E)
+        e = ttk.Label(mainframe, text='End year (optional):')
+        e.grid(column=3, row=row, sticky=tk.E)
         self.end = tk.StringVar()
-        ttk.Entry(mainframe, textvariable=self.end, width=6).grid(column=4,
-                                                                  row=row,
-                                                                  sticky=tk.W)
+        e = ttk.Entry(mainframe, textvariable=self.end, width=6)
+        e.grid(column=4, row=row, sticky=tk.W)
         row += 1
 
-        ttk.Label(mainframe,
-                  text='Period offset (optional):').grid(column=3,
-                                                         row=row,
-                                                         sticky=tk.E)
+        e = ttk.Label(mainframe, text='Period offset (optional):')
+        e.grid(column=3, row=row, sticky=tk.E)
         self.offset = tk.StringVar()
-        ttk.Entry(mainframe, textvariable=self.offset,
-                  width=6).grid(column=4, row=row, sticky=tk.W)
+        e = ttk.Entry(mainframe, textvariable=self.offset, width=6)
+        e.grid(column=4, row=row, sticky=tk.W)
         row += 1
 
         for child in mainframe.winfo_children():
