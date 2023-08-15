@@ -67,27 +67,57 @@ class App:
         row = 1
 
         ttk.Label(mainframe, text="X axis:").grid(column=1, row=row, sticky=tk.E)
-        vs_what = tk.StringVar()
+        self.vs_what = tk.StringVar()
         vs_what_choices = ['tokens', 'words']
-        ttk.OptionMenu(mainframe, vs_what, vs_what_choices[0], *vs_what_choices).grid(column=2, row=row, sticky=tk.W)
+        ttk.OptionMenu(mainframe, self.vs_what, vs_what_choices[0], *vs_what_choices).grid(column=2, row=row, sticky=tk.W)
         row += 1
 
         ttk.Label(mainframe, text="Categories:").grid(column=1, row=row, sticky=tk.E)
-        compare = tk.StringVar()
+        self.compare = tk.StringVar()
         compare_choices = metadata_top_choices(sample_metadata)
-        ttk.OptionMenu(mainframe, compare, compare_choices[0], *compare_choices).grid(column=2, row=row, sticky=tk.W)
+        ttk.OptionMenu(mainframe, self.compare, compare_choices[0], *compare_choices).grid(column=2, row=row, sticky=tk.W)
         row += 1
 
         ttk.Label(mainframe, text="Sample restriction:").grid(column=1, row=row, sticky=tk.E)
-        restrict_samples = tk.StringVar()
+        self.restrict_samples = tk.StringVar()
         restrict_samples_choices = metadata_choices(sample_metadata)
-        ttk.OptionMenu(mainframe, restrict_samples, restrict_samples_choices[0], *restrict_samples_choices).grid(column=2, row=row, sticky=tk.W)
+        ttk.OptionMenu(mainframe, self.restrict_samples, restrict_samples_choices[0], *restrict_samples_choices).grid(column=2, row=row, sticky=tk.W)
         row += 1
 
         ttk.Label(mainframe, text="Token restriction:").grid(column=1, row=row, sticky=tk.E)
-        restrict_tokens = tk.StringVar()
+        self.restrict_tokens = tk.StringVar()
         restrict_tokens_choices = metadata_choices(token_metadata)
-        ttk.OptionMenu(mainframe, restrict_tokens, restrict_tokens_choices[0], *restrict_tokens_choices).grid(column=2, row=row, sticky=tk.W)
+        ttk.OptionMenu(mainframe, self.restrict_tokens, restrict_tokens_choices[0], *restrict_tokens_choices).grid(column=2, row=row, sticky=tk.W)
+        row += 1
+
+        row = 1
+
+        ttk.Label(mainframe, text="Window size:").grid(column=3, row=row, sticky=tk.E)
+        self.window = tk.StringVar(value="10")
+        e = ttk.Entry(mainframe, textvariable=self.window, width=6)
+        e.grid(column=4, row=row, sticky=tk.W)
+        row += 1
+
+        ttk.Label(mainframe, text="Step size:").grid(column=3, row=row, sticky=tk.E)
+        self.step = tk.StringVar(value="10")
+        e = ttk.Entry(mainframe, textvariable=self.step, width=6)
+        e.grid(column=4, row=row, sticky=tk.W)
+        row += 1
+
+        ttk.Label(mainframe, text="Start year (optional):").grid(column=3, row=row, sticky=tk.E)
+        self.start = tk.StringVar()
+        e = ttk.Entry(mainframe, textvariable=self.start, width=6)
+        e.grid(column=4, row=row, sticky=tk.W)
+        row += 1
+
+        ttk.Label(mainframe, text="End year (optional):").grid(column=3, row=row, sticky=tk.E)
+        self.end = tk.StringVar()
+        ttk.Entry(mainframe, textvariable=self.end, width=6).grid(column=4, row=row, sticky=tk.W)
+        row += 1
+
+        ttk.Label(mainframe, text="Period offset (optional):").grid(column=3, row=row, sticky=tk.E)
+        self.offset = tk.StringVar()
+        ttk.Entry(mainframe, textvariable=self.offset, width=6).grid(column=4, row=row, sticky=tk.W)
         row += 1
 
         for child in mainframe.winfo_children(): 
@@ -105,5 +135,5 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s %(message)s', level=loglevel)
     sanity_check()
     root = tk.Tk()
-    App(root, args)
+    app = App(root, args)
     root.mainloop()
