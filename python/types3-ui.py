@@ -125,6 +125,8 @@ class App:
         self.window = tk.StringVar(value='10')
         e = ttk.Entry(mainframe, textvariable=self.window, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(mainframe, text='Step size:')
@@ -132,6 +134,8 @@ class App:
         self.step = tk.StringVar(value='10')
         e = ttk.Entry(mainframe, textvariable=self.step, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(mainframe, text='Start year (optional):')
@@ -139,6 +143,8 @@ class App:
         self.start = tk.StringVar()
         e = ttk.Entry(mainframe, textvariable=self.start, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(mainframe, text='End year (optional):')
@@ -146,6 +152,8 @@ class App:
         self.end = tk.StringVar()
         e = ttk.Entry(mainframe, textvariable=self.end, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(mainframe, text='Period offset (optional):')
@@ -153,6 +161,8 @@ class App:
         self.offset = tk.StringVar()
         e = ttk.Entry(mainframe, textvariable=self.offset, width=6)
         e.grid(column=4, row=row, sticky=tk.W)
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
         row += 1
 
         for child in mainframe.winfo_children():
@@ -162,11 +172,6 @@ class App:
         self.compare.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
-        self.window.trace_add('write', self.update)
-        self.step.trace_add('write', self.update)
-        self.start.trace_add('write', self.update)
-        self.end.trace_add('write', self.update)
-        self.offset.trace_add('write', self.update)
         self.update()
         logging.info(f'ready')
 
