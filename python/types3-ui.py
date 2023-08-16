@@ -58,12 +58,15 @@ class App:
     def __init__(self, root, args):
         root.title('types3')
 
+        self.cur_args = None
+
         self.cachedir = Path(appdirs.user_cache_dir('types3'))
         self.cachedir.mkdir(parents=True, exist_ok=True)
         logging.debug(f'cache directory: {self.cachedir}')
 
-        logging.info(f'read: {args.infile}')
-        with open(args.infile) as f:
+        self.infile = args.infile
+        logging.info(f'read: {self.infile}')
+        with open(self.infile) as f:
             data = json.load(f)
         years = set()
         sample_metadata = defaultdict(set)
@@ -99,11 +102,11 @@ class App:
 
         e = ttk.Label(mainframe, text='Categories:')
         e.grid(column=1, row=row, sticky=tk.E)
-        self.compare = tk.StringVar()
-        self.compare_map, compare_choices = metadata_top_choices(
+        self.category = tk.StringVar()
+        self.category_map, category_choices = metadata_top_choices(
             sample_metadata)
-        e = ttk.OptionMenu(mainframe, self.compare, compare_choices[0],
-                           *compare_choices)
+        e = ttk.OptionMenu(mainframe, self.category, category_choices[0],
+                           *category_choices)
         e.grid(column=2, row=row, sticky=tk.W)
         row += 1
 
@@ -180,20 +183,80 @@ class App:
             child.grid_configure(padx=5, pady=2)
 
         self.vs_what.trace_add('write', self.update)
-        self.compare.trace_add('write', self.update)
+        self.category.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
         self.update()
         logging.info(f'ready')
 
+    def parse_required_int(self, errors, label, min, max, v):
+        x = self.parse_opt_int(errors, label, min, max, v)
+        if x is None:
+            errors.append(f'{label} is required')
+            return None
+        return x
+
+    def parse_opt_int(self, errors, label, min, max, v):
+        if v is None:
+            return None
+        if v.strip() == '':
+            return None
+        try:
+            x = int(v)
+        except:
+            errors.append(f'{label} is not a valid number')
+            return None
+        if min is not None and x < min:
+            errors.append(f'{label} should be at least {min}')
+            return None
+        if max is not None and x > max:
+            errors.append(f'{label} should be at most {max}')
+            return None
+        return x
+
     def update(self, *x):
-        compare = self.compare_map[self.compare.get()]
+        args = []
+        errors = []
+        window = self.parse_required_int(errors, 'Window size', 1, None,
+                                         self.window.get())
+        if window is not None:
+            args += ['--window', str(window)]
+        step = self.parse_required_int(errors, 'Step size', 1, None,
+                                       self.step.get())
+        if step is not None:
+            args += ['--step', str(step)]
+        start = self.parse_opt_int(errors, 'Start year', None, None,
+                                   self.start.get())
+        if start is not None:
+            args += ['--start', str(start)]
+        end = self.parse_opt_int(errors, 'End year', None, None,
+                                 self.end.get())
+        if end is not None:
+            args += ['--end', str(end)]
+        offset = self.parse_opt_int(errors, 'Offset', None, None,
+                                    self.offset.get())
+        if offset is not None:
+            args += ['--offset', str(offset)]
+        category = self.category_map[self.category.get()]
+        if category is not None:
+            args += ['--category', category]
         restrict_samples = self.restrict_samples_map[
             self.restrict_samples.get()]
+        if restrict_samples is not None:
+            args += ['--restrict-samples', '='.join(restrict_samples)]
         restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
-        logging.debug(
-            f'{self.vs_what.get()} {compare} {restrict_samples} {restrict_tokens} {self.window.get()} {self.step.get()} {self.start.get()} {self.end.get()} {self.offset.get()}'
-        )
+        if restrict_tokens is not None:
+            args += ['--restrict-tokens', '='.join(restrict_tokens)]
+        vs_what = self.vs_what.get()
+        if vs_what == 'words':
+            args += ['--words']
+        args += [self.infile]
+        if errors:
+            logging.warning(errors)
+            return
+        if self.cur_args != args:
+            self.cur_args = args
+            logging.debug(args)
 
 
 if __name__ == '__main__':
