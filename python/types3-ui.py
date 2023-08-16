@@ -31,18 +31,26 @@ def sanity_check():
 
 def metadata_choices(metadata):
     r = ['everything']
+    m = {'everything': None}
     for k in sorted(metadata.keys()):
         for v in sorted(metadata[k]):
-            r.append(f'{k}={v}')
-    return r
+            l = f'{k} = {v}'
+            assert l not in m
+            m[l] = (k, v)
+            r.append(l)
+    return m, r
 
 
 def metadata_top_choices(metadata):
     r = ['none']
+    m = {'none': None}
     for k in sorted(metadata.keys()):
         vv = ', '.join(sorted(metadata[k]))
-        r.append(f'{k} ({vv})')
-    return r
+        l = f'{k} ({vv})'
+        assert l not in m
+        m[l] = k
+        r.append(l)
+    return m, r
 
 
 class App:
@@ -92,7 +100,8 @@ class App:
         e = ttk.Label(mainframe, text='Categories:')
         e.grid(column=1, row=row, sticky=tk.E)
         self.compare = tk.StringVar()
-        compare_choices = metadata_top_choices(sample_metadata)
+        self.compare_map, compare_choices = metadata_top_choices(
+            sample_metadata)
         e = ttk.OptionMenu(mainframe, self.compare, compare_choices[0],
                            *compare_choices)
         e.grid(column=2, row=row, sticky=tk.W)
@@ -101,7 +110,8 @@ class App:
         e = ttk.Label(mainframe, text='Sample restriction:')
         e.grid(column=1, row=row, sticky=tk.E)
         self.restrict_samples = tk.StringVar()
-        restrict_samples_choices = metadata_choices(sample_metadata)
+        self.restrict_samples_map, restrict_samples_choices = metadata_choices(
+            sample_metadata)
         e = ttk.OptionMenu(mainframe, self.restrict_samples,
                            restrict_samples_choices[0],
                            *restrict_samples_choices)
@@ -111,7 +121,8 @@ class App:
         e = ttk.Label(mainframe, text='Token restriction:')
         e.grid(column=1, row=row, sticky=tk.E)
         self.restrict_tokens = tk.StringVar()
-        restrict_tokens_choices = metadata_choices(token_metadata)
+        self.restrict_tokens_map, restrict_tokens_choices = metadata_choices(
+            token_metadata)
         e = ttk.OptionMenu(mainframe, self.restrict_tokens,
                            restrict_tokens_choices[0],
                            *restrict_tokens_choices)
@@ -176,8 +187,12 @@ class App:
         logging.info(f'ready')
 
     def update(self, *x):
+        compare = self.compare_map[self.compare.get()]
+        restrict_samples = self.restrict_samples_map[
+            self.restrict_samples.get()]
+        restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
         logging.debug(
-            f'{self.vs_what.get()} {self.compare.get()} {self.restrict_samples.get()} {self.restrict_tokens.get()} {self.window.get()} {self.step.get()} {self.start.get()} {self.end.get()} {self.offset.get()}'
+            f'{self.vs_what.get()} {compare} {restrict_samples} {restrict_tokens} {self.window.get()} {self.step.get()} {self.start.get()} {self.end.get()} {self.offset.get()}'
         )
 
 
