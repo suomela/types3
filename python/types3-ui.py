@@ -7,7 +7,10 @@ import math
 # matplotlib.use('Agg')
 # matplotlib.rcParams['axes.titlesize'] = 'medium'
 # import matplotlib.pyplot as plt
+import queue
+import subprocess
 import sys
+import threading
 import tkinter as tk
 from collections import defaultdict
 from pathlib import Path
@@ -51,6 +54,94 @@ def metadata_top_choices(metadata):
         m[l] = k
         r.append(l)
     return m, r
+
+
+MIN_ITER = 1_000
+MAX_ITER = 100_000
+ITER_STEP = 10
+TIMEOUT = 0.1
+
+
+class Runner:
+
+    def __init__(self, args, queue):
+        self.infile = args.infile
+        self.queue = queue
+        self.current = None
+        self.process = None
+        self.iter = None
+
+    def start_cmd(self):
+        assert self.process is None
+        assert self.current is not None
+        assert self.iter is not None
+        full_cmd = [
+            './types3-calc', self.infile, 'temp.json', '-i',
+            str(self.iter)
+        ] + self.current
+        logging.debug(f'starting: {full_cmd}...')
+        self.process = subprocess.Popen(full_cmd)
+
+    def process_poll(self):
+        assert self.process is not None
+        assert self.current is not None
+        assert self.iter is not None
+        ret = self.process.poll()
+        if ret is None:
+            return
+        self.process = None
+        if ret != 0:
+            logging.warning(f'process failed')
+            self.iter = None
+            self.current = None
+            return
+        logging.debug(f'process finished successfully')
+        if self.iter < MAX_ITER:
+            self.iter *= ITER_STEP
+            self.start_cmd()
+            return
+        logging.debug(f'all iterations done')
+        self.iter = None
+        self.current = None
+
+    def terminate(self):
+        assert self.process is not None
+        assert self.current is not None
+        assert self.iter is not None
+        logging.debug(f'stopping...')
+        self.process.terminate()
+        logging.debug(f'waiting...')
+        self.process.wait()
+        logging.debug(f'stopped')
+        self.iter = None
+        self.process = None
+        self.current = None
+
+    def run(self):
+        logging.debug(f'runner started')
+        while True:
+            if self.process:
+                need_poll = False
+                try:
+                    cmd = self.queue.get(timeout=TIMEOUT)
+                except queue.Empty:
+                    need_poll = True
+                if need_poll:
+                    self.process_poll()
+                    continue
+            else:
+                cmd = self.queue.get()
+            if cmd == self.current:
+                continue
+            if self.process:
+                self.terminate()
+            if cmd == 'STOP':
+                break
+            assert self.iter is None
+            self.iter = MIN_ITER
+            self.current = cmd
+            self.start_cmd()
+        logging.debug(f'runner done')
 
 
 class App:
@@ -182,10 +273,21 @@ class App:
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=2)
 
+        # macOS: cmd-q and "Quit" in the application menu will close the window instead of just killing Python
+        menubar = tk.Menu(root)
+        appmenu = tk.Menu(menubar, name='apple')
+        menubar.add_cascade(menu=appmenu)
+        root.createcommand('tk::mac::Quit', root.destroy)
+
         self.vs_what.trace_add('write', self.update)
         self.category.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
+
+        self.runner_queue = queue.Queue()
+        runner = Runner(args, self.runner_queue)
+        self.runner_thread = threading.Thread(target=runner.run)
+        self.runner_thread.start()
         self.update()
         logging.info(f'ready')
 
@@ -250,13 +352,19 @@ class App:
         vs_what = self.vs_what.get()
         if vs_what == 'words':
             args += ['--words']
-        args += [self.infile]
         if errors:
             logging.warning(errors)
             return
         if self.cur_args != args:
             self.cur_args = args
-            logging.debug(args)
+            self.runner_queue.put(args)
+
+    def run(self, root):
+        root.mainloop()
+        logging.debug(f'stopping...')
+        self.runner_queue.put('STOP')
+        self.runner_thread.join()
+        logging.info(f'done')
 
 
 if __name__ == '__main__':
@@ -268,6 +376,4 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s %(message)s', level=loglevel)
     sanity_check()
     root = tk.Tk()
-    app = App(root, args)
-    root.mainloop()
-    logging.info(f'done')
+    App(root, args).run(root)
