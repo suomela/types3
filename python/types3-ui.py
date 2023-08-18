@@ -1,5 +1,6 @@
 import appdirs
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -56,6 +57,12 @@ def metadata_top_choices(metadata):
     return m, r
 
 
+def cmd_digest(x):
+    x = json.dumps(x)
+    x = bytes(x, encoding='utf-8')
+    return hashlib.sha256(x).hexdigest()
+
+
 MIN_ITER = 1_000
 MAX_ITER = 100_000
 ITER_STEP = 10
@@ -64,8 +71,9 @@ TIMEOUT = 0.1
 
 class Runner:
 
-    def __init__(self, args, runner_queue, result_queue, root):
-        self.infile = args.infile
+    def __init__(self, infile, cachedir, runner_queue, result_queue, root):
+        self.infile = infile
+        self.cachedir = cachedir
         self.runner_queue = runner_queue
         self.result_queue = result_queue
         self.root = root
@@ -81,8 +89,11 @@ class Runner:
         assert self.process is None
         assert self.current is not None
         assert self.iter is not None
+        digest = cmd_digest(self.current)
+        self.tempfile = self.cachedir / f'{digest}-{self.iter}.new'
+        self.outfile = self.cachedir / f'{digest}-{self.iter}.json'
         full_cmd = [
-            './types3-calc', self.infile, 'temp.json', '-i',
+            './types3-calc', self.infile, self.tempfile, '-i',
             str(self.iter)
         ] + self.current
         logging.debug(f'starting: {full_cmd}...')
@@ -102,6 +113,7 @@ class Runner:
             self.current = None
             return
         logging.debug(f'process finished successfully')
+        self.tempfile.rename(self.outfile)
         if self.iter < MAX_ITER:
             self.msg(('DONE-WORKING', self.current, self.iter))
             self.iter *= ITER_STEP
@@ -169,7 +181,10 @@ class App:
     def _read_infile(self):
         logging.info(f'read: {self.infile}')
         with open(self.infile) as f:
-            data = json.load(f)
+            raw_data = f.read()
+        raw_bytes = bytes(raw_data, encoding='utf-8')
+        self.data_digest = hashlib.sha256(raw_bytes).hexdigest()
+        data = json.loads(raw_data)
         years = set()
         self.sample_metadata = defaultdict(set)
         self.token_metadata = defaultdict(set)
@@ -182,7 +197,8 @@ class App:
                     self.token_metadata[k].add(v)
 
     def _setup_cache(self):
-        self.cachedir = Path(appdirs.user_cache_dir('types3'))
+        self.cachedir = Path(
+            appdirs.user_cache_dir('types3')) / self.data_digest
         self.cachedir.mkdir(parents=True, exist_ok=True)
         logging.debug(f'cache directory: {self.cachedir}')
 
@@ -314,7 +330,8 @@ class App:
         root.bind('<<NewResults>>', self.new_results)
         self.result_queue = queue.Queue()
         self.runner_queue = queue.Queue()
-        runner = Runner(args, self.runner_queue, self.result_queue, root)
+        runner = Runner(self.infile, self.cachedir, self.runner_queue,
+                        self.result_queue, root)
         self.runner_thread = threading.Thread(target=runner.run)
         self.runner_thread.start()
         self.update()
