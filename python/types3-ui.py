@@ -157,28 +157,36 @@ class App:
 
     def __init__(self, root, args):
         root.title('types3')
-
-        self.cur_args = None
-
-        self.cachedir = Path(appdirs.user_cache_dir('types3'))
-        self.cachedir.mkdir(parents=True, exist_ok=True)
-        logging.debug(f'cache directory: {self.cachedir}')
-
         self.infile = args.infile
+        self.cur_args = None
+        self._read_infile()
+        self._setup_cache()
+        self._build_ui(root)
+        self._setup_menu(root)
+        self._setup_hooks(root)
+        logging.info(f'ready')
+
+    def _read_infile(self):
         logging.info(f'read: {self.infile}')
         with open(self.infile) as f:
             data = json.load(f)
         years = set()
-        sample_metadata = defaultdict(set)
-        token_metadata = defaultdict(set)
+        self.sample_metadata = defaultdict(set)
+        self.token_metadata = defaultdict(set)
         for s in data['samples']:
             years.add(s['year'])
             for k, v in s['metadata'].items():
-                sample_metadata[k].add(v)
+                self.sample_metadata[k].add(v)
             for t in s['tokens']:
                 for k, v in t['metadata'].items():
-                    token_metadata[k].add(v)
+                    self.token_metadata[k].add(v)
 
+    def _setup_cache(self):
+        self.cachedir = Path(appdirs.user_cache_dir('types3'))
+        self.cachedir.mkdir(parents=True, exist_ok=True)
+        logging.debug(f'cache directory: {self.cachedir}')
+
+    def _build_ui(self, root):
         mainframe = ttk.Frame(root, padding='3 3 12 12')
         mainframe.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         root.columnconfigure(0, weight=1)
@@ -204,7 +212,7 @@ class App:
         e.grid(column=1, row=row, sticky=tk.E)
         self.category = tk.StringVar()
         self.category_map, category_choices = metadata_top_choices(
-            sample_metadata)
+            self.sample_metadata)
         e = ttk.OptionMenu(mainframe, self.category, category_choices[0],
                            *category_choices)
         e.grid(column=2, row=row, sticky=tk.W)
@@ -214,7 +222,7 @@ class App:
         e.grid(column=1, row=row, sticky=tk.E)
         self.restrict_samples = tk.StringVar()
         self.restrict_samples_map, restrict_samples_choices = metadata_choices(
-            sample_metadata)
+            self.sample_metadata)
         e = ttk.OptionMenu(mainframe, self.restrict_samples,
                            restrict_samples_choices[0],
                            *restrict_samples_choices)
@@ -225,7 +233,7 @@ class App:
         e.grid(column=1, row=row, sticky=tk.E)
         self.restrict_tokens = tk.StringVar()
         self.restrict_tokens_map, restrict_tokens_choices = metadata_choices(
-            token_metadata)
+            self.token_metadata)
         e = ttk.OptionMenu(mainframe, self.restrict_tokens,
                            restrict_tokens_choices[0],
                            *restrict_tokens_choices)
@@ -289,18 +297,20 @@ class App:
         for child in mainframe.winfo_children():
             child.grid_configure(padx=5, pady=2)
 
-        # macOS: cmd-q and "Quit" in the application menu will close the window instead of just killing Python
+    def _setup_menu(self, root):
         if root.tk.call('tk', 'windowingsystem') == 'aqua':
+            # macOS: cmd-q and "Quit" in the application menu will
+            # close the window instead of just killing Python
             menubar = tk.Menu(root)
             appmenu = tk.Menu(menubar, name='apple')
             menubar.add_cascade(menu=appmenu)
             root.createcommand('tk::mac::Quit', root.destroy)
 
+    def _setup_hooks(self, root):
         self.vs_what.trace_add('write', self.update)
         self.category.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
-
         root.bind('<<NewResults>>', self.new_results)
         self.result_queue = queue.Queue()
         self.runner_queue = queue.Queue()
@@ -308,7 +318,6 @@ class App:
         self.runner_thread = threading.Thread(target=runner.run)
         self.runner_thread.start()
         self.update()
-        logging.info(f'ready')
 
     def parse_required_int(self, errors, label, min, max, v):
         x = self.parse_opt_int(errors, label, min, max, v)
