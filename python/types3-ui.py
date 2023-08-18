@@ -64,12 +64,18 @@ TIMEOUT = 0.1
 
 class Runner:
 
-    def __init__(self, args, queue):
+    def __init__(self, args, runner_queue, result_queue, root):
         self.infile = args.infile
-        self.queue = queue
+        self.runner_queue = runner_queue
+        self.result_queue = result_queue
+        self.root = root
         self.current = None
         self.process = None
         self.iter = None
+
+    def msg(self, x):
+        self.root.event_generate('<<NewResults>>')
+        self.result_queue.put(x)
 
     def start_cmd(self):
         assert self.process is None
@@ -97,12 +103,14 @@ class Runner:
             return
         logging.debug(f'process finished successfully')
         if self.iter < MAX_ITER:
+            self.msg(('DONE-WORKING', self.current, self.iter))
             self.iter *= ITER_STEP
             self.start_cmd()
-            return
-        logging.debug(f'all iterations done')
-        self.iter = None
-        self.current = None
+        else:
+            self.msg(('DONE', self.current, self.iter))
+            logging.debug(f'all iterations done')
+            self.iter = None
+            self.current = None
 
     def terminate(self):
         assert self.process is not None
@@ -123,14 +131,14 @@ class Runner:
             if self.process:
                 need_poll = False
                 try:
-                    cmd = self.queue.get(timeout=TIMEOUT)
+                    cmd = self.runner_queue.get(timeout=TIMEOUT)
                 except queue.Empty:
                     need_poll = True
                 if need_poll:
                     self.process_poll()
                     continue
             else:
-                cmd = self.queue.get()
+                cmd = self.runner_queue.get()
             if cmd == self.current:
                 continue
             if self.process:
@@ -140,6 +148,7 @@ class Runner:
             assert self.iter is None
             self.iter = MIN_ITER
             self.current = cmd
+            self.msg(('WORKING', ))
             self.start_cmd()
         logging.debug(f'runner done')
 
@@ -274,18 +283,21 @@ class App:
             child.grid_configure(padx=5, pady=2)
 
         # macOS: cmd-q and "Quit" in the application menu will close the window instead of just killing Python
-        menubar = tk.Menu(root)
-        appmenu = tk.Menu(menubar, name='apple')
-        menubar.add_cascade(menu=appmenu)
-        root.createcommand('tk::mac::Quit', root.destroy)
+        if root.tk.call('tk', 'windowingsystem') == 'aqua':
+            menubar = tk.Menu(root)
+            appmenu = tk.Menu(menubar, name='apple')
+            menubar.add_cascade(menu=appmenu)
+            root.createcommand('tk::mac::Quit', root.destroy)
 
         self.vs_what.trace_add('write', self.update)
         self.category.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
 
+        root.bind('<<NewResults>>', self.new_results)
+        self.result_queue = queue.Queue()
         self.runner_queue = queue.Queue()
-        runner = Runner(args, self.runner_queue)
+        runner = Runner(args, self.runner_queue, self.result_queue, root)
         self.runner_thread = threading.Thread(target=runner.run)
         self.runner_thread.start()
         self.update()
@@ -365,6 +377,14 @@ class App:
         self.runner_queue.put('STOP')
         self.runner_thread.join()
         logging.info(f'done')
+
+    def new_results(self, *_):
+        while True:
+            try:
+                x = self.result_queue.get_nowait()
+                logging.debug(f'got results: {x}')
+            except queue.Empty:
+                break
 
 
 if __name__ == '__main__':
