@@ -137,6 +137,36 @@ class Runner:
         self.process = None
         self.current = None
 
+    def try_cache(self):
+        assert self.process is None
+        assert self.current is not None
+        assert self.iter is not None
+        digest = cmd_digest(self.current)
+        best = None
+        all_done = False
+        while True:
+            cached = self.cachedir / f'{digest}-{self.iter}.json'
+            if cached.exists():
+                best = self.iter
+                if self.iter < MAX_ITER:
+                    self.iter *= ITER_STEP
+                else:
+                    all_done = True
+                    break
+            else:
+                break
+        if all_done:
+            self.msg(('DONE', self.current, self.iter))
+            logging.debug(f'all iterations in cache')
+            self.iter = None
+            self.current = None
+        else:
+            if best is not None:
+                self.msg(('DONE-WORKING', self.current, best))
+            else:
+                self.msg(('WORKING', self.current, 0))
+            self.start_cmd()
+
     def run(self):
         logging.debug(f'runner started')
         while True:
@@ -160,8 +190,7 @@ class Runner:
             assert self.iter is None
             self.iter = MIN_ITER
             self.current = cmd
-            self.msg(('WORKING', self.current, 0))
-            self.start_cmd()
+            self.try_cache()
         logging.debug(f'runner done')
 
 
