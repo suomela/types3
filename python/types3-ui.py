@@ -74,8 +74,8 @@ class Runner:
         self.iter = None
 
     def msg(self, x):
-        self.root.event_generate('<<NewResults>>')
         self.result_queue.put(x)
+        self.root.event_generate('<<NewResults>>')
 
     def start_cmd(self):
         assert self.process is None
@@ -148,7 +148,7 @@ class Runner:
             assert self.iter is None
             self.iter = MIN_ITER
             self.current = cmd
-            self.msg(('WORKING', ))
+            self.msg(('WORKING', self.current, 0))
             self.start_cmd()
         logging.debug(f'runner done')
 
@@ -229,6 +229,13 @@ class App:
         e = ttk.OptionMenu(mainframe, self.restrict_tokens,
                            restrict_tokens_choices[0],
                            *restrict_tokens_choices)
+        e.grid(column=2, row=row, sticky=tk.W)
+        row += 1
+
+        e = ttk.Label(mainframe, text='Iterations:')
+        e.grid(column=1, row=row, sticky=tk.E)
+        self.iter = tk.StringVar(value='')
+        e = ttk.Label(mainframe, textvariable=self.iter)
         e.grid(column=2, row=row, sticky=tk.W)
         row += 1
 
@@ -382,9 +389,16 @@ class App:
         while True:
             try:
                 x = self.result_queue.get_nowait()
-                logging.debug(f'got results: {x}')
             except queue.Empty:
                 break
+            logging.debug(x)
+            what, cmd, iter = x
+            if what == 'WORKING':
+                self.iter.set('…')
+            elif what == 'DONE-WORKING':
+                self.iter.set(f'{iter}…')
+            elif what == 'DONE':
+                self.iter.set(f'{iter}')
 
 
 if __name__ == '__main__':
