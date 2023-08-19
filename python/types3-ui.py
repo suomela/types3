@@ -133,12 +133,15 @@ class Runner:
         assert self.current is not None
         assert self.iter is not None
         digest = cmd_digest(self.current)
+        self.errfile = self.cachedir / f'{digest}-{self.iter}.err'
         self.tempfile = self.cachedir / f'{digest}-{self.iter}.new'
         self.outfile = self.cachedir / f'{digest}-{self.iter}.json'
-        full_cmd = [
-            './types3-calc', self.infile, self.tempfile, '-i',
+        base_args = [
+            './types3-calc', self.infile, self.tempfile, '--error-file',
+            self.errfile, '-i',
             str(self.iter)
-        ] + self.current
+        ]
+        full_cmd = base_args + self.current
         logging.debug(f'starting: {full_cmd}...')
         self.process = subprocess.Popen(full_cmd)
 
@@ -152,17 +155,24 @@ class Runner:
         self.process = None
         if ret != 0:
             logging.warning(f'process failed')
+            error = 'Unknown error during calculation.'
+            if self.errfile.exists():
+                with open(self.errfile) as f:
+                    error_struct = json.load(f)
+                    error = error_struct['error']
+                self.errfile.unlink()
+            self.msg(('ERROR', self.current, self.iter, error))
             self.iter = None
             self.current = None
             return
         logging.debug(f'process finished successfully')
         self.tempfile.rename(self.outfile)
         if self.iter < MAX_ITER:
-            self.msg(('DONE-WORKING', self.current, self.iter))
+            self.msg(('DONE-WORKING', self.current, self.iter, None))
             self.iter *= ITER_STEP
             self.start_cmd()
         else:
-            self.msg(('DONE', self.current, self.iter))
+            self.msg(('DONE', self.current, self.iter, None))
             logging.debug(f'all iterations done')
             self.iter = None
             self.current = None
@@ -199,15 +209,15 @@ class Runner:
             else:
                 break
         if all_done:
-            self.msg(('DONE', self.current, self.iter))
+            self.msg(('DONE', self.current, self.iter, None))
             logging.debug(f'all iterations in cache')
             self.iter = None
             self.current = None
         else:
             if best is not None:
-                self.msg(('DONE-WORKING', self.current, best))
+                self.msg(('DONE-WORKING', self.current, best, None))
             else:
-                self.msg(('WORKING', self.current, 0))
+                self.msg(('WORKING', self.current, 0, None))
             self.start_cmd()
 
     def run(self):
@@ -549,7 +559,7 @@ class App:
             except queue.Empty:
                 break
             logging.debug(x)
-            what, cmd, iter = x
+            what, cmd, iter, error = x
             if what == 'WORKING':
                 to_draw = None
                 self.iter.set('… (working)')
@@ -562,6 +572,11 @@ class App:
                 to_draw = (cmd, iter)
                 self.iter.set(f'{iter} (all done)')
                 self.error.set('')
+            elif what == 'ERROR':
+                self.iter.set('—')
+                self.error.set(error)
+            else:
+                assert False, what
         if to_draw:
             self.draw(*to_draw)
 

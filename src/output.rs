@@ -61,6 +61,11 @@ pub struct Output {
     pub iter: u64,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct OError {
+    pub error: String,
+}
+
 pub fn avg_string(ar: &AvgResult) -> String {
     let low = ar.types_low as f64 / ar.iter as f64;
     let high = ar.types_high as f64 / ar.iter as f64;

@@ -8,7 +8,8 @@ use std::{error, fmt, fs, io, process, result};
 use types3::calculation::{self, Point, SToken, Sample};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
-    avg_string, point_string, Measure, OCategory, OCurve, OResult, Output, PointResult, Years,
+    avg_string, point_string, Measure, OCategory, OCurve, OError, OResult, Output, PointResult,
+    Years,
 };
 
 const DEFAULT_ITER: u64 = 1_000_000;
@@ -86,6 +87,9 @@ struct Args {
     /// Token category restriction, of the form key=value
     #[arg(long)]
     restrict_tokens: Option<String>,
+    /// Report errors as a JSON file
+    #[arg(long)]
+    error_file: Option<String>,
     #[command(flatten)]
     verbose: Verbosity<InfoLevel>,
 }
@@ -619,6 +623,16 @@ fn process(args: &Args) -> Result<()> {
     Ok(())
 }
 
+fn store_error(error_file: &str, e: &dyn error::Error) -> Result<()> {
+    let error = OError {
+        error: format!("{e}"),
+    };
+    let file = fs::File::create(error_file)?;
+    let writer = io::BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, &error)?;
+    Ok(())
+}
+
 fn main() {
     let args = Args::parse();
     pretty_env_logger::formatted_timed_builder()
@@ -627,7 +641,18 @@ fn main() {
     match process(&args) {
         Ok(()) => (),
         Err(e) => {
-            error!("{e}");
+            match args.error_file {
+                Some(filename) => match store_error(&filename, &*e) {
+                    Ok(()) => {
+                        info!("error reported: {e}");
+                    }
+                    Err(e2) => {
+                        error!("{e}");
+                        error!("{e2}");
+                    }
+                },
+                None => error!("{e}"),
+            }
             process::exit(1);
         }
     }
