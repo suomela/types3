@@ -3,7 +3,13 @@
 set -e
 
 WHERE=$(readlink -f "$0")
-BASEDIR=$(dirname "$WHERE")
+TYPES3_BASEDIR=$(dirname "$WHERE")
+
+if [ ! -e "$TYPES3_BASEDIR/venv/bin/activate" ]; then
+    echo "Cannot find Python virtual environment"
+    echo "Try to run util/setup.sh first!"
+    exit 1
+fi
 
 source "$BASEDIR/venv/bin/activate"
 exec python3 $BASEDIR/python/types3-plot.py "$@"

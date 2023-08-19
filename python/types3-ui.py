@@ -143,7 +143,7 @@ class Runner:
         self.tempfile = self.cachedir / f'{digest}-{self.iter}.new'
         self.outfile = self.cachedir / f'{digest}-{self.iter}.json'
         basedir = Path(os.environ['TYPES3_BASEDIR'])
-        tool = basedir / 'types3-calc'
+        tool = basedir / 'target/release/types3'
         base_args = [
             tool, self.infile, self.tempfile, '--error-file', self.errfile,
             '--iter',

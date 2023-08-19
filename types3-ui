@@ -5,5 +5,17 @@ set -e
 WHERE=$(readlink -f "$0")
 export TYPES3_BASEDIR=$(dirname "$WHERE")
 
+if [ ! -e "$TYPES3_BASEDIR/venv/bin/activate" ]; then
+    echo "Cannot find Python virtual environment"
+    echo "Try to run util/setup.sh first!"
+    exit 1
+fi
+
+if [ ! -e "$TYPES3_BASEDIR/target/release/types3" ]; then
+    echo "Cannot find types-calc binary"
+    echo "Try to run util/setup.sh first!"
+    exit 1
+fi
+
 source "$TYPES3_BASEDIR/venv/bin/activate"
 exec python3 $TYPES3_BASEDIR/python/types3-ui.py "$@"
