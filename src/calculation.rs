@@ -20,6 +20,7 @@ pub struct SToken {
 pub struct Sample {
     pub size: u64,
     pub tokens: Vec<SToken>,
+    pub id: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -33,6 +34,11 @@ pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult 
     r.finalize(iter)
 }
 
+pub fn subsets_at_limit(samples: &[Sample], iter: u64, limit: u64) -> Vec<Vec<usize>> {
+    let (r, _iter) = Driver::new(samples, SubsetComp { limit }).compute_seq(iter);
+    r.finalize()
+}
+
 pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult> {
     let (r, iter) = Driver::new(samples, PointComp { points }).compute(iter);
     r.finalize(iter)
@@ -40,16 +46,14 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
 
 trait Comp<R, J> {
     fn sanity(&self);
+    fn parallel_ok(&self) -> bool;
     fn build_total(&self) -> R;
-    fn build_tracker(&self) -> J;
+    fn start(&self, result: &mut R) -> J;
+    fn feed_sample(&self, result: &mut R, sample: &Sample);
     fn step(&self, result: &mut R, tracker: &mut J, prev: u64, types: u64, size: u64) -> bool;
 }
 
 trait Tracker {}
-
-struct AvgComp {
-    limit: u64,
-}
 
 struct NoTracker {}
 
@@ -61,6 +65,14 @@ struct CountTracker {
 
 impl Tracker for CountTracker {}
 
+struct AvgComp {
+    limit: u64,
+}
+
+struct SubsetComp {
+    limit: u64,
+}
+
 struct PointComp<'a> {
     points: &'a [Point],
 }
@@ -68,13 +80,19 @@ struct PointComp<'a> {
 impl Comp<RawAvgResult, NoTracker> for AvgComp {
     fn sanity(&self) {}
 
-    fn build_tracker(&self) -> NoTracker {
+    fn parallel_ok(&self) -> bool {
+        true
+    }
+
+    fn start(&self, _result: &mut RawAvgResult) -> NoTracker {
         NoTracker {}
     }
 
     fn build_total(&self) -> RawAvgResult {
         RawAvgResult::new()
     }
+
+    fn feed_sample(&self, _result: &mut RawAvgResult, _sample: &Sample) {}
 
     fn step(
         &self,
@@ -100,12 +118,52 @@ impl Comp<RawAvgResult, NoTracker> for AvgComp {
     }
 }
 
+impl Comp<RawSubsetResult, NoTracker> for SubsetComp {
+    fn sanity(&self) {}
+
+    fn parallel_ok(&self) -> bool {
+        false
+    }
+
+    fn start(&self, result: &mut RawSubsetResult) -> NoTracker {
+        result.subsets.push(vec![]);
+        NoTracker {}
+    }
+
+    fn build_total(&self) -> RawSubsetResult {
+        RawSubsetResult::new()
+    }
+
+    fn feed_sample(&self, result: &mut RawSubsetResult, sample: &Sample) {
+        result
+            .subsets
+            .last_mut()
+            .expect("initialized")
+            .push(sample.id);
+    }
+
+    fn step(
+        &self,
+        _result: &mut RawSubsetResult,
+        _tracker: &mut NoTracker,
+        _prev: u64,
+        _types: u64,
+        size: u64,
+    ) -> bool {
+        size >= self.limit
+    }
+}
+
 impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
     fn sanity(&self) {
         assert!(!self.points.is_empty());
     }
 
-    fn build_tracker(&self) -> CountTracker {
+    fn parallel_ok(&self) -> bool {
+        true
+    }
+
+    fn start(&self, _result: &mut RawPointResults) -> CountTracker {
         CountTracker { j: 0 }
     }
 
@@ -114,6 +172,8 @@ impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
             results: vec![RawPointResult::new(); self.points.len()],
         }
     }
+
+    fn feed_sample(&self, _result: &mut RawPointResults, _sample: &Sample) {}
 
     fn step(
         &self,
@@ -174,7 +234,19 @@ where
         }
     }
 
+    fn compute_seq(&self, iter: u64) -> (R, u64) {
+        self.comp.sanity();
+        let mut total = self.comp.build_total();
+        let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
+        let iter = iter_per_job * RANDOM_JOBS;
+        for job in 0..RANDOM_JOBS {
+            self.job(job, iter_per_job, &mut total);
+        }
+        (total, iter)
+    }
+
     fn compute(&self, iter: u64) -> (R, u64) {
+        assert!(self.comp.parallel_ok());
         self.comp.sanity();
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in 0..RANDOM_JOBS {
@@ -207,7 +279,7 @@ where
             }
             drop(s2);
             while let Ok(thread_total) = r2.recv() {
-                total.add(&thread_total);
+                total.add(thread_total);
             }
         });
         (total, iter)
@@ -229,10 +301,11 @@ where
 
     fn calc_one(&self, idx: &[usize], ls: &mut LocalState, result: &mut R) {
         ls.reset();
-        let mut tracker = self.comp.build_tracker();
+        let mut tracker = self.comp.start(result);
         for i in idx {
             let prev = ls.types;
             ls.feed_sample(&self.samples[*i]);
+            self.comp.feed_sample(result, &self.samples[*i]);
             if self
                 .comp
                 .step(result, &mut tracker, prev, ls.types, ls.size)
@@ -283,7 +356,7 @@ impl LocalState {
 }
 
 trait RawResult {
-    fn add(&mut self, other: &Self);
+    fn add(&mut self, other: Self);
 }
 
 struct RawAvgResult {
@@ -292,7 +365,7 @@ struct RawAvgResult {
 }
 
 impl RawResult for RawAvgResult {
-    fn add(&mut self, other: &Self) {
+    fn add(&mut self, other: Self) {
         self.types_low += other.types_low;
         self.types_high += other.types_high;
     }
@@ -325,7 +398,8 @@ impl RawPointResult {
     fn new() -> RawPointResult {
         RawPointResult { above: 0, below: 0 }
     }
-    fn add(&mut self, other: &Self) {
+
+    fn add(&mut self, other: Self) {
         self.above += other.above;
         self.below += other.below;
     }
@@ -336,10 +410,10 @@ struct RawPointResults {
 }
 
 impl RawResult for RawPointResults {
-    fn add(&mut self, other: &Self) {
+    fn add(&mut self, other: Self) {
         debug_assert_eq!(self.results.len(), other.results.len());
         for i in 0..self.results.len() {
-            self.results[i].add(&other.results[i]);
+            self.results[i].add(other.results[i]);
         }
     }
 }
@@ -354,5 +428,25 @@ impl RawPointResults {
                 iter,
             })
             .collect_vec()
+    }
+}
+
+struct RawSubsetResult {
+    subsets: Vec<Vec<usize>>,
+}
+
+impl RawResult for RawSubsetResult {
+    fn add(&mut self, other: Self) {
+        self.subsets.extend(other.subsets);
+    }
+}
+
+impl RawSubsetResult {
+    fn new() -> RawSubsetResult {
+        RawSubsetResult { subsets: vec![] }
+    }
+
+    fn finalize(self) -> Vec<Vec<usize>> {
+        self.subsets
     }
 }

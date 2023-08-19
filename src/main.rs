@@ -90,6 +90,13 @@ struct Args {
     /// Report errors as a JSON file
     #[arg(long)]
     error_file: Option<String>,
+    /// Save information on random subsets in the output file
+    #[arg(long)]
+    save_subsets: bool,
+    /// Produce compact JSON files
+    #[arg(long)]
+    compact: bool,
+    /// Verbosity
     #[command(flatten)]
     verbose: Verbosity<WarnLevel>,
 }
@@ -328,9 +335,10 @@ struct CSample<'a> {
     metadata: &'a HashMap<String, String>,
     words: u64,
     tokens: Vec<&'a str>,
+    id: usize,
 }
 
-fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
+fn get_sample<'a>(restrict_tokens: Category, id: usize, s: &'a ISample) -> CSample<'a> {
     CSample {
         year: s.year,
         metadata: &s.metadata,
@@ -346,6 +354,7 @@ fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
                 }
             })
             .collect_vec(),
+        id,
     }
 }
 
@@ -356,9 +365,10 @@ fn get_samples<'a>(
 ) -> Vec<CSample<'a>> {
     samples
         .iter()
-        .filter_map(|s| {
+        .enumerate()
+        .filter_map(|(id, s)| {
             if matches(restrict_samples, &s.metadata) {
-                Some(get_sample(restrict_tokens, s))
+                Some(get_sample(restrict_tokens, id, s))
             } else {
                 None
             }
@@ -403,7 +413,11 @@ fn build_subset<'a>(
                 Measure::Tokens => s.tokens.len() as u64,
                 Measure::Words => s.words,
             };
-            Sample { size, tokens }
+            Sample {
+                size,
+                tokens,
+                id: s.id,
+            }
         })
         .collect_vec();
     let total_size: u64 = samples.iter().map(|s| s.size).sum();
@@ -460,6 +474,7 @@ struct Calc<'a> {
     measure: Measure,
     restrict_samples: Category<'a>,
     restrict_tokens: Category<'a>,
+    save_subsets: bool,
 }
 
 impl<'a> Calc<'a> {
@@ -497,16 +512,16 @@ impl<'a> Calc<'a> {
                 }
             }
         }
-        let iter = args.iter;
         Ok(Calc {
             years,
             periods,
             curves,
             subset_map,
-            iter,
+            iter: args.iter,
             measure,
             restrict_samples,
             restrict_tokens,
+            save_subsets: args.save_subsets,
         })
     }
 
@@ -585,6 +600,15 @@ impl<'a> Calc<'a> {
             limit,
             self.measure
         ));
+        let samples_at_limit = if self.save_subsets {
+            Some(calculation::subsets_at_limit(
+                &subset.samples,
+                self.iter,
+                limit,
+            ))
+        } else {
+            None
+        };
         let p = subset.get_point();
         let vs_time = {
             let k = subset.get_parent_period(self.years);
@@ -605,6 +629,7 @@ impl<'a> Calc<'a> {
         OResult {
             period: subset.period,
             average_at_limit,
+            subsets_at_limit: samples_at_limit,
             vs_time,
             vs_categories,
         }
@@ -619,7 +644,11 @@ fn process(args: &Args) -> Result<()> {
     info!("write: {}", args.outfile);
     let file = fs::File::create(&args.outfile)?;
     let writer = io::BufWriter::new(file);
-    serde_json::to_writer_pretty(writer, &output)?;
+    if args.compact {
+        serde_json::to_writer(writer, &output)?;
+    } else {
+        serde_json::to_writer_pretty(writer, &output)?;
+    }
     Ok(())
 }
 
@@ -629,7 +658,7 @@ fn store_error(error_file: &str, e: &dyn error::Error) -> Result<()> {
     };
     let file = fs::File::create(error_file)?;
     let writer = io::BufWriter::new(file);
-    serde_json::to_writer_pretty(writer, &error)?;
+    serde_json::to_writer(writer, &error)?;
     Ok(())
 }
 
