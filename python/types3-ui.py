@@ -404,7 +404,9 @@ class App:
         row += 1
 
         self.error = tk.StringVar(value='')
-        e = ttk.Label(widgetframe, textvariable=self.error, wraplength=WIDGET_WIDTH)
+        e = ttk.Label(widgetframe,
+                      textvariable=self.error,
+                      wraplength=WIDGET_WIDTH)
         e.grid(column=0, columnspan=2, row=row, sticky='w')
         row += 1
 
