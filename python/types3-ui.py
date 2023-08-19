@@ -18,6 +18,17 @@ from matplotlib.figure import Figure
 
 matplotlib.rcParams['axes.titlesize'] = 'medium'
 
+MIN_ITER = 1_000
+MAX_ITER = 100_000
+ITER_STEP = 10
+TIMEOUT = 0.1
+MAX_SIGNIFICANCE = 4
+FIG_WIDTH = 7
+FIG_HEIGHT = 15
+COLORS = ['#f26924', '#0088cc', '#3ec636']
+WINDOW_INIT_SIZE = '1200x1000'
+WIDGET_WIDTH = 250
+
 cli = argparse.ArgumentParser()
 cli.add_argument('--verbose',
                  '-v',
@@ -62,16 +73,6 @@ def cmd_digest(x):
     x = json.dumps(x)
     x = bytes(x, encoding='utf-8')
     return hashlib.sha256(x).hexdigest()
-
-
-MIN_ITER = 1_000
-MAX_ITER = 100_000
-ITER_STEP = 10
-TIMEOUT = 0.1
-MAX_SIGNIFICANCE = 4
-FIG_WIDTH = 7
-FIG_HEIGHT = 15
-COLORS = ['#f26924', '#0088cc', '#3ec636']
 
 
 def catname(cats):
@@ -274,7 +275,7 @@ class App:
         logging.debug(f'cache directory: {self.cachedir}')
 
     def _build_ui(self, root):
-        root.geometry('1200x1000')
+        root.geometry(WINDOW_INIT_SIZE)
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
@@ -293,7 +294,7 @@ class App:
 
         widgetframe = ttk.Frame(mainframe, padding='5 5 5 5')
         widgetframe.grid(column=1, row=0, padx=3, pady=3, sticky='nw')
-        widgetframe.columnconfigure(1, minsize=250)
+        widgetframe.columnconfigure(1, minsize=WIDGET_WIDTH)
 
         row = 0
 
@@ -398,6 +399,15 @@ class App:
         e.grid(column=1, row=row, sticky='w')
         row += 1
 
+        e = ttk.Separator(widgetframe, orient='horizontal')
+        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        row += 1
+
+        self.error = tk.StringVar(value='')
+        e = ttk.Label(widgetframe, textvariable=self.error, wraplength=WIDGET_WIDTH)
+        e.grid(column=0, columnspan=2, row=row, sticky='w')
+        row += 1
+
         for child in widgetframe.winfo_children():
             child.grid_configure(padx=5, pady=3)
 
@@ -456,7 +466,7 @@ class App:
     def parse_required_int(self, errors, label, min, max, v):
         x = self.parse_opt_int(errors, label, min, max, v)
         if x is None:
-            errors.append(f'{label} is required')
+            errors.append(f'{label} is required.')
             return None
         return x
 
@@ -468,13 +478,13 @@ class App:
         try:
             x = int(v)
         except:
-            errors.append(f'{label} is not a valid number')
+            errors.append(f'{label} is not a valid number.')
             return None
         if min is not None and x < min:
-            errors.append(f'{label} should be at least {min}')
+            errors.append(f'{label} should be at least {min}.')
             return None
         if max is not None and x > max:
-            errors.append(f'{label} should be at most {max}')
+            errors.append(f'{label} should be at most {max}.')
             return None
         return x
 
@@ -515,6 +525,7 @@ class App:
         if vs_what == 'words':
             args += ['--words']
         if errors:
+            self.error.set('\n'.join(errors))
             logging.warning(errors)
             return
         if self.cur_args != args:
@@ -540,12 +551,15 @@ class App:
             if what == 'WORKING':
                 to_draw = None
                 self.iter.set('… (working)')
+                self.error.set('')
             elif what == 'DONE-WORKING':
                 to_draw = (cmd, iter)
                 self.iter.set(f'{iter}… (more coming)')
+                self.error.set('')
             elif what == 'DONE':
                 to_draw = (cmd, iter)
                 self.iter.set(f'{iter} (all done)')
+                self.error.set('')
         if to_draw:
             self.draw(*to_draw)
 
