@@ -274,124 +274,160 @@ class App:
         logging.debug(f'cache directory: {self.cachedir}')
 
     def _build_ui(self, root):
-        mainframe = ttk.Frame(root, padding='3 3 3 3')
-        mainframe.grid(column=0, row=0, sticky='nwes')
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
-        canvasframe = ttk.Frame(mainframe,
-                                padding='5 5 5 5',
-                                borderwidth=1,
-                                relief='sunken')
-        canvasframe.grid(column=1, row=1, padx=3, pady=3, sticky='nw')
+        mainframe = ttk.Frame(root)
+        mainframe.grid(column=0, row=0, sticky='nwes')
+        mainframe.rowconfigure(0, weight=1)
+        mainframe.columnconfigure(0, weight=1)
+        mainframe.columnconfigure(1, weight=0)
+
+        canvasframe = ttk.Frame(mainframe)
+        canvasframe.grid(column=0, row=0, padx=3, pady=3, sticky='nwes')
+        canvasframe.columnconfigure(0, weight=1)
+        canvasframe.columnconfigure(1, weight=0)
+        canvasframe.rowconfigure(0, weight=1)
+        canvasframe.rowconfigure(1, weight=0)
+
         widgetframe = ttk.Frame(mainframe, padding='5 5 5 5')
-        widgetframe.grid(column=2, row=1, padx=3, pady=3, sticky='nw')
+        widgetframe.grid(column=1, row=0, padx=3, pady=3, sticky='nw')
+        widgetframe.columnconfigure(1, minsize=250)
 
-        widgetframe.columnconfigure(1, minsize=100)
-        widgetframe.columnconfigure(2, minsize=300)
-
-        row = 1
+        row = 0
 
         e = ttk.Label(widgetframe, text='X axis:')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.vs_what = tk.StringVar()
         vs_what_choices = ['tokens', 'words']
         e = ttk.OptionMenu(widgetframe, self.vs_what, vs_what_choices[0],
                            *vs_what_choices)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         row += 1
 
         e = ttk.Label(widgetframe, text='Categories:')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.category = tk.StringVar()
         self.category_map, category_choices = metadata_top_choices(
             self.sample_metadata)
         e = ttk.OptionMenu(widgetframe, self.category, category_choices[0],
                            *category_choices)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         row += 1
 
         e = ttk.Label(widgetframe, text='Sample restriction:')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.restrict_samples = tk.StringVar()
         self.restrict_samples_map, restrict_samples_choices = metadata_choices(
             self.sample_metadata)
         e = ttk.OptionMenu(widgetframe, self.restrict_samples,
                            restrict_samples_choices[0],
                            *restrict_samples_choices)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         row += 1
 
         e = ttk.Label(widgetframe, text='Token restriction:')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.restrict_tokens = tk.StringVar()
         self.restrict_tokens_map, restrict_tokens_choices = metadata_choices(
             self.token_metadata)
         e = ttk.OptionMenu(widgetframe, self.restrict_tokens,
                            restrict_tokens_choices[0],
                            *restrict_tokens_choices)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        e = ttk.Separator(widgetframe, orient='horizontal')
+        e.grid(column=0, row=row, columnspan=2, sticky='ew')
         row += 1
 
         e = ttk.Label(widgetframe, text='Window size:')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.window = tk.StringVar(value='10')
         e = ttk.Entry(widgetframe, textvariable=self.window, width=6)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
         e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(widgetframe, text='Step size:')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.step = tk.StringVar(value='10')
         e = ttk.Entry(widgetframe, textvariable=self.step, width=6)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
         e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(widgetframe, text='Start year (optional):')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.start = tk.StringVar()
         e = ttk.Entry(widgetframe, textvariable=self.start, width=6)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
         e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(widgetframe, text='End year (optional):')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.end = tk.StringVar()
         e = ttk.Entry(widgetframe, textvariable=self.end, width=6)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
         e.bind('<Return>', self.update)
         row += 1
 
         e = ttk.Label(widgetframe, text='Period offset (optional):')
-        e.grid(column=1, row=row, sticky='e')
+        e.grid(column=0, row=row, sticky='e')
         self.offset = tk.StringVar()
         e = ttk.Entry(widgetframe, textvariable=self.offset, width=6)
-        e.grid(column=2, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
         e.bind('<Return>', self.update)
         row += 1
 
-        e = ttk.Label(widgetframe, text='Iterations:')
-        e.grid(column=1, row=row, sticky='e')
-        self.iter = tk.StringVar(value='')
-        e = ttk.Label(widgetframe, textvariable=self.iter)
-        e.grid(column=2, row=row, sticky='w')
+        e = ttk.Separator(widgetframe, orient='horizontal')
+        e.grid(column=0, row=row, columnspan=2, sticky='ew')
         row += 1
 
-        self.fig = Figure(figsize=(FIG_WIDTH, FIG_HEIGHT))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=canvasframe)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().grid(column=1, row=1, sticky='w')
+        e = ttk.Label(widgetframe, text='Iterations:')
+        e.grid(column=0, row=row, sticky='e')
+        self.iter = tk.StringVar(value='')
+        e = ttk.Label(widgetframe, textvariable=self.iter)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
 
         for child in widgetframe.winfo_children():
             child.grid_configure(padx=5, pady=3)
+
+        scrollablecanvas = tk.Canvas(canvasframe,
+                                     borderwidth=0,
+                                     highlightthickness=0)
+        scrollableframe = ttk.Frame(scrollablecanvas)
+        scrollablecanvas.grid(column=0, row=0, sticky='nesw')
+        sx = ttk.Scrollbar(canvasframe,
+                           orient='horizontal',
+                           command=scrollablecanvas.xview)
+        sx.grid(row=1, column=0, sticky='ew')
+        sy = ttk.Scrollbar(canvasframe,
+                           orient='vertical',
+                           command=scrollablecanvas.yview)
+        sy.grid(row=0, column=1, sticky='ns')
+        scrollablecanvas.configure(yscrollcommand=sy.set,
+                                   xscrollcommand=sx.set)
+        scrollablecanvas.grid(row=0, column=0, sticky='nesw')
+        scrollablecanvas.create_window((0, 0),
+                                       window=scrollableframe,
+                                       anchor='nw')
+        scrollableframe.bind(
+            '<Configure>', lambda ev: scrollablecanvas.configure(
+                scrollregion=scrollablecanvas.bbox('all')))
+
+        self.fig = Figure(figsize=(FIG_WIDTH, FIG_HEIGHT))
+        self.canvas = FigureCanvasTkAgg(self.fig, master=scrollableframe)
+        self.canvas.draw()
+        e = self.canvas.get_tk_widget()
+        e.grid(column=0, row=0, sticky='ne')
 
     def _setup_menu(self, root):
         if root.tk.call('tk', 'windowingsystem') == 'aqua':
