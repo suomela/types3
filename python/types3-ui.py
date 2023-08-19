@@ -70,7 +70,7 @@ ITER_STEP = 10
 TIMEOUT = 0.1
 MAX_SIGNIFICANCE = 4
 FIG_WIDTH = 7
-FIG_HEIGHT = 10
+FIG_HEIGHT = 15
 COLORS = ['#f26924', '#0088cc', '#3ec636']
 
 
@@ -274,6 +274,7 @@ class App:
         logging.debug(f'cache directory: {self.cachedir}')
 
     def _build_ui(self, root):
+        root.geometry('1200x1000')
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
