@@ -11,5 +11,5 @@ if [ ! -e "$TYPES3_BASEDIR/venv/bin/activate" ]; then
     exit 1
 fi
 
-source "$BASEDIR/venv/bin/activate"
-exec python3 $BASEDIR/python/types3-plot.py "$@"
+source "$TYPES3_BASEDIR/venv/bin/activate"
+exec python3 $TYPES3_BASEDIR/python/types3-plot.py "$@"
