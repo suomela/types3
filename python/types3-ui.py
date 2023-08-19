@@ -327,12 +327,16 @@ class App:
 
         row = 0
 
-        e = ttk.Label(widgetframe, text='X axis:')
+        e = ttk.Label(widgetframe, text='Calculate:')
         e.grid(column=0, row=row, sticky='e')
-        self.vs_what = tk.StringVar()
-        vs_what_choices = ['tokens', 'words']
-        e = ttk.OptionMenu(widgetframe, self.vs_what, vs_what_choices[0],
-                           *vs_what_choices)
+        self.what = tk.StringVar()
+        what_choices = [
+            'tokens, using samples',
+            'tokens, individually',
+            'words, using samples',
+        ]
+        e = ttk.OptionMenu(widgetframe, self.what, what_choices[0],
+                           *what_choices)
         e.grid(column=1, row=row, sticky='w')
         row += 1
 
@@ -481,7 +485,7 @@ class App:
             root.createcommand('tk::mac::Quit', root.destroy)
 
     def _setup_hooks(self, root):
-        self.vs_what.trace_add('write', self.update)
+        self.what.trace_add('write', self.update)
         self.category.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
@@ -552,8 +556,12 @@ class App:
         restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
         if restrict_tokens is not None:
             args += ['--restrict-tokens', '='.join(restrict_tokens)]
-        vs_what = self.vs_what.get()
-        if vs_what == 'words':
+        what = self.what.get()
+        if what == 'tokens, using samples':
+            pass
+        elif what == 'tokens, individually':
+            args += ['--split-samples']
+        elif what == 'words, using samples':
             args += ['--words']
         if errors:
             logging.debug(errors)

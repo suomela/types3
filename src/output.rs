@@ -2,7 +2,7 @@ use crate::input::Year;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Measure {
     Words,
@@ -58,6 +58,7 @@ pub struct Output {
     pub years: Years,
     pub periods: Vec<Years>,
     pub measure: Measure,
+    pub split_samples: bool,
     pub limit: u64,
     pub iter: u64,
 }

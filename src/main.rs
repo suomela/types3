@@ -50,6 +50,10 @@ fn invalid_argument(s: String) -> Box<dyn error::Error> {
     InvalidArgument(s).into()
 }
 
+fn invalid_argument_ref(s: &str) -> Box<dyn error::Error> {
+    InvalidArgument(s.to_owned()).into()
+}
+
 #[derive(Parser)]
 #[command(author, version, about)]
 struct Args {
@@ -87,6 +91,9 @@ struct Args {
     /// Token category restriction, of the form key=value
     #[arg(long)]
     restrict_tokens: Option<String>,
+    /// Can we split samples?
+    #[arg(long)]
+    split_samples: bool,
     /// Report errors as a JSON file
     #[arg(long)]
     error_file: Option<String>,
@@ -380,6 +387,7 @@ fn build_subset<'a>(
     measure: Measure,
     samples: &[CSample<'a>],
     key: SubsetKey<'a>,
+    split_samples: bool,
 ) -> Result<Subset<'a>> {
     let category = key.category;
     let period = key.period;
@@ -396,30 +404,49 @@ fn build_subset<'a>(
     let lemmamap: HashMap<&str, usize> = lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
     let total_types = lemmas.len() as u64;
 
-    let samples = samples
-        .into_iter()
-        .map(|s| {
-            let mut tokencount = HashMap::new();
+    let samples = if split_samples {
+        assert_eq!(measure, Measure::Tokens);
+        let mut split = vec![];
+        for s in samples {
             for lemma in &s.tokens {
-                let id = lemmamap[lemma];
-                *tokencount.entry(id).or_insert(0) += 1;
+                let token = SToken {
+                    count: 1,
+                    id: lemmamap[lemma],
+                };
+                split.push(Sample {
+                    size: 1,
+                    tokens: vec![token],
+                    id: 0,
+                })
             }
-            let mut tokens = tokencount
-                .iter()
-                .map(|(&id, &count)| SToken { id, count })
-                .collect_vec();
-            tokens.sort_by_key(|t| t.id);
-            let size = match measure {
-                Measure::Tokens => s.tokens.len() as u64,
-                Measure::Words => s.words,
-            };
-            Sample {
-                size,
-                tokens,
-                id: s.id,
-            }
-        })
-        .collect_vec();
+        }
+        split
+    } else {
+        samples
+            .into_iter()
+            .map(|s| {
+                let mut tokencount = HashMap::new();
+                for lemma in &s.tokens {
+                    let id = lemmamap[lemma];
+                    *tokencount.entry(id).or_insert(0) += 1;
+                }
+                let mut tokens = tokencount
+                    .iter()
+                    .map(|(&id, &count)| SToken { id, count })
+                    .collect_vec();
+                tokens.sort_by_key(|t| t.id);
+                let size = match measure {
+                    Measure::Tokens => s.tokens.len() as u64,
+                    Measure::Words => s.words,
+                };
+                Sample {
+                    size,
+                    tokens,
+                    id: s.id,
+                }
+            })
+            .collect_vec()
+    };
     let total_size: u64 = samples.iter().map(|s| s.size).sum();
     let s = Subset {
         category,
@@ -474,16 +501,23 @@ struct Calc<'a> {
     measure: Measure,
     restrict_samples: Category<'a>,
     restrict_tokens: Category<'a>,
+    split_samples: bool,
     save_subsets: bool,
 }
 
 impl<'a> Calc<'a> {
     fn new(args: &'a Args, input: &'a Input) -> Result<Calc<'a>> {
         let measure = if args.words {
-            Measure::Words
+            if args.split_samples {
+                Err(invalid_argument_ref(
+                    "cannot select both --words and --split-samples",
+                ))
+            } else {
+                Ok(Measure::Words)
+            }
         } else {
-            Measure::Tokens
-        };
+            Ok(Measure::Tokens)
+        }?;
         statistics(&input.samples);
         let restrict_samples = parse_restriction(&args.restrict_samples)?;
         let restrict_tokens = parse_restriction(&args.restrict_tokens)?;
@@ -499,14 +533,19 @@ impl<'a> Calc<'a> {
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset = build_subset(measure, &samples, *key)?;
+                let subset = build_subset(measure, &samples, *key, args.split_samples)?;
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
                 for parent in &parents {
                     let x = match subset_map.entry(*parent) {
                         Occupied(e) => e.into_mut(),
-                        Vacant(e) => e.insert(build_subset(measure, &samples, *parent)?),
+                        Vacant(e) => e.insert(build_subset(
+                            measure,
+                            &samples,
+                            *parent,
+                            args.split_samples,
+                        )?),
                     };
                     x.points.insert(point);
                 }
@@ -521,6 +560,7 @@ impl<'a> Calc<'a> {
             measure,
             restrict_samples,
             restrict_tokens,
+            split_samples: args.split_samples,
             save_subsets: args.save_subsets,
         })
     }
@@ -563,6 +603,7 @@ impl<'a> Calc<'a> {
             limit,
             restrict_tokens: owned_cat(self.restrict_tokens),
             restrict_samples: owned_cat(self.restrict_samples),
+            split_samples: self.split_samples,
         })
     }
 
