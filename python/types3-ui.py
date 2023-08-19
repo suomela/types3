@@ -114,9 +114,11 @@ def get_vs(r, what):
 
 class Runner:
 
-    def __init__(self, infile, cachedir, runner_queue, result_queue, root):
+    def __init__(self, infile, cachedir, verbose, runner_queue, result_queue,
+                 root):
         self.infile = infile
         self.cachedir = cachedir
+        self.verbose = verbose
         self.runner_queue = runner_queue
         self.result_queue = result_queue
         self.root = root
@@ -138,9 +140,11 @@ class Runner:
         self.outfile = self.cachedir / f'{digest}-{self.iter}.json'
         base_args = [
             './types3-calc', self.infile, self.tempfile, '--error-file',
-            self.errfile, '-i',
+            self.errfile, '--iter',
             str(self.iter)
         ]
+        for i in range(self.verbose):
+            base_args += ['--verbose']
         full_cmd = base_args + self.current
         logging.debug(f'starting: {full_cmd}...')
         self.process = subprocess.Popen(full_cmd)
@@ -154,13 +158,14 @@ class Runner:
             return
         self.process = None
         if ret != 0:
-            logging.warning(f'process failed')
             error = 'Unknown error during calculation.'
             if self.errfile.exists():
                 with open(self.errfile) as f:
                     error_struct = json.load(f)
                     error = error_struct['error']
                 self.errfile.unlink()
+            else:
+                logging.warning(f'process failed without telling why')
             self.msg(('ERROR', self.current, self.iter, error))
             self.iter = None
             self.current = None
@@ -251,6 +256,7 @@ class App:
 
     def __init__(self, root, args):
         root.title('types3')
+        self.verbose = args.verbose
         self.infile = args.infile
         self.cur_args = None
         self._read_infile()
@@ -258,10 +264,10 @@ class App:
         self._build_ui(root)
         self._setup_menu(root)
         self._setup_hooks(root)
-        logging.info(f'ready')
+        logging.debug(f'ready')
 
     def _read_infile(self):
-        logging.info(f'read: {self.infile}')
+        logging.debug(f'read: {self.infile}')
         with open(self.infile) as f:
             raw_data = f.read()
         raw_bytes = bytes(raw_data, encoding='utf-8')
@@ -469,8 +475,8 @@ class App:
         root.bind('<<NewResults>>', self.new_results)
         self.result_queue = queue.Queue()
         self.runner_queue = queue.Queue()
-        runner = Runner(self.infile, self.cachedir, self.runner_queue,
-                        self.result_queue, root)
+        runner = Runner(self.infile, self.cachedir, self.verbose,
+                        self.runner_queue, self.result_queue, root)
         self.runner_thread = threading.Thread(target=runner.run)
         self.runner_thread.start()
         self.update()
@@ -537,8 +543,8 @@ class App:
         if vs_what == 'words':
             args += ['--words']
         if errors:
+            logging.debug(errors)
             self.error.set('\n'.join(errors))
-            logging.warning(errors)
             return
         if self.cur_args != args:
             self.cur_args = args
@@ -549,7 +555,7 @@ class App:
         logging.debug(f'stopping...')
         self.runner_queue.put('STOP')
         self.runner_thread.join()
-        logging.info(f'done')
+        logging.debug(f'done')
 
     def new_results(self, *_):
         to_draw = None
@@ -701,10 +707,12 @@ class App:
 
 if __name__ == '__main__':
     args = cli.parse_args()
-    if args.verbose >= 1:
+    if args.verbose >= 2:
         loglevel = logging.DEBUG
-    else:
+    elif args.verbose >= 1:
         loglevel = logging.INFO
+    else:
+        loglevel = logging.WARN
     logging.basicConfig(format='%(levelname)s %(message)s', level=loglevel)
     sanity_check()
     root = tk.Tk()

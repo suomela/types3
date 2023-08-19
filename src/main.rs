@@ -1,5 +1,5 @@
 use clap::Parser;
-use clap_verbosity_flag::{InfoLevel, Verbosity};
+use clap_verbosity_flag::{Verbosity, WarnLevel};
 use itertools::Itertools;
 use log::{debug, error, info};
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -91,7 +91,7 @@ struct Args {
     #[arg(long)]
     error_file: Option<String>,
     #[command(flatten)]
-    verbose: Verbosity<InfoLevel>,
+    verbose: Verbosity<WarnLevel>,
 }
 
 type Category<'a> = Option<(&'a str, &'a str)>;
