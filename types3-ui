@@ -3,7 +3,7 @@
 set -e
 
 WHERE=$(readlink -f "$0")
-BASEDIR=$(dirname "$WHERE")
+export TYPES3_BASEDIR=$(dirname "$WHERE")
 
-source "$BASEDIR/venv/bin/activate"
-exec python3 $BASEDIR/python/types3-ui.py "$@"
+source "$TYPES3_BASEDIR/venv/bin/activate"
+exec python3 $TYPES3_BASEDIR/python/types3-ui.py "$@"

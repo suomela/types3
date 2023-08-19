@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import matplotlib
+import os
 import queue
 import subprocess
 import sys
@@ -42,6 +43,9 @@ def sanity_check():
     tcltk_version = tk.Tcl().eval('info patchlevel')
     if tcltk_version.split('.') < ['8', '6']:
         logging.error(f'Unsupported Tcl/Tk version {tcltk_version}')
+        sys.exit(1)
+    if 'TYPES3_BASEDIR' not in os.environ:
+        logging.error('TYPES3_BASEDIR environment variable not defined')
         sys.exit(1)
 
 
@@ -138,16 +142,25 @@ class Runner:
         self.errfile = self.cachedir / f'{digest}-{self.iter}.err'
         self.tempfile = self.cachedir / f'{digest}-{self.iter}.new'
         self.outfile = self.cachedir / f'{digest}-{self.iter}.json'
+        basedir = Path(os.environ['TYPES3_BASEDIR'])
+        tool = basedir / 'types3-calc'
         base_args = [
-            './types3-calc', self.infile, self.tempfile, '--error-file',
-            self.errfile, '--iter',
+            tool, self.infile, self.tempfile, '--error-file', self.errfile,
+            '--iter',
             str(self.iter)
         ]
         for i in range(self.verbose):
             base_args += ['--verbose']
         full_cmd = base_args + self.current
         logging.debug(f'starting: {full_cmd}...')
-        self.process = subprocess.Popen(full_cmd)
+        try:
+            self.process = subprocess.Popen(full_cmd)
+        except Exception as e:
+            logging.warning(f'starting {full_cmd} failed with {e}')
+            error = 'Cannot start calculations.'
+            self.msg(('ERROR', self.current, self.iter, error))
+            self.iter = None
+            self.current = None
 
     def process_poll(self):
         assert self.process is not None
