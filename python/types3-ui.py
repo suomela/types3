@@ -296,6 +296,8 @@ class App:
             for t in s['tokens']:
                 for k, v in t['metadata'].items():
                     self.token_metadata[k].add(v)
+        gcd = math.gcd(*years)
+        self.default_step = max(gcd, 10)
 
     def _setup_cache(self):
         self.cachedir = Path(
@@ -378,7 +380,7 @@ class App:
 
         e = ttk.Label(widgetframe, text='Window size:')
         e.grid(column=0, row=row, sticky='e')
-        self.window = tk.StringVar(value='10')
+        self.window = tk.StringVar(value=str(self.default_step))
         e = ttk.Entry(widgetframe, textvariable=self.window, width=6)
         e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
@@ -387,7 +389,7 @@ class App:
 
         e = ttk.Label(widgetframe, text='Step size:')
         e.grid(column=0, row=row, sticky='e')
-        self.step = tk.StringVar(value='10')
+        self.step = tk.StringVar(value=str(self.default_step))
         e = ttk.Entry(widgetframe, textvariable=self.step, width=6)
         e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
