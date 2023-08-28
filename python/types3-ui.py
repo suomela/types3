@@ -27,8 +27,8 @@ MAX_SIGNIFICANCE = 4
 FIG_WIDTH = 7
 FIG_HEIGHT = 15
 COLORS = ['#f26924', '#0088cc', '#3ec636']
-WINDOW_INIT_SIZE = '1200x1000'
-WIDGET_WIDTH = 250
+WINDOW_INIT_SIZE = '1200x1050'
+WIDGET_WIDTH = 300
 
 cli = argparse.ArgumentParser()
 cli.add_argument('--verbose',
@@ -66,6 +66,8 @@ def metadata_top_choices(metadata):
     m = {'none': None}
     for k in sorted(metadata.keys()):
         vv = ', '.join(sorted(metadata[k]))
+        if len(vv) > 25:
+            vv = vv[:20] + '…'
         l = f'{k} ({vv})'
         assert l not in m
         m[l] = k
