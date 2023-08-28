@@ -18,6 +18,16 @@ Once everything is set up, you can compile the code and install the relevant Pyt
 
 Try these:
 
+    ./types3-ui --help
     ./types3-calc --help
     ./types3-plot --help
-    ./types3-ui --help
+
+## Sample data
+
+See [https://github.com/suomela/types3-examples] for some sample data. Download the data set and explore it with `types3-ui`, e.g. as follows:
+
+    ./types3-ui ../types3-examples/ceec.json
+
+## Author
+
+- [Jukka Suomela](https://jukkasuomela.fi/), Aalto University
