@@ -1,7 +1,38 @@
 import math
+from collections import namedtuple
 
 COLORS = ['#f26924', '#0088cc', '#3ec636']
 MAX_SIGNIFICANCE = 4
+SIG_MARG = 0
+
+Dims = namedtuple(
+    'Dims', ['h1', 'h2', 'm1', 'm2', 'm3', 'm4', 'x', 'w', 'width', 'height'])
+
+DIMS_UI = Dims(
+    h1=4,
+    h2=0.8,
+    m1=0.3,
+    m2=0.6,
+    m3=0.1,
+    m4=1.5,
+    x=0.1,
+    w=0.8,
+    width=7,
+    height=15,
+)
+
+DIMS_PLOT = Dims(
+    h1=4,
+    h2=1,
+    m1=0.5,
+    m2=0.5,
+    m3=0.1,
+    m4=1.5,
+    x=0.1,
+    w=0.8,
+    width=7,
+    height=None,
+)
 
 
 def _catname(cats):
@@ -41,63 +72,73 @@ def _get_vs(r, what):
     return (x, above, -below)
 
 
-def plot(fig, data, fig_height):
+def set_height(data, dims):
+    curves = data['curves']
+    nn = len(curves)
+    has_cats = curves[0]['category'] is not None
+    y = dims.m1
+    y += dims.h1
+    y += dims.m2
+    y += nn * dims.h2
+    y += (nn - 1) * dims.m3
+    if has_cats:
+        y += dims.m2
+        y += nn * dims.h2
+        y += (nn - 1) * dims.m3
+    y += dims.m4
+    return dims._replace(height=y)
+
+
+def plot(fig, data, dims, legend):
     measure = data['measure']
     limit = data['limit']
     periods = data['periods']
     curves = data['curves']
     restrictions = [data['restrict_samples'], data['restrict_tokens']]
     has_cats = curves[0]['category'] is not None
-    nn = len(curves)
-
-    sigmarg = 0
-    h1 = 4
-    h2 = 0.8
-    m1 = 0.3
-    m2 = 0.6
-    m3 = 0.1
-    x = 0.1
-    w = 0.8
-    h = fig_height
 
     xx = [a for (a, b) in periods]
     periodlabels = [f'{a}–{b-1}' for (a, b) in periods]
 
     axs2 = []
     axs3 = []
-    y = m1
-    y += h1
-    ax = fig.add_axes([x, 1 - y / h, w, h1 / h])
+    y = dims.m1
+    y += dims.h1
+    ax = fig.add_axes(
+        [dims.x, 1 - y / dims.height, dims.w, dims.h1 / dims.height])
     ax.set_title(f'Types in subcorpora with {limit} {measure}')
     ax.set_xticks(xx, [])
     ax1 = ax
     last = ax
-    y += m2
+    y += dims.m2
     for i, curve in enumerate(curves):
         if i != 0:
-            y += m3
-        y += h2
-        ax = fig.add_axes([x, 1 - y / h, w, h2 / h])
+            y += dims.m3
+        y += dims.h2
+        ax = fig.add_axes(
+            [dims.x, 1 - y / dims.height, dims.w, dims.h2 / dims.height])
         if i == 0:
             ax.set_title(f'Significance of differences in time')
-        ax.set_ylim((-MAX_SIGNIFICANCE - sigmarg, MAX_SIGNIFICANCE + sigmarg))
+        ax.set_ylim(
+            (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
         ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
         ax.set_xticks([], [])
         axs2.append(ax)
         last = ax
     last.set_xticks(xx, [])
     if has_cats:
-        y += m2
+        y += dims.m2
         for i, curve in enumerate(curves):
             if i != 0:
-                y += m3
-            y += h2
-            ax = fig.add_axes([x, 1 - y / h, w, h2 / h])
+                y += dims.m3
+            y += dims.h2
+            ax = fig.add_axes(
+                [dims.x, 1 - y / dims.height, dims.w, dims.h2 / dims.height])
             if i == 0:
                 ax.set_title(
                     f'Significance in comparison with other categories')
             ax.set_ylim(
-                (-MAX_SIGNIFICANCE - sigmarg, MAX_SIGNIFICANCE + sigmarg))
+                (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
             ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
             ax.set_xticks([], [])
             axs3.append(ax)
@@ -124,7 +165,7 @@ def plot(fig, data, fig_height):
 
         def plotter(ax, points):
             xx, yy1, yy2 = zip(*points)
-            ax.fill_between(xx, yy1, yy2, color=color, alpha=0.8, linewidth=0)
+            ax.fill_between(xx, yy1, yy2, color=color, alpha=0.7, linewidth=0)
             for i in range(1, MAX_SIGNIFICANCE):
                 ax.fill_between(xx,
                                 -i,
@@ -142,4 +183,4 @@ def plot(fig, data, fig_height):
             plotter(axs3[i], points)
 
     ax1.set_ylim((0, ymax * 1.05))
-    ax1.legend(loc='lower right')
+    ax1.legend(loc=legend)

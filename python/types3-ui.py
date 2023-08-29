@@ -24,8 +24,6 @@ MIN_ITER = 1_000
 MAX_ITER = 100_000
 ITER_STEP = 10
 TIMEOUT = 0.1
-FIG_WIDTH = 7
-FIG_HEIGHT = 15
 WINDOW_INIT_SIZE = '1200x1050'
 WIDGET_WIDTH = 300
 
@@ -435,7 +433,8 @@ class App:
             '<Configure>', lambda ev: scrollablecanvas.configure(
                 scrollregion=scrollablecanvas.bbox('all')))
 
-        self.fig = Figure(figsize=(FIG_WIDTH, FIG_HEIGHT))
+        dims = types3.plot.DIMS_UI
+        self.fig = Figure(figsize=(dims.width, dims.height))
         self.canvas = FigureCanvasTkAgg(self.fig, master=scrollableframe)
         self.canvas.draw()
         e = self.canvas.get_tk_widget()
@@ -580,7 +579,8 @@ class App:
             data = json.load(f)
 
         self.fig.clear()
-        types3.plot.plot(self.fig, data, FIG_HEIGHT)
+        dims = types3.plot.DIMS_UI
+        types3.plot.plot(self.fig, data, dims, legend='lower right')
         self.canvas.draw()
 
 
