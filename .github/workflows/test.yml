@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Ghostscript
+        run: |
+          sudo apt-get update
+          sudo apt-get install ghostscript -y
+
+      - name: Change ImageMagick policy to allow PDF-to-PNG conversion
+        run: |
+          sudo mv /etc/ImageMagick-6/policy.xml /etc/ImageMagick-6/policy.xml.off
+
+      - name: Run setup
+        run: |
+          util/setup.sh
+
+      - name: Test calc
+        run: |
+          integration-test/test-calc.sh
+
+      - name: test plot
+        run: |
+          integration-test/test-plot.sh
