@@ -3,5 +3,5 @@
 set -e
 
 source "venv/bin/activate"
-yapf -ip python/*.py python/types3/*.py
+yapf -ip python/*.py python/types3/*.py sample-data/util/*.py
 cargo fmt
