@@ -36,9 +36,11 @@ def plot(args):
 
 if __name__ == '__main__':
     args = cli.parse_args()
-    if args.verbose >= 1:
+    if args.verbose >= 2:
         loglevel = logging.DEBUG
-    else:
+    elif args.verbose >= 1:
         loglevel = logging.INFO
+    else:
+        loglevel = logging.WARN
     logging.basicConfig(format='%(levelname)s %(message)s', level=loglevel)
     plot(args)
