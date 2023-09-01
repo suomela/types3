@@ -24,9 +24,9 @@ Try these:
 
 ## Sample data
 
-See [types3-examples](https://github.com/suomela/types3-examples) for some sample data. Download the data set and explore it with `types3-ui`, e.g. as follows:
+To explore the sample data set that we have in `sample-data`, try:
 
-    ./types3-ui ../types3-examples/ceec.json
+    ./types3-ui sample-data/ceec.json
 
 ## Author
 
