@@ -7,10 +7,12 @@ rm -rf plot
 mkdir -p plot
 
 for a in calc/*.json; do
-    b="${a#calc/}"
-    b="${b%.json}"
-    b="plot/$b.pdf"
+    x="${a#calc/}"
+    x="${x%.json}"
+    b="plot/$x.pdf"
+    c="plot/$x-wide.pdf"
     ../types3-plot --legend 'lower right' "$a" "$b" &
+    ../types3-plot --legend 'lower right' --wide "$a" "$c" &
 done
 wait
 
