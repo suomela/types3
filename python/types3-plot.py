@@ -16,17 +16,18 @@ cli.add_argument('--legend',
                  help='Legend placement (e.g. "upper right")')
 cli.add_argument('--wide', action='store_true', help='Wide layout')
 cli.add_argument('--large', action='store_true', help='Large fonts')
+cli.add_argument('--dpi', default=300, type=int, help='PNG resolution')
 cli.add_argument('infile', help='Input file (JSON)')
-cli.add_argument('outfile', help='Output file (PDF)')
+cli.add_argument('outfile', help='Output file (PDF or PNG)')
 
 
 def plot(args):
     matplotlib.use('Agg')
     matplotlib.rcParams['axes.titlesize'] = 'medium'
+    matplotlib.rcParams['savefig.dpi'] = args.dpi
     if args.large:
         matplotlib.rcParams['font.size'] = 14
         matplotlib.rcParams['axes.titlepad'] = 10
-
     logging.info(f'read: {args.infile}')
     with open(args.infile) as f:
         data = json.load(f)
