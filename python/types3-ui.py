@@ -234,6 +234,7 @@ class App:
         self.verbose = args.verbose
         self.infile = args.infile
         self.cur_args = None
+        self.cur_outfile = None
         self._read_infile()
         self._setup_cache()
         self._build_ui(root)
@@ -290,6 +291,48 @@ class App:
         widgetframe.columnconfigure(1, minsize=WIDGET_WIDTH)
 
         row = 0
+
+        e = ttk.Label(widgetframe, text='Export:')
+        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Button(widgetframe, text='Save a PDF…', command=self.save)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        self.save_wide = tk.StringVar(value='')
+        e = ttk.Checkbutton(widgetframe,
+                            text='Wide PDF',
+                            onvalue='wide',
+                            offvalue='',
+                            variable=self.save_wide)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        self.save_large = tk.StringVar(value='')
+        e = ttk.Checkbutton(widgetframe,
+                            text='Large fonts',
+                            onvalue='large',
+                            offvalue='',
+                            variable=self.save_large)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        e = ttk.Label(widgetframe, text='Legend:')
+        e.grid(column=0, row=row, sticky='e')
+        self.save_legend = tk.StringVar()
+        what_choices = [
+            'lower right',
+            'lower left',
+            'upper right',
+            'upper left',
+        ]
+        e = ttk.OptionMenu(widgetframe, self.save_legend, what_choices[0],
+                           *what_choices)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        e = ttk.Separator(widgetframe, orient='horizontal')
+        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        row += 1
 
         e = ttk.Label(widgetframe, text='Calculate:')
         e.grid(column=0, row=row, sticky='e')
@@ -575,6 +618,7 @@ class App:
     def draw(self, cmd, iter):
         digest = cmd_digest(cmd)
         outfile = self.cachedir / f'{digest}-{iter}.json'
+        self.cur_outfile = outfile
         with open(outfile) as f:
             data = json.load(f)
 
@@ -582,6 +626,35 @@ class App:
         dims = types3.plot.DIMS_UI
         types3.plot.plot(self.fig, data, dims, legend='lower right')
         self.canvas.draw()
+
+    def save(self, *x):
+        if self.cur_outfile is None:
+            return
+        filetypes = [('PDF', '*.pdf')]
+        save_filename = tk.filedialog.asksaveasfilename(
+            filetypes=filetypes,
+            defaultextension=filetypes,
+            initialfile='types3')
+        if not save_filename:
+            return
+        basedir = Path(os.environ['TYPES3_BASEDIR'])
+        tool = basedir / 'types3-plot'
+        cmd = [
+            tool, self.cur_outfile, save_filename, '--legend',
+            self.save_legend.get()
+        ]
+        if self.save_wide.get() == 'wide':
+            cmd += ['--wide']
+        if self.save_large.get() == 'large':
+            cmd += ['--large']
+        for i in range(self.verbose):
+            cmd += ['--verbose']
+        try:
+            subprocess.run(cmd, check=True)
+        except Exception as e:
+            logging.warning(f'starting {cmd} failed with {e}')
+            tk.messagebox.showerror(
+                message=f'Could not export as {save_filename}')
 
 
 if __name__ == '__main__':
