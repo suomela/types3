@@ -5,8 +5,10 @@ COLORS = ['#f26924', '#0088cc', '#3ec636']
 MAX_SIGNIFICANCE = 4
 SIG_MARG = 0
 
-Dims = namedtuple(
-    'Dims', ['h1', 'h2', 'm1', 'm2', 'm3', 'm4', 'x', 'w', 'width', 'height'])
+Dims = namedtuple('Dims', [
+    'h1', 'h2', 'm1', 'm2', 'm3', 'm4', 'x0', 'x1', 'w', 'width', 'height',
+    'columns'
+])
 
 DIMS_UI = Dims(
     h1=4,
@@ -15,10 +17,12 @@ DIMS_UI = Dims(
     m2=0.6,
     m3=0.1,
     m4=1.5,
-    x=0.1,
-    w=0.8,
+    x0=0.1 * 7,
+    x1=None,
+    w=0.8 * 7,
     width=7,
     height=15,
+    columns=1,
 )
 
 DIMS_PLOT = Dims(
@@ -28,10 +32,27 @@ DIMS_PLOT = Dims(
     m2=0.5,
     m3=0.1,
     m4=1.5,
-    x=0.1,
-    w=0.8,
+    x0=0.1 * 7,
+    x1=None,
+    w=0.8 * 7,
     width=7,
     height=None,
+    columns=1,
+)
+
+DIMS_PLOT_WIDE = Dims(
+    h1=5,
+    h2=1,
+    m1=0.5,
+    m2=0.8,
+    m3=0.1,
+    m4=1.5,
+    x0=0.1 * 7,
+    x1=0.9 * 7,
+    w=0.8 * 7,
+    width=1.9 * 7,
+    height=None,
+    columns=2,
 )
 
 
@@ -76,16 +97,30 @@ def set_height(data, dims):
     curves = data['curves']
     nn = len(curves)
     has_cats = curves[0]['category'] is not None
-    y = dims.m1
-    y += dims.h1
-    y += dims.m2
-    y += nn * dims.h2
-    y += (nn - 1) * dims.m3
-    if has_cats:
+    if dims.columns == 1:
+        y = dims.m1
+        y += dims.h1
         y += dims.m2
         y += nn * dims.h2
         y += (nn - 1) * dims.m3
-    y += dims.m4
+        if has_cats:
+            y += dims.m2
+            y += nn * dims.h2
+            y += (nn - 1) * dims.m3
+        y += dims.m4
+    else:
+        y1 = dims.m1
+        y1 += dims.h1
+        y1 += dims.m4
+        y2 = dims.m1
+        y2 += nn * dims.h2
+        y2 += (nn - 1) * dims.m3
+        if has_cats:
+            y2 += dims.m2
+            y2 += nn * dims.h2
+            y2 += (nn - 1) * dims.m3
+        y2 += dims.m4
+        y = max(y1, y2)
     return dims._replace(height=y)
 
 
@@ -100,23 +135,32 @@ def plot(fig, data, dims, legend):
     xx = [a for (a, b) in periods]
     periodlabels = [f'{a}–{b-1}' for (a, b) in periods]
 
+    col = dims.x0
     axs2 = []
     axs3 = []
     y = dims.m1
     y += dims.h1
-    ax = fig.add_axes(
-        [dims.x, 1 - y / dims.height, dims.w, dims.h1 / dims.height])
+    ax = fig.add_axes([
+        col / dims.width, 1 - y / dims.height, dims.w / dims.width,
+        dims.h1 / dims.height
+    ])
     ax.set_title(f'Types in subcorpora with {limit} {measure}')
     ax.set_xticks(xx, [])
     ax1 = ax
     last = ax
     y += dims.m2
+    if dims.columns > 1:
+        last.set_xticks(xx, periodlabels, rotation='vertical')
+        col += dims.x1
+        y = dims.m1
     for i, curve in enumerate(curves):
         if i != 0:
             y += dims.m3
         y += dims.h2
-        ax = fig.add_axes(
-            [dims.x, 1 - y / dims.height, dims.w, dims.h2 / dims.height])
+        ax = fig.add_axes([
+            col / dims.width, 1 - y / dims.height, dims.w / dims.width,
+            dims.h2 / dims.height
+        ])
         if i == 0:
             ax.set_title(f'Significance of differences in time')
         ax.set_ylim(
@@ -132,8 +176,10 @@ def plot(fig, data, dims, legend):
             if i != 0:
                 y += dims.m3
             y += dims.h2
-            ax = fig.add_axes(
-                [dims.x, 1 - y / dims.height, dims.w, dims.h2 / dims.height])
+            ax = fig.add_axes([
+                col / dims.width, 1 - y / dims.height, dims.w / dims.width,
+                dims.h2 / dims.height
+            ])
             if i == 0:
                 ax.set_title(
                     f'Significance in comparison with other categories')
