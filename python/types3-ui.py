@@ -294,13 +294,23 @@ class App:
 
         e = ttk.Label(widgetframe, text='Export:')
         e.grid(column=0, row=row, sticky='e')
-        e = ttk.Button(widgetframe, text='Save a PDF…', command=self.save)
+        e = ttk.Button(widgetframe, text='Save as…', command=self.save)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        self.save_format = tk.StringVar()
+        what_choices = [
+            'PDF',
+            'PNG',
+        ]
+        e = ttk.OptionMenu(widgetframe, self.save_format, what_choices[0],
+                           *what_choices)
         e.grid(column=1, row=row, sticky='w')
         row += 1
 
         self.save_wide = tk.StringVar(value='')
         e = ttk.Checkbutton(widgetframe,
-                            text='Wide PDF',
+                            text='Wide layout',
                             onvalue='wide',
                             offvalue='',
                             variable=self.save_wide)
@@ -327,6 +337,20 @@ class App:
         ]
         e = ttk.OptionMenu(widgetframe, self.save_legend, what_choices[0],
                            *what_choices)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        e = ttk.Label(widgetframe, text='PNG DPI:')
+        e.grid(column=0, row=row, sticky='e')
+        self.save_dpi = tk.StringVar()
+        what_choices = [
+            '100',
+            '200',
+            '300',
+            '400',
+            '600',
+        ]
+        e = ttk.OptionMenu(widgetframe, self.save_dpi, '300', *what_choices)
         e.grid(column=1, row=row, sticky='w')
         row += 1
 
@@ -630,7 +654,14 @@ class App:
     def save(self, *x):
         if self.cur_outfile is None:
             return
-        filetypes = [('PDF', '*.pdf')]
+        ftmap = {
+            'PDF': [('PDF', '*.pdf')],
+            'PNG': [('PNG', '*.png')],
+        }
+        fmt = self.save_format.get()
+        if fmt not in ftmap:
+            fmt = 'PDF'
+        filetypes = ftmap[fmt]
         save_filename = tk.filedialog.asksaveasfilename(
             filetypes=filetypes,
             defaultextension=filetypes,
@@ -640,8 +671,13 @@ class App:
         basedir = Path(os.environ['TYPES3_BASEDIR'])
         tool = basedir / 'types3-plot'
         cmd = [
-            tool, self.cur_outfile, save_filename, '--legend',
-            self.save_legend.get()
+            tool,
+            self.cur_outfile,
+            save_filename,
+            '--legend',
+            self.save_legend.get(),
+            '--dpi',
+            self.save_dpi.get(),
         ]
         if self.save_wide.get() == 'wide':
             cmd += ['--wide']
