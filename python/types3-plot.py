@@ -3,9 +3,6 @@ import json
 import logging
 import matplotlib
 import types3.plot
-
-matplotlib.use('Agg')
-matplotlib.rcParams['axes.titlesize'] = 'medium'
 import matplotlib.pyplot as plt
 
 cli = argparse.ArgumentParser()
@@ -18,11 +15,18 @@ cli.add_argument('--legend',
                  default='best',
                  help='Legend placement (e.g. "upper right")')
 cli.add_argument('--wide', action='store_true', help='Wide layout')
+cli.add_argument('--large', action='store_true', help='Large fonts')
 cli.add_argument('infile', help='Input file (JSON)')
 cli.add_argument('outfile', help='Output file (PDF)')
 
 
 def plot(args):
+    matplotlib.use('Agg')
+    matplotlib.rcParams['axes.titlesize'] = 'medium'
+    if args.large:
+        matplotlib.rcParams['font.size'] = 14
+        matplotlib.rcParams['axes.titlepad'] = 10
+
     logging.info(f'read: {args.infile}')
     with open(args.infile) as f:
         data = json.load(f)
