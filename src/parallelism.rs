@@ -2,7 +2,7 @@ use crossbeam_channel::TryRecvError;
 use log::trace;
 use std::thread;
 
-/// Number of tasks for randomized calculation.
+/// Number of parallel tasks.
 const RANDOM_JOBS: u64 = 1000;
 
 pub trait RawResult {
@@ -54,4 +54,56 @@ where
         }
     });
     (total, iter)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    struct Adder {
+        x: u64,
+        y: u64,
+    }
+
+    impl RawResult for Adder {
+        fn add(&mut self, other: Self) {
+            self.x += other.x;
+            self.y += other.y;
+        }
+    }
+
+    #[test]
+    fn compute_parallel_basic() {
+        let (r, iter) = compute_parallel(
+            || Adder { x: 0, y: 0 },
+            |i, iter_per_job, adder| {
+                assert!(i < RANDOM_JOBS);
+                assert_eq!(iter_per_job, 100);
+                adder.x += 1;
+                adder.y += i;
+            },
+            100 * RANDOM_JOBS,
+        );
+        assert_eq!(iter, 100 * RANDOM_JOBS);
+        assert_eq!(r.x, RANDOM_JOBS);
+        assert_eq!(r.y, RANDOM_JOBS * (RANDOM_JOBS - 1) / 2);
+    }
+
+    #[test]
+    fn compute_parallel_small() {
+        assert!(5 < RANDOM_JOBS);
+        let (r, iter) = compute_parallel(
+            || Adder { x: 0, y: 0 },
+            |i, iter_per_job, adder| {
+                assert!(i < RANDOM_JOBS);
+                assert_eq!(iter_per_job, 1);
+                adder.x += 1;
+                adder.y += i;
+            },
+            5,
+        );
+        assert_eq!(iter, RANDOM_JOBS);
+        assert_eq!(r.x, RANDOM_JOBS);
+        assert_eq!(r.y, RANDOM_JOBS * (RANDOM_JOBS - 1) / 2);
+    }
 }
