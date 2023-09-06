@@ -1,63 +1,11 @@
 use crate::output::{AvgResult, PointResult};
+use crate::parallelism::{compute_parallel, RawResult};
 use core::marker::PhantomData;
-use crossbeam_channel::TryRecvError;
 use itertools::Itertools;
-use log::trace;
 use rand::seq::SliceRandom;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
 use std::cmp::Ordering;
-use std::thread;
-
-/// Number of tasks for randomized calculation.
-const RANDOM_JOBS: u64 = 1000;
-
-fn compute_parallel<TRawResult, TBuilder, TRunner>(
-    builder: TBuilder,
-    runner: TRunner,
-    iter: u64,
-) -> (TRawResult, u64)
-where
-    TRawResult: RawResult + Send,
-    TBuilder: Fn() -> TRawResult + Send + Copy,
-    TRunner: Fn(u64, u64, &mut TRawResult) + Send + Copy,
-{
-    let (s1, r1) = crossbeam_channel::unbounded();
-    for job in 0..RANDOM_JOBS {
-        s1.send(job).expect("send succeeds");
-    }
-    let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
-    let iter = iter_per_job * RANDOM_JOBS;
-    drop(s1);
-    let nthreads = num_cpus::get();
-    let mut total = builder();
-    trace!("randomized, {RANDOM_JOBS} jobs, {nthreads} threads");
-    thread::scope(|scope| {
-        let (s2, r2) = crossbeam_channel::unbounded();
-        for _ in 0..nthreads {
-            let r1 = r1.clone();
-            let s2 = s2.clone();
-            scope.spawn(move || {
-                let mut thread_total = builder();
-                loop {
-                    match r1.try_recv() {
-                        Ok(job) => {
-                            runner(job, iter_per_job, &mut thread_total);
-                        }
-                        Err(TryRecvError::Empty) => unreachable!(),
-                        Err(TryRecvError::Disconnected) => break,
-                    }
-                }
-                s2.send(thread_total).expect("send succeeds");
-            });
-        }
-        drop(s2);
-        while let Ok(thread_total) = r2.recv() {
-            total.add(thread_total);
-        }
-    });
-    (total, iter)
-}
 
 pub struct SToken {
     pub count: u64,
@@ -247,12 +195,12 @@ where
     }
 
     fn job(&self, job: u64, iter_per_job: u64, result: &mut TRawResult) {
+        let mut ls = LocalState::new(self.total_types);
         let n = self.samples.len();
         let mut idx = vec![0; n];
         for (i, v) in idx.iter_mut().enumerate() {
             *v = i;
         }
-        let mut ls = LocalState::new(self.total_types);
         let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
         for _ in 0..iter_per_job {
             idx.shuffle(&mut rng);
@@ -313,10 +261,6 @@ impl LocalState {
         }
         self.size += sample.size;
     }
-}
-
-trait RawResult {
-    fn add(&mut self, other: Self);
 }
 
 struct RawAvgResult {
