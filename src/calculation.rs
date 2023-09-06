@@ -38,11 +38,18 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
     r.finalize(iter)
 }
 
-trait Comp<R, J> {
+trait Comp<TRawResult, TTracker> {
     fn sanity(&self);
-    fn build_total(&self) -> R;
-    fn start(&self, result: &mut R) -> J;
-    fn step(&self, result: &mut R, tracker: &mut J, prev: u64, types: u64, size: u64) -> bool;
+    fn build_total(&self) -> TRawResult;
+    fn start(&self, result: &mut TRawResult) -> TTracker;
+    fn step(
+        &self,
+        result: &mut TRawResult,
+        tracker: &mut TTracker,
+        prev: u64,
+        types: u64,
+        size: u64,
+    ) -> bool;
 }
 
 trait Tracker {}
@@ -141,23 +148,23 @@ impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
     }
 }
 
-struct Driver<'a, T, R, J> {
+struct Driver<'a, TComp, TRawResult, TTracker> {
     /// Input data.
     samples: &'a [Sample],
     /// All types have identifiers in `0..total_types`.
     total_types: usize,
-    comp: T,
-    _r: PhantomData<R>,
-    _j: PhantomData<J>,
+    comp: TComp,
+    _raw_result: PhantomData<TRawResult>,
+    _tracker: PhantomData<TTracker>,
 }
 
-impl<T, R, J> Driver<'_, T, R, J>
+impl<TComp, TRawResult, TTracker> Driver<'_, TComp, TRawResult, TTracker>
 where
-    T: Send + Sync + Comp<R, J>,
-    R: Send + Sync + RawResult,
-    J: Send + Sync,
+    TComp: Send + Sync + Comp<TRawResult, TTracker>,
+    TRawResult: Send + Sync + RawResult,
+    TTracker: Send + Sync,
 {
-    fn new(samples: &[Sample], comp: T) -> Driver<T, R, J> {
+    fn new(samples: &[Sample], comp: TComp) -> Driver<TComp, TRawResult, TTracker> {
         let mut max_type = 0;
         for sample in samples {
             for token in &sample.tokens {
@@ -169,12 +176,12 @@ where
             samples,
             total_types,
             comp,
-            _r: PhantomData,
-            _j: PhantomData,
+            _raw_result: PhantomData,
+            _tracker: PhantomData,
         }
     }
 
-    fn compute(&self, iter: u64) -> (R, u64) {
+    fn compute(&self, iter: u64) -> (TRawResult, u64) {
         self.comp.sanity();
         let (s1, r1) = crossbeam_channel::unbounded();
         for job in 0..RANDOM_JOBS {
@@ -213,7 +220,7 @@ where
         (total, iter)
     }
 
-    fn job(&self, job: u64, iter_per_job: u64, result: &mut R) {
+    fn job(&self, job: u64, iter_per_job: u64, result: &mut TRawResult) {
         let n = self.samples.len();
         let mut idx = vec![0; n];
         for (i, v) in idx.iter_mut().enumerate() {
@@ -227,7 +234,7 @@ where
         }
     }
 
-    fn calc_one(&self, idx: &[usize], ls: &mut LocalState, result: &mut R) {
+    fn calc_one(&self, idx: &[usize], ls: &mut LocalState, result: &mut TRawResult) {
         ls.reset();
         let mut tracker = self.comp.start(result);
         for i in idx {
