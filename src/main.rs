@@ -339,10 +339,9 @@ struct CSample<'a> {
     metadata: &'a HashMap<String, String>,
     words: u64,
     tokens: Vec<&'a str>,
-    id: usize,
 }
 
-fn get_sample<'a>(restrict_tokens: Category, id: usize, s: &'a ISample) -> CSample<'a> {
+fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
     CSample {
         year: s.year,
         metadata: &s.metadata,
@@ -358,7 +357,6 @@ fn get_sample<'a>(restrict_tokens: Category, id: usize, s: &'a ISample) -> CSamp
                 }
             })
             .collect_vec(),
-        id,
     }
 }
 
@@ -369,10 +367,9 @@ fn get_samples<'a>(
 ) -> Vec<CSample<'a>> {
     samples
         .iter()
-        .enumerate()
-        .filter_map(|(id, s)| {
+        .filter_map(|s| {
             if matches(restrict_samples, &s.metadata) {
-                Some(get_sample(restrict_tokens, id, s))
+                Some(get_sample(restrict_tokens, s))
             } else {
                 None
             }
@@ -413,7 +410,6 @@ fn build_subset<'a>(
                 split.push(Sample {
                     size: 1,
                     tokens: vec![token],
-                    id: 0,
                 })
             }
         }
@@ -436,11 +432,7 @@ fn build_subset<'a>(
                     Measure::Tokens => s.tokens.len() as u64,
                     Measure::Words => s.words,
                 };
-                Sample {
-                    size,
-                    tokens,
-                    id: s.id,
-                }
+                Sample { size, tokens }
             })
             .collect_vec()
     };

@@ -20,7 +20,6 @@ pub struct SToken {
 pub struct Sample {
     pub size: u64,
     pub tokens: Vec<SToken>,
-    pub id: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
