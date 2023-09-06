@@ -38,7 +38,11 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
     r.finalize(iter)
 }
 
-trait Comp<TRawResult, TTracker> {
+trait Comp<TRawResult, TTracker>
+where
+    TRawResult: RawResult,
+    TTracker: Tracker,
+{
     fn sanity(&self);
     fn build_total(&self) -> TRawResult;
     fn start(&self, result: &mut TRawResult) -> TTracker;
@@ -148,7 +152,12 @@ impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
     }
 }
 
-struct Driver<'a, TComp, TRawResult, TTracker> {
+struct Driver<'a, TComp, TRawResult, TTracker>
+where
+    TComp: Comp<TRawResult, TTracker>,
+    TRawResult: RawResult,
+    TTracker: Tracker,
+{
     /// Input data.
     samples: &'a [Sample],
     /// All types have identifiers in `0..total_types`.
@@ -162,7 +171,7 @@ impl<TComp, TRawResult, TTracker> Driver<'_, TComp, TRawResult, TTracker>
 where
     TComp: Send + Sync + Comp<TRawResult, TTracker>,
     TRawResult: Send + Sync + RawResult,
-    TTracker: Send + Sync,
+    TTracker: Send + Sync + Tracker,
 {
     fn new(samples: &[Sample], comp: TComp) -> Driver<TComp, TRawResult, TTracker> {
         let mut max_type = 0;
