@@ -18,7 +18,6 @@
             "types_high": 360000,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5726,
             "below": 4259,
@@ -36,7 +35,6 @@
             "types_high": 504982,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 1672,
             "below": 8327,
@@ -54,7 +52,6 @@
             "types_high": 522734,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5429,
             "below": 4561,
@@ -72,7 +69,6 @@
             "types_high": 794418,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 6558,
             "below": 3428,
@@ -90,7 +86,6 @@
             "types_high": 896211,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 9875,
             "below": 121,
@@ -108,7 +103,6 @@
             "types_high": 753482,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 7643,
             "below": 2343,

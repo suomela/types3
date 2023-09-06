@@ -21,7 +21,6 @@
             "types_high": 140000,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5965,
             "below": 4029,
@@ -43,7 +42,6 @@
             "types_high": 324757,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 6472,
             "below": 3500,
@@ -65,7 +63,6 @@
             "types_high": 251478,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 8871,
             "below": 1112,
@@ -87,7 +84,6 @@
             "types_high": 377065,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 6181,
             "below": 3800,
@@ -109,7 +105,6 @@
             "types_high": 392189,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 9257,
             "below": 720,
@@ -131,7 +126,6 @@
             "types_high": 387915,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 8391,
             "below": 1544,
@@ -161,7 +155,6 @@
             "types_high": 252480,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 2,
             "below": 9998,
@@ -183,7 +176,6 @@
             "types_high": 272958,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 95,
             "below": 9904,
@@ -205,7 +197,6 @@
             "types_high": 259096,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 2776,
             "below": 7198,
@@ -227,7 +218,6 @@
             "types_high": 305690,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5608,
             "below": 4321,
@@ -249,7 +239,6 @@
             "types_high": 313365,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 6910,
             "below": 3022,
@@ -271,7 +260,6 @@
             "types_high": 327236,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 9893,
             "below": 98,

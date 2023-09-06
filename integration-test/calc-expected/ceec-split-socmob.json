@@ -18,7 +18,6 @@
             "types_high": 164672,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 0,
             "below": 9999,
@@ -40,7 +39,6 @@
             "types_high": 200000,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 2447,
             "below": 6901,
@@ -62,7 +60,6 @@
             "types_high": 191066,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 70,
             "below": 9883,
@@ -84,7 +81,6 @@
             "types_high": 217980,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 7114,
             "below": 2386,
@@ -106,7 +102,6 @@
             "types_high": 209459,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 4138,
             "below": 5111,
@@ -128,7 +123,6 @@
             "types_high": 218831,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 1888,
             "below": 7633,
@@ -158,7 +152,6 @@
             "types_high": 222529,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 491,
             "below": 9388,
@@ -180,7 +173,6 @@
             "types_high": 205571,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 0,
             "below": 10000,
@@ -202,7 +194,6 @@
             "types_high": 212624,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 51,
             "below": 9916,
@@ -224,7 +215,6 @@
             "types_high": 227946,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 147,
             "below": 9825,
@@ -246,7 +236,6 @@
             "types_high": 231016,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 6891,
             "below": 2752,
@@ -268,7 +257,6 @@
             "types_high": 212687,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 3287,
             "below": 6311,
@@ -298,7 +286,6 @@
             "types_high": 180014,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 0,
             "below": 10000,
@@ -320,7 +307,6 @@
             "types_high": 195749,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 1,
             "below": 9999,
@@ -342,7 +328,6 @@
             "types_high": 234762,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 4254,
             "below": 5188,
@@ -364,7 +349,6 @@
             "types_high": 224607,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5514,
             "below": 4022,
@@ -386,7 +370,6 @@
             "types_high": 237723,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 9716,
             "below": 222,
@@ -408,7 +391,6 @@
             "types_high": 218001,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 3029,
             "below": 6528,

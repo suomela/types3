@@ -39,7 +39,6 @@ pub struct PointResult {
 pub struct OResult {
     pub period: Years,
     pub average_at_limit: AvgResult,
-    pub subsets_at_limit: Option<Vec<Vec<usize>>>,
     pub vs_time: PointResult,
     pub vs_categories: Option<PointResult>,
 }

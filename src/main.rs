@@ -97,9 +97,6 @@ struct Args {
     /// Report errors as a JSON file
     #[arg(long)]
     error_file: Option<String>,
-    /// Save information on random subsets in the output file
-    #[arg(long)]
-    save_subsets: bool,
     /// Produce compact JSON files
     #[arg(long)]
     compact: bool,
@@ -502,7 +499,6 @@ struct Calc<'a> {
     restrict_samples: Category<'a>,
     restrict_tokens: Category<'a>,
     split_samples: bool,
-    save_subsets: bool,
 }
 
 impl<'a> Calc<'a> {
@@ -561,7 +557,6 @@ impl<'a> Calc<'a> {
             restrict_samples,
             restrict_tokens,
             split_samples: args.split_samples,
-            save_subsets: args.save_subsets,
         })
     }
 
@@ -641,15 +636,6 @@ impl<'a> Calc<'a> {
             limit,
             self.measure
         ));
-        let samples_at_limit = if self.save_subsets {
-            Some(calculation::subsets_at_limit(
-                &subset.samples,
-                self.iter,
-                limit,
-            ))
-        } else {
-            None
-        };
         let p = subset.get_point();
         let vs_time = {
             let k = subset.get_parent_period(self.years);
@@ -670,7 +656,6 @@ impl<'a> Calc<'a> {
         OResult {
             period: subset.period,
             average_at_limit,
-            subsets_at_limit: samples_at_limit,
             vs_time,
             vs_categories,
         }

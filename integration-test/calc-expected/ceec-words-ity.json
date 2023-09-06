@@ -18,7 +18,6 @@
             "types_high": 907947,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 2,
             "below": 9998,
@@ -36,7 +35,6 @@
             "types_high": 908951,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5,
             "below": 9995,
@@ -54,7 +52,6 @@
             "types_high": 1010000,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 472,
             "below": 9518,
@@ -72,7 +69,6 @@
             "types_high": 1293965,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 5740,
             "below": 4158,
@@ -90,7 +86,6 @@
             "types_high": 1387858,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 8862,
             "below": 1087,
@@ -108,7 +103,6 @@
             "types_high": 1426524,
             "iter": 10000
           },
-          "subsets_at_limit": null,
           "vs_time": {
             "above": 9975,
             "below": 22,
