@@ -1,7 +1,6 @@
 use crate::output::{AvgResult, PointResult};
 use crate::parallelism::{compute_parallel, RawResult};
 use crate::shuffle::shuffle_job;
-use core::marker::PhantomData;
 use itertools::Itertools;
 use std::cmp::Ordering;
 
@@ -22,12 +21,13 @@ pub struct Point {
 }
 
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
-    let (r, iter) = Driver::new(samples, AvgComp { limit }).compute(iter);
+    let (r, iter) = compute(samples, iter, AvgComp { limit });
     r.finalize(iter)
 }
 
 pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult> {
-    let (r, iter) = Driver::new(samples, PointComp { points }).compute(iter);
+    assert!(!points.is_empty());
+    let (r, iter) = compute(samples, iter, PointComp { points });
     r.finalize(iter)
 }
 
@@ -36,7 +36,6 @@ where
     TRawResult: RawResult,
     TTracker: Tracker,
 {
-    fn sanity(&self);
     fn build_total(&self) -> TRawResult;
     fn start(&self, result: &mut TRawResult) -> TTracker;
     fn step(
@@ -70,8 +69,6 @@ struct PointComp<'a> {
 }
 
 impl Comp<RawAvgResult, NoTracker> for AvgComp {
-    fn sanity(&self) {}
-
     fn start(&self, _result: &mut RawAvgResult) -> NoTracker {
         NoTracker {}
     }
@@ -105,10 +102,6 @@ impl Comp<RawAvgResult, NoTracker> for AvgComp {
 }
 
 impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
-    fn sanity(&self) {
-        assert!(!self.points.is_empty());
-    }
-
     fn start(&self, _result: &mut RawPointResults) -> CountTracker {
         CountTracker { j: 0 }
     }
@@ -142,78 +135,6 @@ impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
                 return true;
             }
         }
-    }
-}
-
-struct Driver<'a, TComp, TRawResult, TTracker>
-where
-    TComp: Comp<TRawResult, TTracker>,
-    TRawResult: RawResult,
-    TTracker: Tracker,
-{
-    /// Input data.
-    samples: &'a [Sample],
-    /// All types have identifiers in `0..total_types`.
-    total_types: usize,
-    comp: TComp,
-    _raw_result: PhantomData<TRawResult>,
-    _tracker: PhantomData<TTracker>,
-}
-
-impl<TComp, TRawResult, TTracker> Driver<'_, TComp, TRawResult, TTracker>
-where
-    TComp: Send + Sync + Comp<TRawResult, TTracker>,
-    TRawResult: Send + Sync + RawResult,
-    TTracker: Send + Sync + Tracker,
-{
-    fn new(samples: &[Sample], comp: TComp) -> Driver<TComp, TRawResult, TTracker> {
-        let mut max_type = 0;
-        for sample in samples {
-            for token in &sample.tokens {
-                max_type = max_type.max(token.id);
-            }
-        }
-        let total_types = max_type + 1;
-        Driver {
-            samples,
-            total_types,
-            comp,
-            _raw_result: PhantomData,
-            _tracker: PhantomData,
-        }
-    }
-
-    fn compute(&self, iter: u64) -> (TRawResult, u64) {
-        self.comp.sanity();
-        compute_parallel(
-            || self.comp.build_total(),
-            |job, iter_per_job, result| {
-                let mut ls = LocalState::new(self.total_types);
-                let n = self.samples.len();
-                shuffle_job(
-                    |idx, result| {
-                        ls.reset();
-                        let mut tracker = self.comp.start(result);
-                        for i in idx {
-                            let prev = ls.types;
-                            ls.feed_sample(&self.samples[*i]);
-                            if self
-                                .comp
-                                .step(result, &mut tracker, prev, ls.types, ls.size)
-                            {
-                                return;
-                            }
-                        }
-                        unreachable!();
-                    },
-                    n,
-                    job,
-                    iter_per_job,
-                    result,
-                );
-            },
-            iter,
-        )
     }
 }
 
@@ -253,6 +174,51 @@ impl LocalState {
         }
         self.size += sample.size;
     }
+}
+
+fn compute<TComp, TTracker, TRawResult>(
+    samples: &[Sample],
+    iter: u64,
+    comp: TComp,
+) -> (TRawResult, u64)
+where
+    TComp: Comp<TRawResult, TTracker> + Send + Sync,
+    TTracker: Tracker,
+    TRawResult: RawResult + Send,
+{
+    let mut max_type = 0;
+    for sample in samples {
+        for token in &sample.tokens {
+            max_type = max_type.max(token.id);
+        }
+    }
+    let total_types = max_type + 1;
+    compute_parallel(
+        || comp.build_total(),
+        |job, iter_per_job, result| {
+            let mut ls = LocalState::new(total_types);
+            let n = samples.len();
+            shuffle_job(
+                |idx, result| {
+                    ls.reset();
+                    let mut tracker = comp.start(result);
+                    for i in idx {
+                        let prev = ls.types;
+                        ls.feed_sample(&samples[*i]);
+                        if comp.step(result, &mut tracker, prev, ls.types, ls.size) {
+                            return;
+                        }
+                    }
+                    unreachable!();
+                },
+                n,
+                job,
+                iter_per_job,
+                result,
+            );
+        },
+        iter,
+    )
 }
 
 struct RawAvgResult {
