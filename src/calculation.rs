@@ -21,21 +21,29 @@ pub struct Point {
 }
 
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
-    let comp = AvgComp { limit };
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
-        || comp.build_total(),
+        RawAvgResult::new,
         |job, result| {
             let mut ls = LocalState::new(total_types);
             shuffle_job(
                 |idx| {
                     ls.reset();
-                    let mut tracker = comp.start(result);
                     for i in idx {
                         let prev = ls.types;
                         ls.feed_sample(&samples[*i]);
-                        if comp.step(result, &mut tracker, prev, ls.types, ls.size) {
-                            return;
+                        match ls.size.cmp(&limit) {
+                            Ordering::Less => (),
+                            Ordering::Equal => {
+                                result.types_low += ls.types;
+                                result.types_high += ls.types;
+                                return;
+                            }
+                            Ordering::Greater => {
+                                result.types_low += prev;
+                                result.types_high += ls.types;
+                                return;
+                            }
                         }
                     }
                     unreachable!();
@@ -108,45 +116,8 @@ struct CountTracker {
 
 impl Tracker for CountTracker {}
 
-struct AvgComp {
-    limit: u64,
-}
-
 struct PointComp<'a> {
     points: &'a [Point],
-}
-
-impl Comp<RawAvgResult, NoTracker> for AvgComp {
-    fn start(&self, _result: &mut RawAvgResult) -> NoTracker {
-        NoTracker {}
-    }
-
-    fn build_total(&self) -> RawAvgResult {
-        RawAvgResult::new()
-    }
-
-    fn step(
-        &self,
-        result: &mut RawAvgResult,
-        _tracker: &mut NoTracker,
-        prev: u64,
-        types: u64,
-        size: u64,
-    ) -> bool {
-        match size.cmp(&self.limit) {
-            Ordering::Less => false,
-            Ordering::Equal => {
-                result.types_low += types;
-                result.types_high += types;
-                true
-            }
-            Ordering::Greater => {
-                result.types_low += prev;
-                result.types_high += types;
-                true
-            }
-        }
-    }
 }
 
 impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
