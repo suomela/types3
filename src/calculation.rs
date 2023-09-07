@@ -1,10 +1,8 @@
 use crate::output::{AvgResult, PointResult};
 use crate::parallelism::{compute_parallel, RawResult};
+use crate::shuffle::shuffle_job;
 use core::marker::PhantomData;
 use itertools::Itertools;
-use rand::seq::SliceRandom;
-use rand_xoshiro::rand_core::SeedableRng;
-use rand_xoshiro::Xoshiro256PlusPlus;
 use std::cmp::Ordering;
 
 pub struct SToken {
@@ -197,15 +195,13 @@ where
     fn job(&self, job: u64, iter_per_job: u64, result: &mut TRawResult) {
         let mut ls = LocalState::new(self.total_types);
         let n = self.samples.len();
-        let mut idx = vec![0; n];
-        for (i, v) in idx.iter_mut().enumerate() {
-            *v = i;
-        }
-        let mut rng = Xoshiro256PlusPlus::seed_from_u64(job);
-        for _ in 0..iter_per_job {
-            idx.shuffle(&mut rng);
-            self.calc_one(&idx, &mut ls, result);
-        }
+        shuffle_job(
+            |idx, result| self.calc_one(idx, &mut ls, result),
+            n,
+            job,
+            iter_per_job,
+            result,
+        );
     }
 
     fn calc_one(&self, idx: &[usize], ls: &mut LocalState, result: &mut TRawResult) {
