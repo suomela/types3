@@ -1,7 +1,8 @@
-use crate::calculation::{count_types, Sample, TypeCounter};
+use crate::calculation::Sample;
 use crate::output::AvgResult;
 use crate::parallelism::{compute_parallel, ParResult};
 use crate::shuffle::shuffle_job;
+use crate::type_count::{count_types, TypeCounter};
 use std::cmp::Ordering;
 
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
