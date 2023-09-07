@@ -21,13 +21,61 @@ pub struct Point {
 }
 
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
-    let (r, iter) = compute(samples, iter, AvgComp { limit });
+    let comp = AvgComp { limit };
+    let total_types = count_types(samples);
+    let (r, iter) = compute_parallel(
+        || comp.build_total(),
+        |job, result| {
+            let mut ls = LocalState::new(total_types);
+            shuffle_job(
+                |idx| {
+                    ls.reset();
+                    let mut tracker = comp.start(result);
+                    for i in idx {
+                        let prev = ls.types;
+                        ls.feed_sample(&samples[*i]);
+                        if comp.step(result, &mut tracker, prev, ls.types, ls.size) {
+                            return;
+                        }
+                    }
+                    unreachable!();
+                },
+                samples.len(),
+                job,
+            );
+        },
+        iter,
+    );
     r.finalize(iter)
 }
 
 pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult> {
     assert!(!points.is_empty());
-    let (r, iter) = compute(samples, iter, PointComp { points });
+    let comp = PointComp { points };
+    let total_types = count_types(samples);
+    let (r, iter) = compute_parallel(
+        || comp.build_total(),
+        |job, result| {
+            let mut ls = LocalState::new(total_types);
+            shuffle_job(
+                |idx| {
+                    ls.reset();
+                    let mut tracker = comp.start(result);
+                    for i in idx {
+                        let prev = ls.types;
+                        ls.feed_sample(&samples[*i]);
+                        if comp.step(result, &mut tracker, prev, ls.types, ls.size) {
+                            return;
+                        }
+                    }
+                    unreachable!();
+                },
+                samples.len(),
+                job,
+            );
+        },
+        iter,
+    );
     r.finalize(iter)
 }
 
@@ -184,42 +232,6 @@ fn count_types(samples: &[Sample]) -> usize {
         }
     }
     max_type + 1
-}
-
-fn compute<TComp, TTracker, TRawResult>(
-    samples: &[Sample],
-    iter: u64,
-    comp: TComp,
-) -> (TRawResult, u64)
-where
-    TComp: Comp<TRawResult, TTracker> + Send + Sync,
-    TTracker: Tracker,
-    TRawResult: RawResult + Send,
-{
-    let total_types = count_types(samples);
-    compute_parallel(
-        || comp.build_total(),
-        |job, result| {
-            let mut ls = LocalState::new(total_types);
-            shuffle_job(
-                |idx| {
-                    ls.reset();
-                    let mut tracker = comp.start(result);
-                    for i in idx {
-                        let prev = ls.types;
-                        ls.feed_sample(&samples[*i]);
-                        if comp.step(result, &mut tracker, prev, ls.types, ls.size) {
-                            return;
-                        }
-                    }
-                    unreachable!();
-                },
-                samples.len(),
-                job,
-            );
-        },
-        iter,
-    )
 }
 
 struct RawAvgResult {
