@@ -8,15 +8,15 @@ pub struct Sample {
     pub tokens: Vec<SToken>,
 }
 
-pub struct LocalState {
+pub struct TypeCounter {
     pub size: u64,
     pub types: u64,
     seen: Vec<bool>,
 }
 
-impl LocalState {
-    pub fn new(total_types: usize) -> LocalState {
-        LocalState {
+impl TypeCounter {
+    pub fn new(total_types: usize) -> TypeCounter {
+        TypeCounter {
             size: 0,
             types: 0,
             seen: vec![false; total_types],

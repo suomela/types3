@@ -11,19 +11,19 @@ pub struct Job {
     pub iter_per_job: u64,
 }
 
-pub trait RawResult {
+pub trait ParResult {
     fn add(&mut self, other: Self);
 }
 
-pub fn compute_parallel<TRawResult, TBuilder, TRunner>(
+pub fn compute_parallel<TParResult, TBuilder, TRunner>(
     builder: TBuilder,
     runner: TRunner,
     iter: u64,
-) -> (TRawResult, u64)
+) -> (TParResult, u64)
 where
-    TRawResult: RawResult + Send,
-    TBuilder: Fn() -> TRawResult + Send + Copy,
-    TRunner: Fn(Job, &mut TRawResult) + Send + Copy,
+    TParResult: ParResult + Send,
+    TBuilder: Fn() -> TParResult + Send + Copy,
+    TRunner: Fn(Job, &mut TParResult) + Send + Copy,
 {
     let (s1, r1) = crossbeam_channel::unbounded();
     for job in 0..RANDOM_JOBS {
@@ -77,7 +77,7 @@ mod test {
         y: u64,
     }
 
-    impl RawResult for Adder {
+    impl ParResult for Adder {
         fn add(&mut self, other: Self) {
             self.x += other.x;
             self.y += other.y;

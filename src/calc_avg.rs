@@ -1,34 +1,34 @@
-use crate::calculation::{count_types, LocalState, Sample};
+use crate::calculation::{count_types, Sample, TypeCounter};
 use crate::output::AvgResult;
-use crate::parallelism::{compute_parallel, RawResult};
+use crate::parallelism::{compute_parallel, ParResult};
 use crate::shuffle::shuffle_job;
 use std::cmp::Ordering;
 
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
-        || RawAvgResult {
+        || AvgParResult {
             types_low: 0,
             types_high: 0,
         },
         |job, result| {
-            let mut ls = LocalState::new(total_types);
+            let mut tc = TypeCounter::new(total_types);
             shuffle_job(
                 |idx| {
-                    ls.reset();
+                    tc.reset();
                     for i in idx {
-                        let prev = ls.types;
-                        ls.feed_sample(&samples[*i]);
-                        match ls.size.cmp(&limit) {
+                        let prev = tc.types;
+                        tc.feed_sample(&samples[*i]);
+                        match tc.size.cmp(&limit) {
                             Ordering::Less => (),
                             Ordering::Equal => {
-                                result.types_low += ls.types;
-                                result.types_high += ls.types;
+                                result.types_low += tc.types;
+                                result.types_high += tc.types;
                                 return;
                             }
                             Ordering::Greater => {
                                 result.types_low += prev;
-                                result.types_high += ls.types;
+                                result.types_high += tc.types;
                                 return;
                             }
                         }
@@ -48,12 +48,12 @@ pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult 
     }
 }
 
-struct RawAvgResult {
+struct AvgParResult {
     types_low: u64,
     types_high: u64,
 }
 
-impl RawResult for RawAvgResult {
+impl ParResult for AvgParResult {
     fn add(&mut self, other: Self) {
         self.types_low += other.types_low;
         self.types_high += other.types_high;
