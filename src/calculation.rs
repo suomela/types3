@@ -176,6 +176,16 @@ impl LocalState {
     }
 }
 
+fn count_types(samples: &[Sample]) -> usize {
+    let mut max_type = 0;
+    for sample in samples {
+        for token in &sample.tokens {
+            max_type = max_type.max(token.id);
+        }
+    }
+    max_type + 1
+}
+
 fn compute<TComp, TTracker, TRawResult>(
     samples: &[Sample],
     iter: u64,
@@ -186,20 +196,13 @@ where
     TTracker: Tracker,
     TRawResult: RawResult + Send,
 {
-    let mut max_type = 0;
-    for sample in samples {
-        for token in &sample.tokens {
-            max_type = max_type.max(token.id);
-        }
-    }
-    let total_types = max_type + 1;
+    let total_types = count_types(samples);
     compute_parallel(
         || comp.build_total(),
         |job, iter_per_job, result| {
             let mut ls = LocalState::new(total_types);
-            let n = samples.len();
             shuffle_job(
-                |idx, result| {
+                |idx| {
                     ls.reset();
                     let mut tracker = comp.start(result);
                     for i in idx {
@@ -211,10 +214,9 @@ where
                     }
                     unreachable!();
                 },
-                n,
+                samples.len(),
                 job,
                 iter_per_job,
-                result,
             );
         },
         iter,
