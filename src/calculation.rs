@@ -14,16 +14,25 @@ pub struct Sample {
     pub tokens: Vec<SToken>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Point {
-    pub size: u64,
-    pub types: u64,
+struct RawAvgResult {
+    types_low: u64,
+    types_high: u64,
+}
+
+impl RawResult for RawAvgResult {
+    fn add(&mut self, other: Self) {
+        self.types_low += other.types_low;
+        self.types_high += other.types_high;
+    }
 }
 
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
-        RawAvgResult::new,
+        || RawAvgResult {
+            types_low: 0,
+            types_high: 0,
+        },
         |job, result| {
             let mut ls = LocalState::new(total_types);
             shuffle_job(
@@ -54,7 +63,43 @@ pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult 
         },
         iter,
     );
-    r.finalize(iter)
+    AvgResult {
+        types_low: r.types_low,
+        types_high: r.types_high,
+        iter,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Point {
+    pub size: u64,
+    pub types: u64,
+}
+
+#[derive(Clone, Copy)]
+struct RawPointResult {
+    above: u64,
+    below: u64,
+}
+
+impl RawPointResult {
+    fn add(&mut self, other: Self) {
+        self.above += other.above;
+        self.below += other.below;
+    }
+}
+
+struct RawPointResults {
+    results: Vec<RawPointResult>,
+}
+
+impl RawResult for RawPointResults {
+    fn add(&mut self, other: Self) {
+        debug_assert_eq!(self.results.len(), other.results.len());
+        for i in 0..self.results.len() {
+            self.results[i].add(other.results[i]);
+        }
+    }
 }
 
 pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult> {
@@ -62,7 +107,7 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
         || RawPointResults {
-            results: vec![RawPointResult::new(); points.len()],
+            results: vec![RawPointResult { above: 0, below: 0 }; points.len()],
         },
         |job, result| {
             let mut ls = LocalState::new(total_types);
@@ -97,7 +142,14 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
         },
         iter,
     );
-    r.finalize(iter)
+    r.results
+        .into_iter()
+        .map(|x| PointResult {
+            above: x.above,
+            below: x.below,
+            iter,
+        })
+        .collect_vec()
 }
 
 struct LocalState {
@@ -146,76 +198,4 @@ fn count_types(samples: &[Sample]) -> usize {
         }
     }
     max_type + 1
-}
-
-struct RawAvgResult {
-    types_low: u64,
-    types_high: u64,
-}
-
-impl RawResult for RawAvgResult {
-    fn add(&mut self, other: Self) {
-        self.types_low += other.types_low;
-        self.types_high += other.types_high;
-    }
-}
-
-impl RawAvgResult {
-    fn new() -> RawAvgResult {
-        RawAvgResult {
-            types_low: 0,
-            types_high: 0,
-        }
-    }
-
-    fn finalize(self, iter: u64) -> AvgResult {
-        AvgResult {
-            types_low: self.types_low,
-            types_high: self.types_high,
-            iter,
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-struct RawPointResult {
-    above: u64,
-    below: u64,
-}
-
-impl RawPointResult {
-    fn new() -> RawPointResult {
-        RawPointResult { above: 0, below: 0 }
-    }
-
-    fn add(&mut self, other: Self) {
-        self.above += other.above;
-        self.below += other.below;
-    }
-}
-
-struct RawPointResults {
-    results: Vec<RawPointResult>,
-}
-
-impl RawResult for RawPointResults {
-    fn add(&mut self, other: Self) {
-        debug_assert_eq!(self.results.len(), other.results.len());
-        for i in 0..self.results.len() {
-            self.results[i].add(other.results[i]);
-        }
-    }
-}
-
-impl RawPointResults {
-    fn finalize(self, iter: u64) -> Vec<PointResult> {
-        self.results
-            .into_iter()
-            .map(|x| PointResult {
-                above: x.above,
-                below: x.below,
-                iter,
-            })
-            .collect_vec()
-    }
 }
