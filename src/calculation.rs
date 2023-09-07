@@ -191,7 +191,21 @@ where
                 let mut ls = LocalState::new(self.total_types);
                 let n = self.samples.len();
                 shuffle_job(
-                    |idx, result| self.calc_one(idx, &mut ls, result),
+                    |idx, result| {
+                        ls.reset();
+                        let mut tracker = self.comp.start(result);
+                        for i in idx {
+                            let prev = ls.types;
+                            ls.feed_sample(&self.samples[*i]);
+                            if self
+                                .comp
+                                .step(result, &mut tracker, prev, ls.types, ls.size)
+                            {
+                                return;
+                            }
+                        }
+                        unreachable!();
+                    },
                     n,
                     job,
                     iter_per_job,
@@ -200,22 +214,6 @@ where
             },
             iter,
         )
-    }
-
-    fn calc_one(&self, idx: &[usize], ls: &mut LocalState, result: &mut TRawResult) {
-        ls.reset();
-        let mut tracker = self.comp.start(result);
-        for i in idx {
-            let prev = ls.types;
-            ls.feed_sample(&self.samples[*i]);
-            if self
-                .comp
-                .step(result, &mut tracker, prev, ls.types, ls.size)
-            {
-                return;
-            }
-        }
-        unreachable!();
     }
 }
 
