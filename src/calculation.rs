@@ -199,7 +199,7 @@ where
     let total_types = count_types(samples);
     compute_parallel(
         || comp.build_total(),
-        |job, iter_per_job, result| {
+        |job, result| {
             let mut ls = LocalState::new(total_types);
             shuffle_job(
                 |idx| {
@@ -216,7 +216,6 @@ where
                 },
                 samples.len(),
                 job,
-                iter_per_job,
             );
         },
         iter,
