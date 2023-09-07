@@ -59,21 +59,34 @@ pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult 
 
 pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult> {
     assert!(!points.is_empty());
-    let comp = PointComp { points };
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
-        || comp.build_total(),
+        || RawPointResults {
+            results: vec![RawPointResult::new(); points.len()],
+        },
         |job, result| {
             let mut ls = LocalState::new(total_types);
             shuffle_job(
                 |idx| {
                     ls.reset();
-                    let mut tracker = comp.start(result);
+                    let mut j = 0;
                     for i in idx {
                         let prev = ls.types;
                         ls.feed_sample(&samples[*i]);
-                        if comp.step(result, &mut tracker, prev, ls.types, ls.size) {
-                            return;
+                        loop {
+                            let p = &points[j];
+                            if ls.size < p.size {
+                                break;
+                            }
+                            if prev < p.types {
+                                result.results[j].above += 1;
+                            } else if ls.types > p.types {
+                                result.results[j].below += 1;
+                            }
+                            j += 1;
+                            if j == points.len() {
+                                return;
+                            }
                         }
                     }
                     unreachable!();
@@ -85,76 +98,6 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
         iter,
     );
     r.finalize(iter)
-}
-
-trait Comp<TRawResult, TTracker>
-where
-    TRawResult: RawResult,
-    TTracker: Tracker,
-{
-    fn build_total(&self) -> TRawResult;
-    fn start(&self, result: &mut TRawResult) -> TTracker;
-    fn step(
-        &self,
-        result: &mut TRawResult,
-        tracker: &mut TTracker,
-        prev: u64,
-        types: u64,
-        size: u64,
-    ) -> bool;
-}
-
-trait Tracker {}
-
-struct NoTracker {}
-
-impl Tracker for NoTracker {}
-
-struct CountTracker {
-    j: usize,
-}
-
-impl Tracker for CountTracker {}
-
-struct PointComp<'a> {
-    points: &'a [Point],
-}
-
-impl Comp<RawPointResults, CountTracker> for PointComp<'_> {
-    fn start(&self, _result: &mut RawPointResults) -> CountTracker {
-        CountTracker { j: 0 }
-    }
-
-    fn build_total(&self) -> RawPointResults {
-        RawPointResults {
-            results: vec![RawPointResult::new(); self.points.len()],
-        }
-    }
-
-    fn step(
-        &self,
-        result: &mut RawPointResults,
-        tracker: &mut CountTracker,
-        prev: u64,
-        types: u64,
-        size: u64,
-    ) -> bool {
-        loop {
-            let p = &self.points[tracker.j];
-            if size < p.size {
-                return false;
-            }
-            if prev < p.types {
-                result.results[tracker.j].above += 1;
-            } else if types > p.types {
-                result.results[tracker.j].below += 1;
-            }
-            tracker.j += 1;
-            if tracker.j == self.points.len() {
-                return true;
-            }
-        }
-    }
 }
 
 struct LocalState {
