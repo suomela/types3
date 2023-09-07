@@ -187,21 +187,19 @@ where
         self.comp.sanity();
         compute_parallel(
             || self.comp.build_total(),
-            |job, iter_per_job, result| self.job(job, iter_per_job, result),
+            |job, iter_per_job, result| {
+                let mut ls = LocalState::new(self.total_types);
+                let n = self.samples.len();
+                shuffle_job(
+                    |idx, result| self.calc_one(idx, &mut ls, result),
+                    n,
+                    job,
+                    iter_per_job,
+                    result,
+                );
+            },
             iter,
         )
-    }
-
-    fn job(&self, job: u64, iter_per_job: u64, result: &mut TRawResult) {
-        let mut ls = LocalState::new(self.total_types);
-        let n = self.samples.len();
-        shuffle_job(
-            |idx, result| self.calc_one(idx, &mut ls, result),
-            n,
-            job,
-            iter_per_job,
-            result,
-        );
     }
 
     fn calc_one(&self, idx: &[usize], ls: &mut LocalState, result: &mut TRawResult) {
