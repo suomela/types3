@@ -47,9 +47,9 @@ where
                             if counter.get_x() < p.x {
                                 break;
                             }
-                            if prev_y < p.y {
+                            if counter.get_y() < p.y {
                                 result.elems[j].above += 1;
-                            } else if counter.get_y() > p.y {
+                            } else if prev_y > p.y {
                                 result.elems[j].below += 1;
                             }
                             j += 1;
