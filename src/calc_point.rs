@@ -2,7 +2,7 @@ use crate::calculation::Sample;
 use crate::output::PointResult;
 use crate::parallelism::{compute_parallel, ParResult};
 use crate::shuffle::shuffle_job;
-use crate::type_count::{count_types, TypeCounter};
+use crate::counter::{count_types, TypeCounter};
 use itertools::Itertools;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
