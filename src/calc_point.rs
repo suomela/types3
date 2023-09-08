@@ -1,8 +1,8 @@
 use crate::calculation::Sample;
-use crate::counter::{count_types, Counter, TokenCounter, TypeCounter};
+use crate::counter::{self, Counter, TokenCounter, TypeCounter};
 use crate::output::{MeasureY, PointResult};
-use crate::parallelism::{compute_parallel, ParResult};
-use crate::shuffle::shuffle_job;
+use crate::parallelism::{self, ParResult};
+use crate::shuffle;
 use itertools::Itertools;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -28,14 +28,14 @@ where
     TCounter: Counter,
 {
     assert!(!points.is_empty());
-    let total_types = count_types(samples);
-    let (r, iter) = compute_parallel(
+    let total_types = counter::count_types(samples);
+    let (r, iter) = parallelism::compute_parallel(
         || PointParResult {
             elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
         },
         |job, result| {
             let mut counter = TCounter::new(total_types);
-            shuffle_job(
+            shuffle::shuffle_job(
                 |idx| {
                     counter.reset();
                     let mut j = 0;

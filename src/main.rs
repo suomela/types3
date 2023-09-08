@@ -12,8 +12,7 @@ use types3::categories::{self, Category};
 use types3::errors::{self, Result};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
-    avg_string, point_string, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult,
-    Years,
+    self, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult, Years,
 };
 use types3::samples::CSample;
 
@@ -582,7 +581,7 @@ impl<'a> Calc<'a> {
             calc_avg::average_at_limit(self.measure_y, &subset.samples, self.iter, limit);
         msg.push_str(&format!(
             "{} {} / {} {}",
-            avg_string(&average_at_limit),
+            output::avg_string(&average_at_limit),
             self.measure_y,
             limit,
             self.measure_x
@@ -591,7 +590,10 @@ impl<'a> Calc<'a> {
         let vs_time = {
             let k = subset.get_parent_period(self.years);
             let pr = top_results[&(k, p)];
-            msg.push_str(&format!(", {} vs. other time points", point_string(&pr)));
+            msg.push_str(&format!(
+                ", {} vs. other time points",
+                output::point_string(&pr)
+            ));
             pr
         };
         let vs_categories = match subset.category {
@@ -599,7 +601,10 @@ impl<'a> Calc<'a> {
             Some(_) => {
                 let k = subset.get_parent_category();
                 let pr = top_results[&(k, p)];
-                msg.push_str(&format!(", {} vs. other categories", point_string(&pr)));
+                msg.push_str(&format!(
+                    ", {} vs. other categories",
+                    output::point_string(&pr)
+                ));
                 Some(pr)
             }
         };
