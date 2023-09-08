@@ -8,13 +8,12 @@ use std::{error, fs, io, process};
 use types3::calc_avg;
 use types3::calc_point::{self, Point};
 use types3::calculation::{SToken, Sample};
-use types3::errors::{
-    invalid_argument, invalid_argument_ref, invalid_input, invalid_input_ref, Result,
-};
+use types3::categories::{self, Category};
+use types3::errors::{invalid_argument_ref, invalid_input, invalid_input_ref, Result};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
-    avg_string, point_string, MeasureX, MeasureY, OCategory, OCurve, OError, OResult, Output,
-    PointResult, Years,
+    avg_string, point_string, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult,
+    Years,
 };
 
 const DEFAULT_ITER: u64 = 1_000_000;
@@ -71,38 +70,6 @@ struct Args {
     /// Verbosity
     #[command(flatten)]
     verbose: Verbosity<WarnLevel>,
-}
-
-type Category<'a> = Option<(&'a str, &'a str)>;
-
-fn owned_cat(category: Category) -> OCategory {
-    category.map(|(k, v)| (k.to_owned(), v.to_owned()))
-}
-
-fn matches(category: Category, metadata: &HashMap<String, String>) -> bool {
-    match category {
-        None => true,
-        Some((k, v)) => match metadata.get(k) {
-            None => false,
-            Some(v2) => v == v2,
-        },
-    }
-}
-
-fn parse_restriction(arg: &Option<String>) -> Result<Category> {
-    match arg {
-        None => Ok(None),
-        Some(r) => {
-            let parts = r.split('=').collect_vec();
-            if parts.len() != 2 {
-                return Err(invalid_argument(format!(
-                    "restriction should be of the form 'key=value', got '{r}'"
-                )));
-            }
-            let category = Some((parts[0], parts[1]));
-            Ok(category)
-        }
-    }
 }
 
 fn get_categories<'a>(args: &'a Args, samples: &[CSample<'a>]) -> Result<Vec<Category<'a>>> {
@@ -318,7 +285,7 @@ fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
             .tokens
             .iter()
             .filter_map(|t| {
-                if matches(restrict_tokens, &t.metadata) {
+                if categories::matches(restrict_tokens, &t.metadata) {
                     Some(&t.lemma as &str)
                 } else {
                     None
@@ -336,7 +303,7 @@ fn get_samples<'a>(
     samples
         .iter()
         .filter_map(|s| {
-            if matches(restrict_samples, &s.metadata) {
+            if categories::matches(restrict_samples, &s.metadata) {
                 Some(get_sample(restrict_tokens, s))
             } else {
                 None
@@ -354,8 +321,9 @@ fn build_subset<'a>(
 ) -> Result<Subset<'a>> {
     let category = key.category;
     let period = key.period;
-    let filter =
-        |s: &&CSample| period.0 <= s.year && s.year < period.1 && matches(category, s.metadata);
+    let filter = |s: &&CSample| {
+        period.0 <= s.year && s.year < period.1 && categories::matches(category, s.metadata)
+    };
     let samples = samples.iter().filter(filter).collect_vec();
 
     let mut lemmas = HashSet::new();
@@ -494,8 +462,8 @@ impl<'a> Calc<'a> {
             MeasureY::Types
         };
         statistics(&input.samples);
-        let restrict_samples = parse_restriction(&args.restrict_samples)?;
-        let restrict_tokens = parse_restriction(&args.restrict_tokens)?;
+        let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
+        let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
         let samples = get_samples(restrict_samples, restrict_tokens, &input.samples);
         post_statistics(&samples);
         if samples.is_empty() {
@@ -579,8 +547,8 @@ impl<'a> Calc<'a> {
             measure_x: self.measure_x,
             iter: self.iter,
             limit,
-            restrict_tokens: owned_cat(self.restrict_tokens),
-            restrict_samples: owned_cat(self.restrict_samples),
+            restrict_tokens: categories::owned_cat(self.restrict_tokens),
+            restrict_samples: categories::owned_cat(self.restrict_samples),
             split_samples: self.split_samples,
         })
     }
@@ -602,7 +570,7 @@ impl<'a> Calc<'a> {
 
     fn calc_curve(&self, curve: &Curve, limit: u64, top_results: &TopResults) -> OCurve {
         OCurve {
-            category: owned_cat(curve.category),
+            category: categories::owned_cat(curve.category),
             results: curve
                 .keys
                 .iter()
