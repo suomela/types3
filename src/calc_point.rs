@@ -1,6 +1,6 @@
 use crate::calculation::Sample;
-use crate::counter::{count_types, Counter, TypeCounter};
-use crate::output::PointResult;
+use crate::counter::{count_types, Counter, TokenCounter, TypeCounter};
+use crate::output::{MeasureY, PointResult};
 use crate::parallelism::{compute_parallel, ParResult};
 use crate::shuffle::shuffle_job;
 use itertools::Itertools;
@@ -11,7 +11,22 @@ pub struct Point {
     pub types: u64,
 }
 
-pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult> {
+pub fn compare_with_points(
+    measure_y: MeasureY,
+    samples: &[Sample],
+    iter: u64,
+    points: &[Point],
+) -> Vec<PointResult> {
+    match measure_y {
+        MeasureY::Types => do_count::<TypeCounter>(samples, iter, points),
+        MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, points),
+    }
+}
+
+fn do_count<TCounter>(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<PointResult>
+where
+    TCounter: Counter,
+{
     assert!(!points.is_empty());
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(

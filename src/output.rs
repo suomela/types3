@@ -9,6 +9,15 @@ pub enum MeasureY {
     Tokens,
 }
 
+impl fmt::Display for MeasureY {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MeasureY::Types => write!(f, "types"),
+            MeasureY::Tokens => write!(f, "tokens"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MeasureX {

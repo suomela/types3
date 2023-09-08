@@ -614,7 +614,8 @@ impl<'a> Calc<'a> {
         let mut points = subset.points.iter().copied().collect_vec();
         let key = subset.key();
         points.sort();
-        let results = calc_point::compare_with_points(&subset.samples, self.iter, &points);
+        let results =
+            calc_point::compare_with_points(self.measure_y, &subset.samples, self.iter, &points);
         for (i, p) in points.into_iter().enumerate() {
             top_results.insert((key, p), results[i]);
         }
@@ -634,10 +635,12 @@ impl<'a> Calc<'a> {
 
     fn calc_relevant(&self, subset: &Subset, limit: u64, top_results: &TopResults) -> OResult {
         let mut msg = format!("{}: ", subset.pretty());
-        let average_at_limit = calc_avg::average_at_limit(&subset.samples, self.iter, limit);
+        let average_at_limit =
+            calc_avg::average_at_limit(self.measure_y, &subset.samples, self.iter, limit);
         msg.push_str(&format!(
-            "{} types / {} {}",
+            "{} {} / {} {}",
             avg_string(&average_at_limit),
+            self.measure_y,
             limit,
             self.measure_x
         ));

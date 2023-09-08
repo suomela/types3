@@ -1,11 +1,26 @@
 use crate::calculation::Sample;
-use crate::counter::{count_types, Counter, TypeCounter};
-use crate::output::AvgResult;
+use crate::counter::{count_types, Counter, TokenCounter, TypeCounter};
+use crate::output::{AvgResult, MeasureY};
 use crate::parallelism::{compute_parallel, ParResult};
 use crate::shuffle::shuffle_job;
 use std::cmp::Ordering;
 
-pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
+pub fn average_at_limit(
+    measure_y: MeasureY,
+    samples: &[Sample],
+    iter: u64,
+    limit: u64,
+) -> AvgResult {
+    match measure_y {
+        MeasureY::Types => do_count::<TypeCounter>(samples, iter, limit),
+        MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, limit),
+    }
+}
+
+fn do_count<TCounter>(samples: &[Sample], iter: u64, limit: u64) -> AvgResult
+where
+    TCounter: Counter,
+{
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
         || AvgParResult { low: 0, high: 0 },

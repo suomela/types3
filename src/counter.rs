@@ -9,7 +9,7 @@ pub trait Counter {
 }
 
 pub struct TypeCounter {
-    size: u64,
+    x: u64,
     types: u64,
     seen: Vec<bool>,
 }
@@ -25,7 +25,7 @@ impl TypeCounter {
 
 impl Counter for TypeCounter {
     fn get_x(&self) -> u64 {
-        self.size
+        self.x
     }
 
     fn get_y(&self) -> u64 {
@@ -34,14 +34,14 @@ impl Counter for TypeCounter {
 
     fn new(total_types: usize) -> TypeCounter {
         TypeCounter {
-            size: 0,
+            x: 0,
             types: 0,
             seen: vec![false; total_types],
         }
     }
 
     fn reset(&mut self) {
-        self.size = 0;
+        self.x = 0;
         self.types = 0;
         for e in self.seen.iter_mut() {
             *e = false;
@@ -52,7 +52,7 @@ impl Counter for TypeCounter {
         for t in &sample.tokens {
             self.feed_token(t);
         }
-        self.size += sample.size;
+        self.x += sample.size;
     }
 }
 
@@ -64,4 +64,33 @@ pub fn count_types(samples: &[Sample]) -> usize {
         }
     }
     max_type + 1
+}
+
+pub struct TokenCounter {
+    x: u64,
+    tokens: u64,
+}
+
+impl Counter for TokenCounter {
+    fn get_x(&self) -> u64 {
+        self.x
+    }
+
+    fn get_y(&self) -> u64 {
+        self.tokens
+    }
+
+    fn new(_total_types: usize) -> TokenCounter {
+        TokenCounter { x: 0, tokens: 0 }
+    }
+
+    fn reset(&mut self) {
+        self.x = 0;
+        self.tokens = 0;
+    }
+
+    fn feed_sample(&mut self, sample: &Sample) {
+        self.x += sample.size;
+        self.tokens += sample.tokens.len() as u64;
+    }
 }
