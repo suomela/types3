@@ -9,12 +9,13 @@ use types3::calc_avg;
 use types3::calc_point::{self, Point};
 use types3::calculation::{SToken, Sample};
 use types3::categories::{self, Category};
-use types3::errors::{invalid_argument_ref, invalid_input, invalid_input_ref, Result};
+use types3::errors::{self, Result};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
     avg_string, point_string, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult,
     Years,
 };
+use types3::samples::CSample;
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -86,7 +87,7 @@ fn get_categories<'a>(args: &'a Args, samples: &[CSample<'a>]) -> Result<Vec<Cat
                 };
             }
             if values.is_empty() {
-                return Err(invalid_input(format!(
+                return Err(errors::invalid_input(format!(
                     "there are no samples with metadata key {}",
                     key
                 )));
@@ -269,13 +270,6 @@ impl<'a> Subset<'a> {
     }
 }
 
-struct CSample<'a> {
-    year: Year,
-    metadata: &'a HashMap<String, String>,
-    words: u64,
-    tokens: Vec<&'a str>,
-}
-
 fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
     CSample {
         year: s.year,
@@ -403,7 +397,10 @@ fn build_subset<'a>(
         measure_x,
     );
     if total_x == 0 {
-        return Err(invalid_input(format!("{}: zero-size subset", s.pretty())));
+        return Err(errors::invalid_input(format!(
+            "{}: zero-size subset",
+            s.pretty()
+        )));
     }
     Ok(s)
 }
@@ -447,7 +444,7 @@ impl<'a> Calc<'a> {
     fn new(args: &'a Args, input: &'a Input) -> Result<Calc<'a>> {
         let measure_x = if args.words {
             if args.split_samples {
-                Err(invalid_argument_ref(
+                Err(errors::invalid_argument_ref(
                     "cannot select both --words and --split-samples",
                 ))
             } else {
@@ -467,7 +464,7 @@ impl<'a> Calc<'a> {
         let samples = get_samples(restrict_samples, restrict_tokens, &input.samples);
         post_statistics(&samples);
         if samples.is_empty() {
-            return Err(invalid_input_ref("no samples found"));
+            return Err(errors::invalid_input_ref("no samples found"));
         }
         let categories = get_categories(args, &samples)?;
         let years = get_years(args, &samples);

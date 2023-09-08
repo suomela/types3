@@ -1,4 +1,4 @@
-use crate::errors::{invalid_argument, Result};
+use crate::errors::{self, Result};
 use crate::output::OCategory;
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -25,7 +25,7 @@ pub fn parse_restriction(arg: &Option<String>) -> Result<Category> {
         Some(r) => {
             let parts = r.split('=').collect_vec();
             if parts.len() != 2 {
-                return Err(invalid_argument(format!(
+                return Err(errors::invalid_argument(format!(
                     "restriction should be of the form 'key=value', got '{r}'"
                 )));
             }

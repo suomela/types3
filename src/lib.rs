@@ -7,4 +7,5 @@ pub mod errors;
 pub mod input;
 pub mod output;
 mod parallelism;
+pub mod samples;
 mod shuffle;
