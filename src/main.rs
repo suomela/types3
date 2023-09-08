@@ -3,11 +3,10 @@ use clap_verbosity_flag::{Verbosity, WarnLevel};
 use itertools::Itertools;
 use log::{debug, error, info};
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::{error, fs, io, process};
 use types3::calc_avg;
 use types3::calc_point::{self, Point};
-use types3::calculation::{SToken, Sample};
 use types3::categories::{self, Category};
 use types3::errors::{self, Result};
 use types3::information;
@@ -15,8 +14,8 @@ use types3::input::{Input, Year};
 use types3::output::{
     self, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult, Years,
 };
-use types3::samples::{self, CSample};
-use types3::subsets::{Subset, SubsetKey};
+use types3::samples;
+use types3::subsets::{self, Subset, SubsetKey};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -90,105 +89,6 @@ fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
     }
     info!("periods: {}", output::pretty_periods(&periods));
     periods
-}
-
-fn build_subset<'a>(
-    measure_x: MeasureX,
-    measure_y: MeasureY,
-    samples: &[CSample<'a>],
-    key: SubsetKey<'a>,
-    split_samples: bool,
-) -> Result<Subset<'a>> {
-    let category = key.category;
-    let period = key.period;
-    let filter = |s: &&CSample| {
-        period.0 <= s.year && s.year < period.1 && categories::matches(category, s.metadata)
-    };
-    let samples = samples.iter().filter(filter).collect_vec();
-
-    let mut lemmas = HashSet::new();
-    for s in &samples {
-        lemmas.extend(&s.tokens);
-    }
-    let mut lemmas = lemmas.into_iter().collect_vec();
-    lemmas.sort();
-    let lemmamap: HashMap<&str, usize> = lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
-    let total_types = lemmas.len() as u64;
-
-    let samples = if split_samples {
-        assert_eq!(measure_x, MeasureX::Tokens);
-        let mut split = vec![];
-        for s in samples {
-            for lemma in &s.tokens {
-                let token = SToken {
-                    count: 1,
-                    id: lemmamap[lemma],
-                };
-                split.push(Sample {
-                    x: 1,
-                    token_count: 1,
-                    tokens: vec![token],
-                })
-            }
-        }
-        split
-    } else {
-        samples
-            .into_iter()
-            .map(|s| {
-                let mut tokencount = HashMap::new();
-                for lemma in &s.tokens {
-                    let id = lemmamap[lemma];
-                    *tokencount.entry(id).or_insert(0) += 1;
-                }
-                let mut tokens = tokencount
-                    .iter()
-                    .map(|(&id, &count)| SToken { id, count })
-                    .collect_vec();
-                tokens.sort_by_key(|t| t.id);
-                let token_count = tokens.iter().map(|t| t.count).sum();
-                let x = match measure_x {
-                    MeasureX::Tokens => token_count,
-                    MeasureX::Words => s.words,
-                };
-                Sample {
-                    x,
-                    token_count,
-                    tokens,
-                }
-            })
-            .collect_vec()
-    };
-    let total_x: u64 = samples.iter().map(|s| s.x).sum();
-    let total_tokens = samples.iter().map(|s| s.token_count).sum();
-    let total_y = match measure_y {
-        MeasureY::Types => total_types,
-        MeasureY::Tokens => total_tokens,
-    };
-    let s = Subset {
-        category,
-        period,
-        samples,
-        total_x,
-        total_y,
-        points: HashSet::new(),
-    };
-    debug!(
-        "{}: {} samples, {} {} / {} {}",
-        s.pretty(),
-        s.samples.len(),
-        s.total_y,
-        measure_y,
-        s.total_x,
-        measure_x,
-    );
-    if total_x == 0 {
-        return Err(errors::invalid_input(format!(
-            "{}: zero-size subset",
-            s.pretty()
-        )));
-    }
-    Ok(s)
 }
 
 struct Curve<'a> {
@@ -266,15 +166,20 @@ impl<'a> Calc<'a> {
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset =
-                    build_subset(measure_x, measure_y, &samples, *key, args.split_samples)?;
+                let subset = subsets::build_subset(
+                    measure_x,
+                    measure_y,
+                    &samples,
+                    *key,
+                    args.split_samples,
+                )?;
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
                 for parent in &parents {
                     let x = match subset_map.entry(*parent) {
                         Occupied(e) => e.into_mut(),
-                        Vacant(e) => e.insert(build_subset(
+                        Vacant(e) => e.insert(subsets::build_subset(
                             measure_x,
                             measure_y,
                             &samples,
