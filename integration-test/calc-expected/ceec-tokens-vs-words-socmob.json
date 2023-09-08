@@ -1,0 +1,443 @@
+{
+  "restrict_samples": null,
+  "restrict_tokens": null,
+  "curves": [
+    {
+      "category": [
+        "socmob",
+        "soc. mob. D"
+      ],
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 121146,
+            "high": 260517,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3403,
+            "below": 6596,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 7015,
+            "below": 2983,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 191964,
+            "high": 246504,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 8084,
+            "below": 1908,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 9125,
+            "below": 869,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 73834,
+            "high": 228985,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3477,
+            "below": 6523,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 3850,
+            "below": 6144,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 157937,
+            "high": 392127,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 9842,
+            "below": 157,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 9984,
+            "below": 16,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 370000,
+            "high": 370000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 9948,
+            "below": 48,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 9977,
+            "below": 22,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 0,
+            "high": 800000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 6971,
+            "below": 3025,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 8766,
+            "below": 1234,
+            "iter": 10000
+          }
+        }
+      ]
+    },
+    {
+      "category": [
+        "socmob",
+        "soc. mob. N"
+      ],
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 108547,
+            "high": 376909,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 7065,
+            "below": 2934,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 9406,
+            "below": 593,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 69712,
+            "high": 388872,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 252,
+            "below": 9748,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 2860,
+            "below": 7138,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 114320,
+            "high": 280021,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 7187,
+            "below": 2813,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 5888,
+            "below": 4111,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 78041,
+            "high": 385956,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 6510,
+            "below": 3488,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 3171,
+            "below": 6829,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 98304,
+            "high": 444424,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 9972,
+            "below": 28,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 3629,
+            "below": 6371,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 71171,
+            "high": 444809,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 5033,
+            "below": 4967,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 7404,
+            "below": 2596,
+            "iter": 10000
+          }
+        }
+      ]
+    },
+    {
+      "category": [
+        "socmob",
+        "soc. mob. U"
+      ],
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 45640,
+            "high": 320294,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 756,
+            "below": 9244,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 1340,
+            "below": 8659,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 131899,
+            "high": 277451,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 5762,
+            "below": 4238,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 8716,
+            "below": 1283,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 114918,
+            "high": 379038,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 8866,
+            "below": 1134,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 9233,
+            "below": 763,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 90871,
+            "high": 469881,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 7575,
+            "below": 2424,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 7542,
+            "below": 2455,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 92680,
+            "high": 572923,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 9978,
+            "below": 22,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 8987,
+            "below": 1010,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 76027,
+            "high": 519838,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 4267,
+            "below": 5733,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 5593,
+            "below": 4406,
+            "iter": 10000
+          }
+        }
+      ]
+    }
+  ],
+  "years": [
+    1680,
+    1781
+  ],
+  "periods": [
+    [
+      1680,
+      1700
+    ],
+    [
+      1700,
+      1720
+    ],
+    [
+      1720,
+      1740
+    ],
+    [
+      1740,
+      1760
+    ],
+    [
+      1760,
+      1780
+    ],
+    [
+      1780,
+      1800
+    ]
+  ],
+  "measure_y": "tokens",
+  "measure_x": "words",
+  "split_samples": false,
+  "limit": 7536,
+  "iter": 10000
+}
