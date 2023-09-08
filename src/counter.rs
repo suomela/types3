@@ -1,13 +1,38 @@
 use crate::calculation::{SToken, Sample};
 
+pub trait Counter {
+    fn new(total_types: usize) -> Self;
+    fn get_x(&self) -> u64;
+    fn get_y(&self) -> u64;
+    fn reset(&mut self);
+    fn feed_sample(&mut self, sample: &Sample);
+}
+
 pub struct TypeCounter {
-    pub size: u64,
-    pub types: u64,
+    size: u64,
+    types: u64,
     seen: Vec<bool>,
 }
 
 impl TypeCounter {
-    pub fn new(total_types: usize) -> TypeCounter {
+    fn feed_token(&mut self, t: &SToken) {
+        if !self.seen[t.id] {
+            self.types += 1;
+            self.seen[t.id] = true;
+        }
+    }
+}
+
+impl Counter for TypeCounter {
+    fn get_x(&self) -> u64 {
+        self.size
+    }
+
+    fn get_y(&self) -> u64 {
+        self.types
+    }
+
+    fn new(total_types: usize) -> TypeCounter {
         TypeCounter {
             size: 0,
             types: 0,
@@ -15,7 +40,7 @@ impl TypeCounter {
         }
     }
 
-    pub fn reset(&mut self) {
+    fn reset(&mut self) {
         self.size = 0;
         self.types = 0;
         for e in self.seen.iter_mut() {
@@ -23,18 +48,11 @@ impl TypeCounter {
         }
     }
 
-    pub fn feed_sample(&mut self, sample: &Sample) {
+    fn feed_sample(&mut self, sample: &Sample) {
         for t in &sample.tokens {
             self.feed_token(t);
         }
         self.size += sample.size;
-    }
-
-    fn feed_token(&mut self, t: &SToken) {
-        if !self.seen[t.id] {
-            self.types += 1;
-            self.seen[t.id] = true;
-        }
     }
 }
 

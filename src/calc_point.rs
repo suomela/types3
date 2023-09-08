@@ -1,8 +1,8 @@
 use crate::calculation::Sample;
+use crate::counter::{count_types, Counter, TypeCounter};
 use crate::output::PointResult;
 use crate::parallelism::{compute_parallel, ParResult};
 use crate::shuffle::shuffle_job;
-use crate::counter::{count_types, TypeCounter};
 use itertools::Itertools;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -19,22 +19,22 @@ pub fn compare_with_points(samples: &[Sample], iter: u64, points: &[Point]) -> V
             elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
         },
         |job, result| {
-            let mut tc = TypeCounter::new(total_types);
+            let mut counter = TypeCounter::new(total_types);
             shuffle_job(
                 |idx| {
-                    tc.reset();
+                    counter.reset();
                     let mut j = 0;
                     for i in idx {
-                        let prev = tc.types;
-                        tc.feed_sample(&samples[*i]);
+                        let prev_y = counter.get_y();
+                        counter.feed_sample(&samples[*i]);
                         loop {
                             let p = &points[j];
-                            if tc.size < p.size {
+                            if counter.get_x() < p.size {
                                 break;
                             }
-                            if prev < p.types {
+                            if prev_y < p.types {
                                 result.elems[j].above += 1;
-                            } else if tc.types > p.types {
+                            } else if counter.get_y() > p.types {
                                 result.elems[j].below += 1;
                             }
                             j += 1;
