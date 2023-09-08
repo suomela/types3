@@ -8,10 +8,7 @@ use std::cmp::Ordering;
 pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult {
     let total_types = count_types(samples);
     let (r, iter) = compute_parallel(
-        || AvgParResult {
-            low: 0,
-            high: 0,
-        },
+        || AvgParResult { low: 0, high: 0 },
         |job, result| {
             let mut counter = TypeCounter::new(total_types);
             shuffle_job(
