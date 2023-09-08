@@ -4,10 +4,11 @@ use itertools::Itertools;
 use log::{debug, error, info};
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::{HashMap, HashSet};
-use std::{error, fmt, fs, io, process, result};
+use std::{error, fs, io, process};
 use types3::calc_avg;
 use types3::calc_point::{self, Point};
 use types3::calculation::{SToken, Sample};
+use types3::errors::{InvalidArgument, InvalidInput, Result};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
     avg_string, point_string, MeasureX, MeasureY, OCategory, OCurve, OError, OResult, Output,
@@ -15,30 +16,6 @@ use types3::output::{
 };
 
 const DEFAULT_ITER: u64 = 1_000_000;
-
-type Result<T> = result::Result<T, Box<dyn error::Error>>;
-
-#[derive(Debug)]
-struct InvalidInput(String);
-
-#[derive(Debug)]
-struct InvalidArgument(String);
-
-impl fmt::Display for InvalidInput {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "invalid input: {}", self.0)
-    }
-}
-
-impl fmt::Display for InvalidArgument {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "invalid argument: {}", self.0)
-    }
-}
-
-impl error::Error for InvalidInput {}
-
-impl error::Error for InvalidArgument {}
 
 fn invalid_input(s: String) -> Box<dyn error::Error> {
     InvalidInput(s).into()
