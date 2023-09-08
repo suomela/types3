@@ -363,9 +363,10 @@ class App:
         e.grid(column=0, row=row, sticky='e')
         self.what = tk.StringVar()
         what_choices = [
-            'tokens, using samples',
-            'tokens, individually',
-            'words, using samples',
+            'types vs. tokens, using samples',
+            'types vs. tokens, individually',
+            'types vs. words, using samples',
+            'tokens vs. words, using samples',
         ]
         e = ttk.OptionMenu(widgetframe, self.what, what_choices[0],
                            *what_choices)
@@ -590,12 +591,12 @@ class App:
         if restrict_tokens is not None:
             args += ['--restrict-tokens', '='.join(restrict_tokens)]
         what = self.what.get()
-        if what == 'tokens, using samples':
-            pass
-        elif what == 'tokens, individually':
-            args += ['--split-samples']
-        elif what == 'words, using samples':
-            args += ['--words']
+        args += {
+            'types vs. tokens, using samples': [],
+            'types vs. tokens, individually': ['--split-samples'],
+            'types vs. words, using samples': ['--words'],
+            'tokens vs. words, using samples': ['--count-tokens', '--words'],
+        }.get(what, [])
         if errors:
             logging.debug(errors)
             self.error.set('\n'.join(errors))

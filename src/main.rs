@@ -292,8 +292,8 @@ struct Subset<'a> {
     category: Category<'a>,
     period: Years,
     samples: Vec<Sample>,
-    total_size: u64,
-    total_types: u64,
+    total_x: u64,
+    total_y: u64,
     points: HashSet<Point>,
 }
 
@@ -311,8 +311,8 @@ impl<'a> Subset<'a> {
 
     fn get_point(&self) -> Point {
         Point {
-            size: self.total_size,
-            types: self.total_types,
+            x: self.total_x,
+            y: self.total_y,
         }
     }
 
@@ -384,6 +384,7 @@ fn get_samples<'a>(
 
 fn build_subset<'a>(
     measure_x: MeasureX,
+    measure_y: MeasureY,
     samples: &[CSample<'a>],
     key: SubsetKey<'a>,
     split_samples: bool,
@@ -413,7 +414,7 @@ fn build_subset<'a>(
                     id: lemmamap[lemma],
                 };
                 split.push(Sample {
-                    size: 1,
+                    x: 1,
                     tokens: vec![token],
                 })
             }
@@ -437,28 +438,34 @@ fn build_subset<'a>(
                     MeasureX::Tokens => s.tokens.len() as u64,
                     MeasureX::Words => s.words,
                 };
-                Sample { size, tokens }
+                Sample { x: size, tokens }
             })
             .collect_vec()
     };
-    let total_size: u64 = samples.iter().map(|s| s.size).sum();
+    let total_x: u64 = samples.iter().map(|s| s.x).sum();
+    let total_tokens = samples.iter().map(|s| s.tokens.len() as u64).sum();
+    let total_y = match measure_y {
+        MeasureY::Types => total_types,
+        MeasureY::Tokens => total_tokens,
+    };
     let s = Subset {
         category,
         period,
         samples,
-        total_size,
-        total_types,
+        total_x,
+        total_y,
         points: HashSet::new(),
     };
     debug!(
-        "{}: {} samples, {} types / {} {}",
+        "{}: {} samples, {} {} / {} {}",
         s.pretty(),
         s.samples.len(),
-        s.total_types,
-        s.total_size,
+        s.total_y,
+        measure_y,
+        s.total_x,
         measure_x,
     );
-    if total_size == 0 {
+    if total_x == 0 {
         return Err(invalid_input(format!("{}: zero-size subset", s.pretty())));
     }
     Ok(s)
@@ -532,7 +539,8 @@ impl<'a> Calc<'a> {
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset = build_subset(measure_x, &samples, *key, args.split_samples)?;
+                let subset =
+                    build_subset(measure_x, measure_y, &samples, *key, args.split_samples)?;
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
@@ -541,6 +549,7 @@ impl<'a> Calc<'a> {
                         Occupied(e) => e.into_mut(),
                         Vacant(e) => e.insert(build_subset(
                             measure_x,
+                            measure_y,
                             &samples,
                             *parent,
                             args.split_samples,
@@ -576,7 +585,7 @@ impl<'a> Calc<'a> {
         curve
             .keys
             .iter()
-            .map(|k| self.subset_map[k].total_size)
+            .map(|k| self.subset_map[k].total_x)
             .min()
             .expect("at least one period")
     }

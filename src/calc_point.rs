@@ -7,8 +7,8 @@ use itertools::Itertools;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Point {
-    pub size: u64,
-    pub types: u64,
+    pub x: u64,
+    pub y: u64,
 }
 
 pub fn compare_with_points(
@@ -34,7 +34,7 @@ where
             elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
         },
         |job, result| {
-            let mut counter = TypeCounter::new(total_types);
+            let mut counter = TCounter::new(total_types);
             shuffle_job(
                 |idx| {
                     counter.reset();
@@ -44,12 +44,12 @@ where
                         counter.feed_sample(&samples[*i]);
                         loop {
                             let p = &points[j];
-                            if counter.get_x() < p.size {
+                            if counter.get_x() < p.x {
                                 break;
                             }
-                            if prev_y < p.types {
+                            if prev_y < p.y {
                                 result.elems[j].above += 1;
-                            } else if counter.get_y() > p.types {
+                            } else if counter.get_y() > p.y {
                                 result.elems[j].below += 1;
                             }
                             j += 1;

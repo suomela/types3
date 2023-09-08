@@ -25,7 +25,7 @@ where
     let (r, iter) = compute_parallel(
         || AvgParResult { low: 0, high: 0 },
         |job, result| {
-            let mut counter = TypeCounter::new(total_types);
+            let mut counter = TCounter::new(total_types);
             shuffle_job(
                 |idx| {
                     counter.reset();

@@ -4,6 +4,6 @@ pub struct SToken {
 }
 
 pub struct Sample {
-    pub size: u64,
+    pub x: u64,
     pub tokens: Vec<SToken>,
 }

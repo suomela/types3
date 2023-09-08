@@ -93,6 +93,12 @@ def _get_vs(r, what):
     return (x, above, -below)
 
 
+def _upcase(x):
+    if x == '':
+        return x
+    return x[0].upper() + x[1:]
+
+
 def set_height(data, dims):
     curves = data['curves']
     nn = len(curves)
@@ -126,6 +132,8 @@ def set_height(data, dims):
 
 def plot(fig, data, dims, legend):
     measure_x = data['measure_x']
+    measure_y = data['measure_y']
+    measure_y_cased = _upcase(measure_y)
     limit = data['limit']
     periods = data['periods']
     curves = data['curves']
@@ -144,7 +152,7 @@ def plot(fig, data, dims, legend):
         col / dims.width, 1 - y / dims.height, dims.w / dims.width,
         dims.h1 / dims.height
     ])
-    ax.set_title(f'Types in subcorpora with {limit} {measure_x}')
+    ax.set_title(f'{measure_y_cased} in subcorpora with {limit} {measure_x}')
     ax.set_xticks(xx, [])
     ax1 = ax
     last = ax
