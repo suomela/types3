@@ -1,0 +1,148 @@
+{
+  "restrict_samples": null,
+  "restrict_tokens": null,
+  "curves": [
+    {
+      "category": null,
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 7539318,
+            "high": 8187881,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 0,
+            "below": 0,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 7406717,
+            "high": 8314541,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 0,
+            "below": 0,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 7860000,
+            "high": 7860000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 0,
+            "below": 0,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 7340109,
+            "high": 8388777,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 0,
+            "below": 0,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 7447321,
+            "high": 8278082,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 0,
+            "below": 0,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 7206743,
+            "high": 8529544,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 0,
+            "below": 0,
+            "iter": 10000
+          },
+          "vs_categories": null
+        }
+      ]
+    }
+  ],
+  "years": [
+    1680,
+    1781
+  ],
+  "periods": [
+    [
+      1680,
+      1700
+    ],
+    [
+      1700,
+      1720
+    ],
+    [
+      1720,
+      1740
+    ],
+    [
+      1740,
+      1760
+    ],
+    [
+      1760,
+      1780
+    ],
+    [
+      1780,
+      1800
+    ]
+  ],
+  "measure_y": "tokens",
+  "measure_x": "tokens",
+  "split_samples": false,
+  "limit": 786,
+  "iter": 10000
+}

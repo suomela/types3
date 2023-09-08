@@ -35,6 +35,10 @@ $what calc/ceec-tokens-vs-words-female.json --restrict-samples gender=female
 $what calc/ceec-tokens-vs-words-gender.json --category gender
 $what calc/ceec-tokens-vs-words-socmob.json --category socmob
 $what calc/ceec-tokens-vs-words-gender-ity.json --category gender --restrict-tokens variant=ity
+what="$base --count-tokens"
+$what calc/ceec-tokens-vs-tokens.json
+what="$base --count-tokens --split-samples"
+$what calc/ceec-tokens-vs-tokens-split.json
 
 cd calc
 for a in *.json; do
