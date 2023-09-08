@@ -11,13 +11,13 @@
             1700
           ],
           "average_at_limit": {
-            "low": 4526153,
-            "high": 4795407,
+            "low": 8881861,
+            "high": 9500298,
             "iter": 10000
           },
           "vs_time": {
-            "above": 1082,
-            "below": 8918,
+            "above": 1075,
+            "below": 7219,
             "iter": 10000
           },
           "vs_categories": null
@@ -28,13 +28,13 @@
             1720
           ],
           "average_at_limit": {
-            "low": 4165900,
-            "high": 4472628,
+            "low": 8390910,
+            "high": 9187602,
             "iter": 10000
           },
           "vs_time": {
-            "above": 261,
-            "below": 9739,
+            "above": 426,
+            "below": 8545,
             "iter": 10000
           },
           "vs_categories": null
@@ -45,13 +45,13 @@
             1740
           ],
           "average_at_limit": {
-            "low": 5430000,
-            "high": 5430000,
+            "low": 7860000,
+            "high": 7860000,
             "iter": 10000
           },
           "vs_time": {
-            "above": 6729,
-            "below": 3271,
+            "above": 63,
+            "below": 9486,
             "iter": 10000
           },
           "vs_categories": null
@@ -62,13 +62,13 @@
             1760
           ],
           "average_at_limit": {
-            "low": 5363925,
-            "high": 5742639,
+            "low": 9485183,
+            "high": 10308473,
             "iter": 10000
           },
           "vs_time": {
-            "above": 7919,
-            "below": 2079,
+            "above": 3299,
+            "below": 4360,
             "iter": 10000
           },
           "vs_categories": null
@@ -79,13 +79,13 @@
             1780
           ],
           "average_at_limit": {
-            "low": 6437376,
-            "high": 6818934,
+            "low": 10644316,
+            "high": 11351542,
             "iter": 10000
           },
           "vs_time": {
-            "above": 10000,
-            "below": 0,
+            "above": 8410,
+            "below": 483,
             "iter": 10000
           },
           "vs_categories": null
@@ -96,13 +96,13 @@
             1800
           ],
           "average_at_limit": {
-            "low": 4913803,
-            "high": 5443262,
+            "low": 10440844,
+            "high": 11654227,
             "iter": 10000
           },
           "vs_time": {
-            "above": 3306,
-            "below": 6694,
+            "above": 9640,
+            "below": 81,
             "iter": 10000
           },
           "vs_categories": null

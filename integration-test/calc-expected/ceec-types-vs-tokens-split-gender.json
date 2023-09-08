@@ -20,12 +20,12 @@
           },
           "vs_time": {
             "above": 2,
-            "below": 9995,
+            "below": 9991,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 99,
-            "below": 9831,
+            "above": 80,
+            "below": 9790,
             "iter": 10000
           }
         },
@@ -45,8 +45,8 @@
             "iter": 10000
           },
           "vs_categories": {
-            "above": 170,
-            "below": 9753,
+            "above": 159,
+            "below": 9731,
             "iter": 10000
           }
         },
@@ -61,13 +61,13 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 1156,
-            "below": 8500,
+            "above": 1058,
+            "below": 8386,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 1505,
-            "below": 8070,
+            "above": 1379,
+            "below": 7924,
             "iter": 10000
           }
         },
@@ -82,12 +82,12 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 47,
-            "below": 9924,
+            "above": 45,
+            "below": 9916,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 3,
+            "above": 2,
             "below": 9997,
             "iter": 10000
           }
@@ -103,13 +103,13 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 9331,
-            "below": 533,
+            "above": 9294,
+            "below": 508,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 577,
-            "below": 9281,
+            "above": 538,
+            "below": 9245,
             "iter": 10000
           }
         },
@@ -124,8 +124,8 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 1020,
-            "below": 8737,
+            "above": 1004,
+            "below": 8710,
             "iter": 10000
           },
           "vs_categories": {
@@ -158,8 +158,8 @@
             "iter": 10000
           },
           "vs_categories": {
-            "above": 1112,
-            "below": 8089,
+            "above": 1050,
+            "below": 7989,
             "iter": 10000
           }
         },
@@ -179,8 +179,8 @@
             "iter": 10000
           },
           "vs_categories": {
-            "above": 402,
-            "below": 9399,
+            "above": 389,
+            "below": 9364,
             "iter": 10000
           }
         },
@@ -196,12 +196,12 @@
           },
           "vs_time": {
             "above": 25,
-            "below": 9969,
+            "below": 9967,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 3879,
-            "below": 5264,
+            "above": 3732,
+            "below": 5119,
             "iter": 10000
           }
         },
@@ -216,13 +216,13 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 988,
-            "below": 8812,
+            "above": 968,
+            "below": 8776,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 7473,
-            "below": 1956,
+            "above": 7415,
+            "below": 1907,
             "iter": 10000
           }
         },
@@ -237,13 +237,13 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 8330,
-            "below": 1419,
+            "above": 8308,
+            "below": 1392,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 3330,
-            "below": 6059,
+            "above": 3270,
+            "below": 5994,
             "iter": 10000
           }
         },
@@ -258,13 +258,13 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 5457,
-            "below": 4116,
+            "above": 5425,
+            "below": 4079,
             "iter": 10000
           },
           "vs_categories": {
-            "above": 5744,
-            "below": 3763,
+            "above": 5694,
+            "below": 3732,
             "iter": 10000
           }
         }

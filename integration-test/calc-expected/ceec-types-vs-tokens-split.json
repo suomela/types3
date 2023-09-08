@@ -50,7 +50,7 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 8,
+            "above": 7,
             "below": 9990,
             "iter": 10000
           },
@@ -67,8 +67,8 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 385,
-            "below": 9525,
+            "above": 377,
+            "below": 9513,
             "iter": 10000
           },
           "vs_categories": null
@@ -84,8 +84,8 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 9099,
-            "below": 769,
+            "above": 9088,
+            "below": 753,
             "iter": 10000
           },
           "vs_categories": null
@@ -101,8 +101,8 @@
             "iter": 10000
           },
           "vs_time": {
-            "above": 5029,
-            "below": 4570,
+            "above": 5015,
+            "below": 4555,
             "iter": 10000
           },
           "vs_categories": null
