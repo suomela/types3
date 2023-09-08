@@ -20,6 +20,7 @@ from matplotlib.figure import Figure
 
 matplotlib.rcParams['axes.titlesize'] = 'medium'
 
+OUTPUT_VERSION = 'v1'
 MIN_ITER = 1_000
 MAX_ITER = 1_000_000
 ITER_STEP = 10
@@ -263,8 +264,8 @@ class App:
         self.default_step = max(gcd, 10)
 
     def _setup_cache(self):
-        self.cachedir = Path(
-            appdirs.user_cache_dir('types3')) / 'v1' / self.data_digest
+        self.cachedir = Path(appdirs.user_cache_dir(
+            'types3')) / OUTPUT_VERSION / self.data_digest
         self.cachedir.mkdir(parents=True, exist_ok=True)
         logging.debug(f'cache directory: {self.cachedir}')
 
