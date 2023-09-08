@@ -113,7 +113,7 @@ fn get_years(args: &Args, samples: &[CSample]) -> Years {
         };
     }
     let years = years.expect("there are samples");
-    info!("years in input data: {}", pretty_period(&years));
+    info!("years in input data: {}", output::pretty_period(&years));
     (years.0.max(args.start), years.1.min(args.end + 1))
 }
 
@@ -131,20 +131,8 @@ fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
         }
         y += args.step;
     }
-    info!("periods: {}", pretty_periods(&periods));
+    info!("periods: {}", output::pretty_periods(&periods));
     periods
-}
-
-fn pretty_period(p: &Years) -> String {
-    format!("{}-{}", p.0, p.1 - 1)
-}
-
-fn pretty_periods(periods: &[Years]) -> String {
-    if periods.len() >= 5 {
-        pretty_periods(&periods[0..2]) + ", ..., " + &pretty_period(periods.last().unwrap())
-    } else {
-        periods.iter().map(pretty_period).collect_vec().join(", ")
-    }
 }
 
 fn explain_metadata_one(k: &str, vv: &HashSet<&str>) -> String {
@@ -212,8 +200,8 @@ struct SubsetKey<'a> {
 impl SubsetKey<'_> {
     fn pretty(&self) -> String {
         match &self.category {
-            None => pretty_period(&self.period),
-            Some((k, v)) => format!("{}, {} = {}", pretty_period(&self.period), k, v),
+            None => output::pretty_period(&self.period),
+            Some((k, v)) => format!("{}, {} = {}", output::pretty_period(&self.period), k, v),
         }
     }
 }
@@ -666,53 +654,5 @@ fn main() {
             }
             process::exit(1);
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn pretty_period_basic() {
-        assert_eq!(pretty_period(&(1990, 2000)), "1990-1999");
-    }
-
-    #[test]
-    fn pretty_periods_basic() {
-        assert_eq!(pretty_periods(&[(1990, 2000)]), "1990-1999");
-        assert_eq!(
-            pretty_periods(&[(1990, 2000), (2000, 2010)]),
-            "1990-1999, 2000-2009"
-        );
-        assert_eq!(
-            pretty_periods(&[(1990, 2000), (2000, 2010), (2010, 2020)]),
-            "1990-1999, 2000-2009, 2010-2019"
-        );
-        assert_eq!(
-            pretty_periods(&[(1990, 2000), (2000, 2010), (2010, 2020), (2020, 2030)]),
-            "1990-1999, 2000-2009, 2010-2019, 2020-2029"
-        );
-        assert_eq!(
-            pretty_periods(&[
-                (1990, 2000),
-                (2000, 2010),
-                (2010, 2020),
-                (2020, 2030),
-                (2030, 2040)
-            ]),
-            "1990-1999, 2000-2009, ..., 2030-2039"
-        );
-        assert_eq!(
-            pretty_periods(&[
-                (1990, 2000),
-                (2000, 2010),
-                (2010, 2020),
-                (2020, 2030),
-                (2030, 2040),
-                (2040, 2050)
-            ]),
-            "1990-1999, 2000-2009, ..., 2040-2049"
-        );
     }
 }
