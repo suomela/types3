@@ -4,6 +4,7 @@ pub mod calculation;
 pub mod categories;
 mod counter;
 pub mod errors;
+pub mod information;
 pub mod input;
 pub mod output;
 mod parallelism;

@@ -10,11 +10,12 @@ use types3::calc_point::{self, Point};
 use types3::calculation::{SToken, Sample};
 use types3::categories::{self, Category};
 use types3::errors::{self, Result};
+use types3::information;
 use types3::input::{ISample, Input, Year};
 use types3::output::{
     self, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult, Years,
 };
-use types3::samples::CSample;
+use types3::samples::{self, CSample};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -72,19 +73,6 @@ struct Args {
     verbose: Verbosity<WarnLevel>,
 }
 
-fn get_years(args: &Args, samples: &[CSample]) -> Years {
-    let mut years = None;
-    for s in samples {
-        years = match years {
-            None => Some((s.year, s.year + 1)),
-            Some((a, b)) => Some((a.min(s.year), b.max(s.year + 1))),
-        };
-    }
-    let years = years.expect("there are samples");
-    info!("years in input data: {}", output::pretty_period(&years));
-    (years.0.max(args.start), years.1.min(args.end + 1))
-}
-
 fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
     let mut periods = vec![];
     let mut y = args.offset;
@@ -101,62 +89,6 @@ fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
     }
     info!("periods: {}", output::pretty_periods(&periods));
     periods
-}
-
-fn explain_metadata_one(k: &str, vv: &HashSet<&str>) -> String {
-    let vals = vv.iter().copied().sorted().collect_vec();
-    format!("{} = {}", k, vals.join(", "))
-}
-
-fn explain_metadata(metadata: &HashMap<&str, HashSet<&str>>) -> String {
-    let keys = metadata.keys().copied().sorted().collect_vec();
-    keys.iter()
-        .map(|k| explain_metadata_one(k, &metadata[k]))
-        .join("; ")
-}
-
-fn statistics(samples: &[ISample]) {
-    let mut lemmas = HashSet::new();
-    let mut token_metadata: HashMap<&str, HashSet<&str>> = HashMap::new();
-    let mut sample_metadata: HashMap<&str, HashSet<&str>> = HashMap::new();
-    let mut tokencount = 0;
-    for s in samples {
-        for (k, v) in s.metadata.iter() {
-            sample_metadata.entry(k).or_default().insert(v);
-        }
-        for t in &s.tokens {
-            tokencount += 1;
-            for (k, v) in t.metadata.iter() {
-                token_metadata.entry(k).or_default().insert(v);
-            }
-            lemmas.insert(&t.lemma);
-        }
-    }
-    info!("before filtering: samples: {}", samples.len());
-    info!("before filtering: tokens: {}", tokencount);
-    info!("before filtering: distinct lemmas: {}", lemmas.len());
-    info!(
-        "token metadata categories: {}",
-        explain_metadata(&token_metadata)
-    );
-    info!(
-        "sample metadata categories: {}",
-        explain_metadata(&sample_metadata)
-    );
-}
-
-fn post_statistics(samples: &[CSample]) {
-    let mut lemmas = HashSet::new();
-    let mut tokencount = 0;
-    for s in samples {
-        for lemma in &s.tokens {
-            tokencount += 1;
-            lemmas.insert(lemma);
-        }
-    }
-    info!("after filtering: samples: {}", samples.len());
-    info!("after filtering: tokens: {}", tokencount);
-    info!("after filtering: distinct lemmas: {}", lemmas.len());
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -413,11 +345,11 @@ impl<'a> Calc<'a> {
         } else {
             MeasureY::Types
         };
-        statistics(&input.samples);
+        information::statistics(&input.samples);
         let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
         let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
         let samples = get_samples(restrict_samples, restrict_tokens, &input.samples);
-        post_statistics(&samples);
+        information::post_statistics(&samples);
         if samples.is_empty() {
             return Err(errors::invalid_input_ref("no samples found"));
         }
@@ -425,7 +357,11 @@ impl<'a> Calc<'a> {
             None => vec![None],
             Some(key) => categories::get_categories(key, &samples)?,
         };
-        let years = get_years(args, &samples);
+        let years = {
+            let years = samples::get_years(&samples);
+            info!("years in input data: {}", output::pretty_period(&years));
+            (years.0.max(args.start), years.1.min(args.end + 1))
+        };
         let periods = get_periods(args, &years);
         let curves = build_curves(&categories, &periods);
         let mut subset_map = HashMap::new();
