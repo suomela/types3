@@ -4,16 +4,23 @@ use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Measure {
+pub enum MeasureY {
+    Types,
+    Tokens,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MeasureX {
     Words,
     Tokens,
 }
 
-impl fmt::Display for Measure {
+impl fmt::Display for MeasureX {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Measure::Words => write!(f, "words"),
-            Measure::Tokens => write!(f, "tokens"),
+            MeasureX::Words => write!(f, "words"),
+            MeasureX::Tokens => write!(f, "tokens"),
         }
     }
 }
@@ -56,7 +63,8 @@ pub struct Output {
     pub curves: Vec<OCurve>,
     pub years: Years,
     pub periods: Vec<Years>,
-    pub measure: Measure,
+    pub measure_y: MeasureY,
+    pub measure_x: MeasureX,
     pub split_samples: bool,
     pub limit: u64,
     pub iter: u64,

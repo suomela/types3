@@ -10,8 +10,8 @@ use types3::calc_point::{self, Point};
 use types3::calculation::{SToken, Sample};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
-    avg_string, point_string, Measure, OCategory, OCurve, OError, OResult, Output, PointResult,
-    Years,
+    avg_string, point_string, MeasureX, MeasureY, OCategory, OCurve, OError, OResult, Output,
+    PointResult, Years,
 };
 
 const DEFAULT_ITER: u64 = 1_000_000;
@@ -66,7 +66,10 @@ struct Args {
     /// Metadata category
     #[arg(long)]
     category: Option<String>,
-    /// Count words (instead of tokens)
+    /// Count tokens (instead of types)
+    #[arg(long, default_value_t = false)]
+    count_tokens: bool,
+    /// Compare with running words (instead of tokens)
     #[arg(long, default_value_t = false)]
     words: bool,
     /// Number of iterations
@@ -380,7 +383,7 @@ fn get_samples<'a>(
 }
 
 fn build_subset<'a>(
-    measure: Measure,
+    measure_x: MeasureX,
     samples: &[CSample<'a>],
     key: SubsetKey<'a>,
     split_samples: bool,
@@ -401,7 +404,7 @@ fn build_subset<'a>(
     let total_types = lemmas.len() as u64;
 
     let samples = if split_samples {
-        assert_eq!(measure, Measure::Tokens);
+        assert_eq!(measure_x, MeasureX::Tokens);
         let mut split = vec![];
         for s in samples {
             for lemma in &s.tokens {
@@ -430,9 +433,9 @@ fn build_subset<'a>(
                     .map(|(&id, &count)| SToken { id, count })
                     .collect_vec();
                 tokens.sort_by_key(|t| t.id);
-                let size = match measure {
-                    Measure::Tokens => s.tokens.len() as u64,
-                    Measure::Words => s.words,
+                let size = match measure_x {
+                    MeasureX::Tokens => s.tokens.len() as u64,
+                    MeasureX::Words => s.words,
                 };
                 Sample { size, tokens }
             })
@@ -453,7 +456,7 @@ fn build_subset<'a>(
         s.samples.len(),
         s.total_types,
         s.total_size,
-        measure,
+        measure_x,
     );
     if total_size == 0 {
         return Err(invalid_input(format!("{}: zero-size subset", s.pretty())));
@@ -489,7 +492,8 @@ struct Calc<'a> {
     curves: Vec<Curve<'a>>,
     subset_map: HashMap<SubsetKey<'a>, Subset<'a>>,
     iter: u64,
-    measure: Measure,
+    measure_y: MeasureY,
+    measure_x: MeasureX,
     restrict_samples: Category<'a>,
     restrict_tokens: Category<'a>,
     split_samples: bool,
@@ -497,17 +501,22 @@ struct Calc<'a> {
 
 impl<'a> Calc<'a> {
     fn new(args: &'a Args, input: &'a Input) -> Result<Calc<'a>> {
-        let measure = if args.words {
+        let measure_x = if args.words {
             if args.split_samples {
                 Err(invalid_argument_ref(
                     "cannot select both --words and --split-samples",
                 ))
             } else {
-                Ok(Measure::Words)
+                Ok(MeasureX::Words)
             }
         } else {
-            Ok(Measure::Tokens)
+            Ok(MeasureX::Tokens)
         }?;
+        let measure_y = if args.count_tokens {
+            MeasureY::Tokens
+        } else {
+            MeasureY::Types
+        };
         statistics(&input.samples);
         let restrict_samples = parse_restriction(&args.restrict_samples)?;
         let restrict_tokens = parse_restriction(&args.restrict_tokens)?;
@@ -523,7 +532,7 @@ impl<'a> Calc<'a> {
         let mut subset_map = HashMap::new();
         for curve in &curves {
             for key in &curve.keys {
-                let subset = build_subset(measure, &samples, *key, args.split_samples)?;
+                let subset = build_subset(measure_x, &samples, *key, args.split_samples)?;
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
@@ -531,7 +540,7 @@ impl<'a> Calc<'a> {
                     let x = match subset_map.entry(*parent) {
                         Occupied(e) => e.into_mut(),
                         Vacant(e) => e.insert(build_subset(
-                            measure,
+                            measure_x,
                             &samples,
                             *parent,
                             args.split_samples,
@@ -547,7 +556,8 @@ impl<'a> Calc<'a> {
             curves,
             subset_map,
             iter: args.iter,
-            measure,
+            measure_y,
+            measure_x,
             restrict_samples,
             restrict_tokens,
             split_samples: args.split_samples,
@@ -577,7 +587,7 @@ impl<'a> Calc<'a> {
             self.calc_top(subset, &mut top_results);
         }
         let limit = self.size_limit();
-        debug!("size limit: {} {}", limit, self.measure);
+        debug!("size limit: {} {}", limit, self.measure_x);
         let curves = self
             .curves
             .iter()
@@ -587,7 +597,8 @@ impl<'a> Calc<'a> {
             curves,
             years: self.years,
             periods: self.periods,
-            measure: self.measure,
+            measure_y: self.measure_y,
+            measure_x: self.measure_x,
             iter: self.iter,
             limit,
             restrict_tokens: owned_cat(self.restrict_tokens),
@@ -628,7 +639,7 @@ impl<'a> Calc<'a> {
             "{} types / {} {}",
             avg_string(&average_at_limit),
             limit,
-            self.measure
+            self.measure_x
         ));
         let p = subset.get_point();
         let vs_time = {

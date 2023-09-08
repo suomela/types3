@@ -125,7 +125,7 @@ def set_height(data, dims):
 
 
 def plot(fig, data, dims, legend):
-    measure = data['measure']
+    measure_x = data['measure_x']
     limit = data['limit']
     periods = data['periods']
     curves = data['curves']
@@ -144,7 +144,7 @@ def plot(fig, data, dims, legend):
         col / dims.width, 1 - y / dims.height, dims.w / dims.width,
         dims.h1 / dims.height
     ])
-    ax.set_title(f'Types in subcorpora with {limit} {measure}')
+    ax.set_title(f'Types in subcorpora with {limit} {measure_x}')
     ax.set_xticks(xx, [])
     ax1 = ax
     last = ax

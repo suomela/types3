@@ -140,7 +140,8 @@
       1800
     ]
   ],
-  "measure": "words",
+  "measure_y": "types",
+  "measure_x": "words",
   "split_samples": false,
   "limit": 211788,
   "iter": 10000

@@ -143,7 +143,8 @@
       1800
     ]
   ],
-  "measure": "tokens",
+  "measure_y": "types",
+  "measure_x": "tokens",
   "split_samples": true,
   "limit": 89,
   "iter": 10000
