@@ -11,7 +11,7 @@ use types3::calculation::{SToken, Sample};
 use types3::categories::{self, Category};
 use types3::errors::{self, Result};
 use types3::information;
-use types3::input::{ISample, Input, Year};
+use types3::input::{Input, Year};
 use types3::output::{
     self, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult, Years,
 };
@@ -90,42 +90,6 @@ fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
     }
     info!("periods: {}", output::pretty_periods(&periods));
     periods
-}
-
-fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
-    CSample {
-        year: s.year,
-        metadata: &s.metadata,
-        words: s.words,
-        tokens: s
-            .tokens
-            .iter()
-            .filter_map(|t| {
-                if categories::matches(restrict_tokens, &t.metadata) {
-                    Some(&t.lemma as &str)
-                } else {
-                    None
-                }
-            })
-            .collect_vec(),
-    }
-}
-
-fn get_samples<'a>(
-    restrict_samples: Category,
-    restrict_tokens: Category,
-    samples: &'a [ISample],
-) -> Vec<CSample<'a>> {
-    samples
-        .iter()
-        .filter_map(|s| {
-            if categories::matches(restrict_samples, &s.metadata) {
-                Some(get_sample(restrict_tokens, s))
-            } else {
-                None
-            }
-        })
-        .collect_vec()
 }
 
 fn build_subset<'a>(
@@ -283,14 +247,14 @@ impl<'a> Calc<'a> {
         information::statistics(&input.samples);
         let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
         let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
-        let samples = get_samples(restrict_samples, restrict_tokens, &input.samples);
+        let samples = samples::get_samples(restrict_samples, restrict_tokens, &input.samples);
         information::post_statistics(&samples);
         if samples.is_empty() {
             return Err(errors::invalid_input_ref("no samples found"));
         }
         let categories = match &args.category {
             None => vec![None],
-            Some(key) => categories::get_categories(key, &samples)?,
+            Some(key) => samples::get_categories(key, &samples)?,
         };
         let years = {
             let years = samples::get_years(&samples);

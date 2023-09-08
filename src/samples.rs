@@ -1,12 +1,52 @@
-use crate::input::Year;
+use crate::categories::{self, Category};
+use crate::errors::{self, Result};
+use crate::input::{ISample, Year};
 use crate::output::Years;
-use std::collections::HashMap;
+use itertools::Itertools;
+use log::info;
+use std::collections::{HashMap, HashSet};
 
 pub struct CSample<'a> {
     pub year: Year,
     pub metadata: &'a HashMap<String, String>,
     pub words: u64,
     pub tokens: Vec<&'a str>,
+}
+
+fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
+    CSample {
+        year: s.year,
+        metadata: &s.metadata,
+        words: s.words,
+        tokens: s
+            .tokens
+            .iter()
+            .filter_map(|t| {
+                if categories::matches(restrict_tokens, &t.metadata) {
+                    Some(&t.lemma as &str)
+                } else {
+                    None
+                }
+            })
+            .collect_vec(),
+    }
+}
+
+pub fn get_samples<'a>(
+    restrict_samples: Category,
+    restrict_tokens: Category,
+    samples: &'a [ISample],
+) -> Vec<CSample<'a>> {
+    samples
+        .iter()
+        .filter_map(|s| {
+            if categories::matches(restrict_samples, &s.metadata) {
+                Some(get_sample(restrict_tokens, s))
+            } else {
+                None
+            }
+        })
+        .collect_vec()
 }
 
 pub fn get_years(samples: &[CSample]) -> Years {
@@ -18,4 +58,31 @@ pub fn get_years(samples: &[CSample]) -> Years {
         };
     }
     years.expect("there are samples")
+}
+
+pub fn get_categories<'a>(key: &'a str, samples: &[CSample<'a>]) -> Result<Vec<Category<'a>>> {
+    let mut values = HashSet::new();
+    for s in samples {
+        match s.metadata.get(key) {
+            None => (),
+            Some(val) => {
+                values.insert(val);
+            }
+        };
+    }
+    if values.is_empty() {
+        return Err(errors::invalid_input(format!(
+            "there are no samples with metadata key {}",
+            key
+        )));
+    }
+    let mut values = values.into_iter().collect_vec();
+    values.sort();
+    let valstring = values.iter().join(", ");
+    let categories = values
+        .into_iter()
+        .map(|val| Some((key as &str, val as &str)))
+        .collect_vec();
+    info!("categories: {} = {}", key, valstring);
+    Ok(categories)
 }

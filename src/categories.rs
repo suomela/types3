@@ -1,9 +1,7 @@
 use crate::errors::{self, Result};
 use crate::output::OCategory;
-use crate::samples::CSample;
 use itertools::Itertools;
-use log::info;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub type Category<'a> = Option<(&'a str, &'a str)>;
 
@@ -35,31 +33,4 @@ pub fn parse_restriction(arg: &Option<String>) -> Result<Category> {
             Ok(category)
         }
     }
-}
-
-pub fn get_categories<'a>(key: &'a str, samples: &[CSample<'a>]) -> Result<Vec<Category<'a>>> {
-    let mut values = HashSet::new();
-    for s in samples {
-        match s.metadata.get(key) {
-            None => (),
-            Some(val) => {
-                values.insert(val);
-            }
-        };
-    }
-    if values.is_empty() {
-        return Err(errors::invalid_input(format!(
-            "there are no samples with metadata key {}",
-            key
-        )));
-    }
-    let mut values = values.into_iter().collect_vec();
-    values.sort();
-    let valstring = values.iter().join(", ");
-    let categories = values
-        .into_iter()
-        .map(|val| Some((key as &str, val as &str)))
-        .collect_vec();
-    info!("categories: {} = {}", key, valstring);
-    Ok(categories)
 }
