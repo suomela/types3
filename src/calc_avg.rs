@@ -43,8 +43,8 @@ pub fn average_at_limit(samples: &[Sample], iter: u64, limit: u64) -> AvgResult 
         iter,
     );
     AvgResult {
-        types_low: r.low,
-        types_high: r.high,
+        low: r.low,
+        high: r.high,
         iter,
     }
 }

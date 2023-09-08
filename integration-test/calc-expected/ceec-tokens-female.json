@@ -14,8 +14,8 @@
             1700
           ],
           "average_at_limit": {
-            "types_low": 360000,
-            "types_high": 360000,
+            "low": 360000,
+            "high": 360000,
             "iter": 10000
           },
           "vs_time": {
@@ -31,8 +31,8 @@
             1720
           ],
           "average_at_limit": {
-            "types_low": 119371,
-            "types_high": 517059,
+            "low": 119371,
+            "high": 517059,
             "iter": 10000
           },
           "vs_time": {
@@ -48,8 +48,8 @@
             1740
           ],
           "average_at_limit": {
-            "types_low": 407053,
-            "types_high": 519845,
+            "low": 407053,
+            "high": 519845,
             "iter": 10000
           },
           "vs_time": {
@@ -65,8 +65,8 @@
             1760
           ],
           "average_at_limit": {
-            "types_low": 250602,
-            "types_high": 752856,
+            "low": 250602,
+            "high": 752856,
             "iter": 10000
           },
           "vs_time": {
@@ -82,8 +82,8 @@
             1780
           ],
           "average_at_limit": {
-            "types_low": 275035,
-            "types_high": 776106,
+            "low": 275035,
+            "high": 776106,
             "iter": 10000
           },
           "vs_time": {
@@ -99,8 +99,8 @@
             1800
           ],
           "average_at_limit": {
-            "types_low": 189020,
-            "types_high": 664548,
+            "low": 189020,
+            "high": 664548,
             "iter": 10000
           },
           "vs_time": {

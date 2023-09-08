@@ -80,7 +80,7 @@ def _get_avg(r):
     period = r['period']
     x = period[0]
     ar = r['average_at_limit']
-    y = (ar['types_low'] + ar['types_high']) / (2 * ar['iter'])
+    y = (ar['low'] + ar['high']) / (2 * ar['iter'])
     return (x, y)
 
 

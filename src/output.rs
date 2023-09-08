@@ -23,8 +23,8 @@ pub type OCategory = Option<(String, String)>;
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct AvgResult {
-    pub types_low: u64,
-    pub types_high: u64,
+    pub low: u64,
+    pub high: u64,
     pub iter: u64,
 }
 
@@ -68,8 +68,8 @@ pub struct OError {
 }
 
 pub fn avg_string(ar: &AvgResult) -> String {
-    let low = ar.types_low as f64 / ar.iter as f64;
-    let high = ar.types_high as f64 / ar.iter as f64;
+    let low = ar.low as f64 / ar.iter as f64;
+    let high = ar.high as f64 / ar.iter as f64;
     format!("{:.2}–{:.2}", low, high)
 }
 
