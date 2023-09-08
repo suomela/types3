@@ -555,7 +555,6 @@ mod test {
         assert_eq!(r.points, HashSet::new());
     }
 
-
     #[test]
     fn build_subsets_types_words_category2() {
         let my = MeasureY::Types;
