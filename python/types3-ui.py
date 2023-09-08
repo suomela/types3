@@ -264,7 +264,7 @@ class App:
 
     def _setup_cache(self):
         self.cachedir = Path(
-            appdirs.user_cache_dir('types3')) / self.data_digest
+            appdirs.user_cache_dir('types3')) / 'v1' / self.data_digest
         self.cachedir.mkdir(parents=True, exist_ok=True)
         logging.debug(f'cache directory: {self.cachedir}')
 
