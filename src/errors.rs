@@ -23,3 +23,19 @@ impl fmt::Display for InvalidArgument {
 impl error::Error for InvalidInput {}
 
 impl error::Error for InvalidArgument {}
+
+pub fn invalid_input(s: String) -> Box<dyn error::Error> {
+    InvalidInput(s).into()
+}
+
+pub fn invalid_input_ref(s: &str) -> Box<dyn error::Error> {
+    InvalidInput(s.to_owned()).into()
+}
+
+pub fn invalid_argument(s: String) -> Box<dyn error::Error> {
+    InvalidArgument(s).into()
+}
+
+pub fn invalid_argument_ref(s: &str) -> Box<dyn error::Error> {
+    InvalidArgument(s.to_owned()).into()
+}

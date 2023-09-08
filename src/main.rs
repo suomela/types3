@@ -8,7 +8,9 @@ use std::{error, fs, io, process};
 use types3::calc_avg;
 use types3::calc_point::{self, Point};
 use types3::calculation::{SToken, Sample};
-use types3::errors::{InvalidArgument, InvalidInput, Result};
+use types3::errors::{
+    invalid_argument, invalid_argument_ref, invalid_input, invalid_input_ref, Result,
+};
 use types3::input::{ISample, Input, Year};
 use types3::output::{
     avg_string, point_string, MeasureX, MeasureY, OCategory, OCurve, OError, OResult, Output,
@@ -16,22 +18,6 @@ use types3::output::{
 };
 
 const DEFAULT_ITER: u64 = 1_000_000;
-
-fn invalid_input(s: String) -> Box<dyn error::Error> {
-    InvalidInput(s).into()
-}
-
-fn invalid_input_ref(s: &str) -> Box<dyn error::Error> {
-    InvalidInput(s.to_owned()).into()
-}
-
-fn invalid_argument(s: String) -> Box<dyn error::Error> {
-    InvalidArgument(s).into()
-}
-
-fn invalid_argument_ref(s: &str) -> Box<dyn error::Error> {
-    InvalidArgument(s.to_owned()).into()
-}
 
 #[derive(Parser)]
 #[command(author, version, about)]
