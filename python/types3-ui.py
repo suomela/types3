@@ -367,6 +367,9 @@ class App:
             'types vs. tokens, individually',
             'types vs. words, using samples',
             'tokens vs. words, using samples',
+            # Useful for testing:
+            # 'tokens vs. tokens, using samples',
+            # 'tokens vs. tokens, individually',
         ]
         e = ttk.OptionMenu(widgetframe, self.what, what_choices[0],
                            *what_choices)
@@ -596,6 +599,9 @@ class App:
             'types vs. tokens, individually': ['--split-samples'],
             'types vs. words, using samples': ['--words'],
             'tokens vs. words, using samples': ['--count-tokens', '--words'],
+            'tokens vs. tokens, using samples': ['--count-tokens'],
+            'tokens vs. tokens, individually':
+            ['--count-tokens', '--split-samples'],
         }.get(what, [])
         if errors:
             logging.debug(errors)
