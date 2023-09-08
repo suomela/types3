@@ -5,5 +5,6 @@ pub struct SToken {
 
 pub struct Sample {
     pub x: u64,
+    pub token_count: u64,
     pub tokens: Vec<SToken>,
 }

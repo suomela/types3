@@ -415,6 +415,7 @@ fn build_subset<'a>(
                 };
                 split.push(Sample {
                     x: 1,
+                    token_count: 1,
                     tokens: vec![token],
                 })
             }
@@ -434,16 +435,21 @@ fn build_subset<'a>(
                     .map(|(&id, &count)| SToken { id, count })
                     .collect_vec();
                 tokens.sort_by_key(|t| t.id);
-                let size = match measure_x {
-                    MeasureX::Tokens => s.tokens.len() as u64,
+                let token_count = tokens.iter().map(|t| t.count).sum();
+                let x = match measure_x {
+                    MeasureX::Tokens => token_count,
                     MeasureX::Words => s.words,
                 };
-                Sample { x: size, tokens }
+                Sample {
+                    x,
+                    token_count,
+                    tokens,
+                }
             })
             .collect_vec()
     };
     let total_x: u64 = samples.iter().map(|s| s.x).sum();
-    let total_tokens = samples.iter().map(|s| s.tokens.len() as u64).sum();
+    let total_tokens = samples.iter().map(|s| s.token_count).sum();
     let total_y = match measure_y {
         MeasureY::Types => total_types,
         MeasureY::Tokens => total_tokens,

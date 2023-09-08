@@ -91,6 +91,6 @@ impl Counter for TokenCounter {
 
     fn feed_sample(&mut self, sample: &Sample) {
         self.x += sample.x;
-        self.tokens += sample.tokens.len() as u64;
+        self.tokens += sample.token_count;
     }
 }
