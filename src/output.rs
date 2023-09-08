@@ -37,14 +37,14 @@ impl fmt::Display for MeasureX {
 pub type Years = (Year, Year);
 pub type OCategory = Option<(String, String)>;
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct AvgResult {
     pub low: u64,
     pub high: u64,
     pub iter: u64,
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct PointResult {
     pub above: u64,
     pub below: u64,
