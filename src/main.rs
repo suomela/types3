@@ -72,38 +72,6 @@ struct Args {
     verbose: Verbosity<WarnLevel>,
 }
 
-fn get_categories<'a>(args: &'a Args, samples: &[CSample<'a>]) -> Result<Vec<Category<'a>>> {
-    match &args.category {
-        None => Ok(vec![None]),
-        Some(key) => {
-            let mut values = HashSet::new();
-            for s in samples {
-                match s.metadata.get(key) {
-                    None => (),
-                    Some(val) => {
-                        values.insert(val);
-                    }
-                };
-            }
-            if values.is_empty() {
-                return Err(errors::invalid_input(format!(
-                    "there are no samples with metadata key {}",
-                    key
-                )));
-            }
-            let mut values = values.into_iter().collect_vec();
-            values.sort();
-            let valstring = values.iter().join(", ");
-            let categories = values
-                .into_iter()
-                .map(|val| Some((key as &str, val as &str)))
-                .collect_vec();
-            info!("categories: {} = {}", key, valstring);
-            Ok(categories)
-        }
-    }
-}
-
 fn get_years(args: &Args, samples: &[CSample]) -> Years {
     let mut years = None;
     for s in samples {
@@ -453,7 +421,10 @@ impl<'a> Calc<'a> {
         if samples.is_empty() {
             return Err(errors::invalid_input_ref("no samples found"));
         }
-        let categories = get_categories(args, &samples)?;
+        let categories = match &args.category {
+            None => vec![None],
+            Some(key) => categories::get_categories(key, &samples)?,
+        };
         let years = get_years(args, &samples);
         let periods = get_periods(args, &years);
         let curves = build_curves(&categories, &periods);
