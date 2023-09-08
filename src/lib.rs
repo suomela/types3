@@ -10,3 +10,4 @@ pub mod output;
 mod parallelism;
 pub mod samples;
 mod shuffle;
+pub mod subsets;

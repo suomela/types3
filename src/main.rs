@@ -16,6 +16,7 @@ use types3::output::{
     self, MeasureX, MeasureY, OCurve, OError, OResult, Output, PointResult, Years,
 };
 use types3::samples::{self, CSample};
+use types3::subsets::{Subset, SubsetKey};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -89,72 +90,6 @@ fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
     }
     info!("periods: {}", output::pretty_periods(&periods));
     periods
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct SubsetKey<'a> {
-    category: Category<'a>,
-    period: Years,
-}
-
-impl SubsetKey<'_> {
-    fn pretty(&self) -> String {
-        match &self.category {
-            None => output::pretty_period(&self.period),
-            Some((k, v)) => format!("{}, {} = {}", output::pretty_period(&self.period), k, v),
-        }
-    }
-}
-
-struct Subset<'a> {
-    category: Category<'a>,
-    period: Years,
-    samples: Vec<Sample>,
-    total_x: u64,
-    total_y: u64,
-    points: HashSet<Point>,
-}
-
-impl<'a> Subset<'a> {
-    fn pretty(&self) -> String {
-        self.key().pretty()
-    }
-
-    fn key(&self) -> SubsetKey {
-        SubsetKey {
-            category: self.category,
-            period: self.period,
-        }
-    }
-
-    fn get_point(&self) -> Point {
-        Point {
-            x: self.total_x,
-            y: self.total_y,
-        }
-    }
-
-    fn get_parent_period(&self, years: Years) -> SubsetKey<'a> {
-        SubsetKey {
-            category: self.category,
-            period: years,
-        }
-    }
-
-    fn get_parent_category(&self) -> SubsetKey<'a> {
-        assert!(self.category.is_some());
-        SubsetKey {
-            category: None,
-            period: self.period,
-        }
-    }
-
-    fn get_parents(&self, years: Years) -> Vec<SubsetKey<'a>> {
-        match self.category {
-            None => vec![self.get_parent_period(years)],
-            Some(_) => vec![self.get_parent_period(years), self.get_parent_category()],
-        }
-    }
 }
 
 fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
