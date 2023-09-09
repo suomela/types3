@@ -734,6 +734,40 @@ mod test {
     }
 
     #[test]
+    #[should_panic(expected = "is_sorted")]
+    fn compare_with_points_tokens_fail_1() {
+        let samples = vec![Sample {
+            x: 1234,
+            token_count: 10,
+            tokens: vec![SToken { id: 0, count: 10 }],
+        }];
+        let points = vec![
+            Point { x: 1, y: 11 },
+            Point { x: 1234, y: 11 },
+            Point { x: 1233, y: 11 },
+        ];
+        let iter = 10000;
+        let _result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+    }
+
+    #[test]
+    #[should_panic(expected = "thread panicked")]
+    fn compare_with_points_tokens_fail_2() {
+        let samples = vec![Sample {
+            x: 1234,
+            token_count: 10,
+            tokens: vec![SToken { id: 0, count: 10 }],
+        }];
+        let points = vec![
+            Point { x: 1, y: 11 },
+            Point { x: 1233, y: 11 },
+            Point { x: 1235, y: 11 },
+        ];
+        let iter = 10000;
+        let _result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+    }
+
+    #[test]
     fn compare_with_points_types_1() {
         let samples = vec![Sample {
             x: 1234,
