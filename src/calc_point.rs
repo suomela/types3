@@ -660,4 +660,82 @@ mod test {
             }
         );
     }
+
+    #[test]
+    fn compare_with_points_tokens_1() {
+        let samples = vec![Sample {
+            x: 1234,
+            token_count: 10,
+            tokens: vec![SToken { id: 0, count: 10 }],
+        }];
+        let points = vec![
+            Point { x: 1, y: 7 },
+            Point { x: 1233, y: 7 },
+            Point { x: 1234, y: 7 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].iter, iter);
+        assert_eq!(result[0].below, 0);
+        assert_eq!(result[0].above, 0);
+        assert_eq!(result[1].iter, iter);
+        assert_eq!(result[1].below, 0);
+        assert_eq!(result[1].above, 0);
+        assert_eq!(result[2].iter, iter);
+        assert_eq!(result[2].below, 0);
+        assert_eq!(result[2].above, 0);
+    }
+
+    #[test]
+    fn compare_with_points_tokens_2() {
+        let samples = vec![Sample {
+            x: 1234,
+            token_count: 10,
+            tokens: vec![SToken { id: 0, count: 10 }],
+        }];
+        let points = vec![
+            Point { x: 1, y: 11 },
+            Point { x: 1233, y: 11 },
+            Point { x: 1234, y: 11 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].iter, iter);
+        assert_eq!(result[0].below, 0);
+        assert_eq!(result[0].above, iter);
+        assert_eq!(result[1].iter, iter);
+        assert_eq!(result[1].below, 0);
+        assert_eq!(result[1].above, iter);
+        assert_eq!(result[2].iter, iter);
+        assert_eq!(result[2].below, 0);
+        assert_eq!(result[2].above, iter);
+    }
+
+    #[test]
+    fn compare_with_points_types_1() {
+        let samples = vec![Sample {
+            x: 1234,
+            token_count: 10,
+            tokens: vec![SToken { id: 0, count: 10 }],
+        }];
+        let points = vec![
+            Point { x: 1, y: 2 },
+            Point { x: 1233, y: 2 },
+            Point { x: 1234, y: 2 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].iter, iter);
+        assert_eq!(result[0].below, 0);
+        assert_eq!(result[0].above, iter);
+        assert_eq!(result[1].iter, iter);
+        assert_eq!(result[1].below, 0);
+        assert_eq!(result[1].above, iter);
+        assert_eq!(result[2].iter, iter);
+        assert_eq!(result[2].below, 0);
+        assert_eq!(result[2].above, iter);
+    }
 }
