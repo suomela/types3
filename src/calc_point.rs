@@ -4,6 +4,7 @@ use crate::output::{MeasureY, PointResult};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
 use itertools::Itertools;
+use is_sorted::IsSorted;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Point {
@@ -28,6 +29,7 @@ where
     TCounter: Counter,
 {
     assert!(!points.is_empty());
+    assert!(IsSorted::is_sorted(&mut points.iter()));
     let total_types = counter::count_types(samples);
     let (r, iter) = parallelism::compute_parallel(
         || PointParResult {
