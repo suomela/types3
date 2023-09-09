@@ -3,8 +3,8 @@ use crate::counter::{self, Counter, TokenCounter, TypeCounter};
 use crate::output::{MeasureY, PointResult};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
-use itertools::Itertools;
 use is_sorted::IsSorted;
+use itertools::Itertools;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Point {
@@ -91,7 +91,7 @@ fn calc_one<TCounter>(
     unreachable!();
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct PointParResultElem {
     above: u64,
     below: u64,
@@ -104,6 +104,7 @@ impl PointParResultElem {
     }
 }
 
+#[derive(PartialEq, Eq, Debug)]
 struct PointParResult {
     elems: Vec<PointParResultElem>,
 }
@@ -114,5 +115,549 @@ impl ParResult for PointParResult {
         for i in 0..self.elems.len() {
             self.elems[i].add(other.elems[i]);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::calculation::SToken;
+
+    #[test]
+    fn calc_one_tokens_1() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 0 },
+            Point { x: 1233, y: 0 },
+            Point { x: 1234, y: 0 },
+            Point { x: 1235, y: 0 },
+            Point {
+                x: 1234 + 5678,
+                y: 0,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 1
+                    PointParResultElem { above: 0, below: 0 }, // 1233
+                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1235
+                    PointParResultElem { above: 0, below: 1 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_2() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 7 },
+            Point { x: 1233, y: 7 },
+            Point { x: 1234, y: 7 },
+            Point { x: 1235, y: 7 },
+            Point {
+                x: 1234 + 5678,
+                y: 7,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 1
+                    PointParResultElem { above: 0, below: 0 }, // 1233
+                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1235
+                    PointParResultElem { above: 0, below: 1 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_3() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 10 },
+            Point { x: 1233, y: 10 },
+            Point { x: 1234, y: 10 },
+            Point { x: 1235, y: 10 },
+            Point {
+                x: 1234 + 5678,
+                y: 10,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 1
+                    PointParResultElem { above: 0, below: 0 }, // 1233
+                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 0 }, // 1235
+                    PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_4() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 11 },
+            Point { x: 1233, y: 11 },
+            Point { x: 1234, y: 11 },
+            Point { x: 1235, y: 11 },
+            Point {
+                x: 1234 + 5678,
+                y: 11,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 1
+                    PointParResultElem { above: 1, below: 0 }, // 1233
+                    PointParResultElem { above: 1, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 0 }, // 1235
+                    PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_5() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 15 },
+            Point { x: 1233, y: 15 },
+            Point { x: 1234, y: 15 },
+            Point { x: 1235, y: 15 },
+            Point {
+                x: 1234 + 5678,
+                y: 15,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 1
+                    PointParResultElem { above: 1, below: 0 }, // 1233
+                    PointParResultElem { above: 1, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 0 }, // 1235
+                    PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_6() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 16 },
+            Point { x: 1233, y: 16 },
+            Point { x: 1234, y: 16 },
+            Point { x: 1235, y: 16 },
+            Point {
+                x: 1234 + 5678,
+                y: 16,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 1
+                    PointParResultElem { above: 1, below: 0 }, // 1233
+                    PointParResultElem { above: 1, below: 0 }, // 1234
+                    PointParResultElem { above: 1, below: 0 }, // 1235
+                    PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_7() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 7 },
+            Point { x: 1233, y: 7 },
+            Point { x: 1234, y: 7 },
+            Point { x: 1235, y: 7 },
+            Point {
+                x: 1234 + 5678,
+                y: 16,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 1
+                    PointParResultElem { above: 0, below: 0 }, // 1233
+                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1235
+                    PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_tokens_8() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 7 },
+            Point { x: 1233, y: 7 },
+            Point { x: 1234, y: 7 },
+            Point { x: 1235, y: 7 },
+            Point {
+                x: 1234 + 5678,
+                y: 16,
+            },
+        ];
+        let idx = vec![1, 0];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 1
+                    PointParResultElem { above: 1, below: 0 }, // 1233
+                    PointParResultElem { above: 1, below: 0 }, // 1234
+                    PointParResultElem { above: 1, below: 0 }, // 1235
+                    PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "unreachable")]
+    fn calc_one_tokens_fail_1() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TokenCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 7 },
+            Point { x: 1233, y: 7 },
+            Point { x: 1234, y: 7 },
+            Point { x: 1235, y: 7 },
+            Point {
+                x: 1234 + 5678,
+                y: 16,
+            },
+            Point {
+                x: 1234 + 5678 + 1,
+                y: 16,
+            },
+        ];
+        let idx = vec![1, 0];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+    }
+
+    #[test]
+    fn calc_one_types_1() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = TypeCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 0 },
+            Point { x: 1233, y: 0 },
+            Point { x: 1234, y: 0 },
+            Point { x: 1235, y: 0 },
+            Point {
+                x: 1234 + 5678,
+                y: 2,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 1
+                    PointParResultElem { above: 0, below: 0 }, // 1233
+                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1235
+                    PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_types_2() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 1, count: 5 }],
+            },
+        ];
+        let mut counter = TypeCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 0 },
+            Point { x: 1233, y: 0 },
+            Point { x: 1234, y: 0 },
+            Point { x: 1235, y: 0 },
+            Point {
+                x: 1234 + 5678,
+                y: 2,
+            },
+        ];
+        let idx = vec![0, 1];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 1
+                    PointParResultElem { above: 0, below: 0 }, // 1233
+                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1235
+                    PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn calc_one_types_3() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![
+                    SToken { id: 0, count: 1 },
+                    SToken { id: 1, count: 1 },
+                    SToken { id: 2, count: 1 },
+                    SToken { id: 3, count: 1 },
+                    SToken { id: 4, count: 1 },
+                    SToken { id: 5, count: 1 },
+                    SToken { id: 6, count: 1 },
+                    SToken { id: 7, count: 1 },
+                    SToken { id: 8, count: 1 },
+                    SToken { id: 9, count: 1 },
+                ],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![
+                    SToken { id: 10, count: 1 },
+                    SToken { id: 11, count: 1 },
+                    SToken { id: 12, count: 1 },
+                    SToken { id: 13, count: 1 },
+                    SToken { id: 14, count: 1 },
+                ],
+            },
+        ];
+        let mut counter = TypeCounter::new(counter::count_types(&samples));
+        let points = vec![
+            Point { x: 1, y: 7 },
+            Point { x: 1233, y: 7 },
+            Point { x: 1234, y: 7 },
+            Point { x: 1235, y: 7 },
+            Point {
+                x: 1234 + 5678,
+                y: 16,
+            },
+        ];
+        let idx = vec![1, 0];
+        let mut result = PointParResult {
+            elems: vec![PointParResultElem { above: 0, below: 0 }; points.len()],
+        };
+        calc_one(&samples, &points, &idx, &mut counter, &mut result);
+        assert_eq!(
+            result,
+            PointParResult {
+                elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 1
+                    PointParResultElem { above: 1, below: 0 }, // 1233
+                    PointParResultElem { above: 1, below: 0 }, // 1234
+                    PointParResultElem { above: 1, below: 0 }, // 1235
+                    PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
+                ]
+            }
+        );
     }
 }
