@@ -42,14 +42,17 @@ where
                     for i in idx {
                         let prev_y = counter.get_y();
                         counter.feed_sample(&samples[*i]);
+                        let cur_y = counter.get_y();
+                        let low_y = cur_y.min(prev_y);
+                        let high_y = cur_y.max(prev_y);
                         loop {
                             let p = &points[j];
                             if counter.get_x() < p.x {
                                 break;
                             }
-                            if counter.get_y() < p.y {
+                            if high_y < p.y {
                                 result.elems[j].above += 1;
-                            } else if prev_y > p.y {
+                            } else if low_y > p.y {
                                 result.elems[j].below += 1;
                             }
                             j += 1;

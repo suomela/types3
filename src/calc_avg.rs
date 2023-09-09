@@ -32,16 +32,19 @@ where
                     for i in idx {
                         let prev_y = counter.get_y();
                         counter.feed_sample(&samples[*i]);
+                        let cur_y = counter.get_y();
+                        let low_y = cur_y.min(prev_y);
+                        let high_y = cur_y.max(prev_y);
                         match counter.get_x().cmp(&limit) {
                             Ordering::Less => (),
                             Ordering::Equal => {
-                                result.low += counter.get_y();
-                                result.high += counter.get_y();
+                                result.low += cur_y;
+                                result.high += cur_y;
                                 return;
                             }
                             Ordering::Greater => {
-                                result.low += prev_y;
-                                result.high += counter.get_y();
+                                result.low += low_y;
+                                result.high += high_y;
                                 return;
                             }
                         }
