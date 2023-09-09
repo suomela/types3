@@ -36,33 +36,7 @@ where
         |job, result| {
             let mut counter = TCounter::new(total_types);
             shuffle::shuffle_job(
-                |idx| {
-                    counter.reset();
-                    let mut j = 0;
-                    for i in idx {
-                        let prev_y = counter.get_y();
-                        counter.feed_sample(&samples[*i]);
-                        let cur_y = counter.get_y();
-                        let low_y = cur_y.min(prev_y);
-                        let high_y = cur_y.max(prev_y);
-                        loop {
-                            let p = &points[j];
-                            if counter.get_x() < p.x {
-                                break;
-                            }
-                            if high_y < p.y {
-                                result.elems[j].above += 1;
-                            } else if low_y > p.y {
-                                result.elems[j].below += 1;
-                            }
-                            j += 1;
-                            if j == points.len() {
-                                return;
-                            }
-                        }
-                    }
-                    unreachable!();
-                },
+                |idx| calc_one(samples, points, idx, &mut counter, result),
                 samples.len(),
                 job,
             );
@@ -77,6 +51,42 @@ where
             iter,
         })
         .collect_vec()
+}
+
+fn calc_one<TCounter>(
+    samples: &[Sample],
+    points: &[Point],
+    idx: &[usize],
+    counter: &mut TCounter,
+    result: &mut PointParResult,
+) where
+    TCounter: Counter,
+{
+    counter.reset();
+    let mut j = 0;
+    for i in idx {
+        let prev_y = counter.get_y();
+        counter.feed_sample(&samples[*i]);
+        let cur_y = counter.get_y();
+        let low_y = cur_y.min(prev_y);
+        let high_y = cur_y.max(prev_y);
+        loop {
+            let p = &points[j];
+            if counter.get_x() < p.x {
+                break;
+            }
+            if high_y < p.y {
+                result.elems[j].above += 1;
+            } else if low_y > p.y {
+                result.elems[j].below += 1;
+            }
+            j += 1;
+            if j == points.len() {
+                return;
+            }
+        }
+    }
+    unreachable!();
 }
 
 #[derive(Clone, Copy)]
