@@ -60,16 +60,6 @@ impl Counter for TypeCounter {
     }
 }
 
-pub fn count_types(samples: &[Sample]) -> usize {
-    let mut max_type = 0;
-    for sample in samples {
-        for token in &sample.tokens {
-            max_type = max_type.max(token.id);
-        }
-    }
-    max_type + 1
-}
-
 pub struct TokenCounter {
     x: u64,
     tokens: u64,
@@ -96,4 +86,14 @@ impl Counter for TokenCounter {
             high_y: self.tokens,
         }
     }
+}
+
+pub fn count_types(samples: &[Sample]) -> usize {
+    let mut max_type = 0;
+    for sample in samples {
+        for token in &sample.tokens {
+            max_type = max_type.max(token.id);
+        }
+    }
+    max_type + 1
 }
