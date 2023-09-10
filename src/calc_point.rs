@@ -132,6 +132,14 @@ mod test {
     use super::*;
     use crate::calculation::SToken;
 
+    fn p(x: u64, y: u64) -> Point {
+        Point { x, y }
+    }
+
+    fn pr(above: u64, below: u64, iter: u64) -> PointResult {
+        PointResult { above, below, iter }
+    }
+
     #[test]
     fn calc_one_tokens_1() {
         let samples = vec![
@@ -148,14 +156,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 0 },
-            Point { x: 1233, y: 0 },
-            Point { x: 1234, y: 0 },
-            Point { x: 1235, y: 0 },
-            Point {
-                x: 1234 + 5678,
-                y: 0,
-            },
+            p(1, 0),
+            p(1233, 0),
+            p(1234, 0),
+            p(1235, 0),
+            p(1234 + 5678, 0),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -192,14 +197,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 7 },
-            Point { x: 1233, y: 7 },
-            Point { x: 1234, y: 7 },
-            Point { x: 1235, y: 7 },
-            Point {
-                x: 1234 + 5678,
-                y: 7,
-            },
+            p(1, 7),
+            p(1233, 7),
+            p(1234, 7),
+            p(1235, 7),
+            p(1234 + 5678, 7),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -236,14 +238,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 10 },
-            Point { x: 1233, y: 10 },
-            Point { x: 1234, y: 10 },
-            Point { x: 1235, y: 10 },
-            Point {
-                x: 1234 + 5678,
-                y: 10,
-            },
+            p(1, 10),
+            p(1233, 10),
+            p(1234, 10),
+            p(1235, 10),
+            p(1234 + 5678, 10),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -280,14 +279,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 11 },
-            Point { x: 1233, y: 11 },
-            Point { x: 1234, y: 11 },
-            Point { x: 1235, y: 11 },
-            Point {
-                x: 1234 + 5678,
-                y: 11,
-            },
+            p(1, 11),
+            p(1233, 11),
+            p(1234, 11),
+            p(1235, 11),
+            p(1234 + 5678, 11),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -324,14 +320,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 15 },
-            Point { x: 1233, y: 15 },
-            Point { x: 1234, y: 15 },
-            Point { x: 1235, y: 15 },
-            Point {
-                x: 1234 + 5678,
-                y: 15,
-            },
+            p(1, 15),
+            p(1233, 15),
+            p(1234, 15),
+            p(1235, 15),
+            p(1234 + 5678, 15),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -368,14 +361,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 16 },
-            Point { x: 1233, y: 16 },
-            Point { x: 1234, y: 16 },
-            Point { x: 1235, y: 16 },
-            Point {
-                x: 1234 + 5678,
-                y: 16,
-            },
+            p(1, 16),
+            p(1233, 16),
+            p(1234, 16),
+            p(1235, 16),
+            p(1234 + 5678, 16),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -412,14 +402,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 7 },
-            Point { x: 1233, y: 7 },
-            Point { x: 1234, y: 7 },
-            Point { x: 1235, y: 7 },
-            Point {
-                x: 1234 + 5678,
-                y: 16,
-            },
+            p(1, 7),
+            p(1233, 7),
+            p(1234, 7),
+            p(1235, 7),
+            p(1234 + 5678, 16),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -456,14 +443,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 7 },
-            Point { x: 1233, y: 7 },
-            Point { x: 1234, y: 7 },
-            Point { x: 1235, y: 7 },
-            Point {
-                x: 1234 + 5678,
-                y: 16,
-            },
+            p(1, 7),
+            p(1233, 7),
+            p(1234, 7),
+            p(1235, 7),
+            p(1234 + 5678, 16),
         ];
         let idx = vec![1, 0];
         let mut result = PointParResult {
@@ -501,18 +485,12 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 7 },
-            Point { x: 1233, y: 7 },
-            Point { x: 1234, y: 7 },
-            Point { x: 1235, y: 7 },
-            Point {
-                x: 1234 + 5678,
-                y: 16,
-            },
-            Point {
-                x: 1234 + 5678 + 1,
-                y: 16,
-            },
+            p(1, 7),
+            p(1233, 7),
+            p(1234, 7),
+            p(1235, 7),
+            p(1234 + 5678, 16),
+            p(1234 + 5678 + 1, 16),
         ];
         let idx = vec![1, 0];
         let mut result = PointParResult {
@@ -537,14 +515,11 @@ mod test {
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 0 },
-            Point { x: 1233, y: 0 },
-            Point { x: 1234, y: 0 },
-            Point { x: 1235, y: 0 },
-            Point {
-                x: 1234 + 5678,
-                y: 2,
-            },
+            p(1, 0),
+            p(1233, 0),
+            p(1234, 0),
+            p(1235, 0),
+            p(1234 + 5678, 2),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -581,14 +556,11 @@ mod test {
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 0 },
-            Point { x: 1233, y: 0 },
-            Point { x: 1234, y: 0 },
-            Point { x: 1235, y: 0 },
-            Point {
-                x: 1234 + 5678,
-                y: 2,
-            },
+            p(1, 0),
+            p(1233, 0),
+            p(1234, 0),
+            p(1235, 0),
+            p(1234 + 5678, 2),
         ];
         let idx = vec![0, 1];
         let mut result = PointParResult {
@@ -642,14 +614,11 @@ mod test {
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
         let points = vec![
-            Point { x: 1, y: 7 },
-            Point { x: 1233, y: 7 },
-            Point { x: 1234, y: 7 },
-            Point { x: 1235, y: 7 },
-            Point {
-                x: 1234 + 5678,
-                y: 16,
-            },
+            p(1, 7),
+            p(1233, 7),
+            p(1234, 7),
+            p(1235, 7),
+            p(1234 + 5678, 16),
         ];
         let idx = vec![1, 0];
         let mut result = PointParResult {
@@ -677,32 +646,12 @@ mod test {
             token_count: 10,
             tokens: vec![SToken { id: 0, count: 10 }],
         }];
-        let points = vec![
-            Point { x: 1, y: 7 },
-            Point { x: 1233, y: 7 },
-            Point { x: 1234, y: 7 },
-        ];
+        let points = vec![p(1, 7), p(1233, 7), p(1234, 7)];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
         assert_eq!(
             result,
-            vec![
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-            ]
+            vec![pr(0, 0, iter), pr(0, 0, iter), pr(0, iter, iter),]
         );
     }
 
@@ -713,32 +662,12 @@ mod test {
             token_count: 10,
             tokens: vec![SToken { id: 0, count: 10 }],
         }];
-        let points = vec![
-            Point { x: 1, y: 11 },
-            Point { x: 1233, y: 11 },
-            Point { x: 1234, y: 11 },
-        ];
+        let points = vec![p(1, 11), p(1233, 11), p(1234, 11)];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
         assert_eq!(
             result,
-            vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-            ]
+            vec![pr(iter, 0, iter), pr(iter, 0, iter), pr(iter, 0, iter),]
         );
     }
 
@@ -750,11 +679,7 @@ mod test {
             token_count: 10,
             tokens: vec![SToken { id: 0, count: 10 }],
         }];
-        let points = vec![
-            Point { x: 1, y: 11 },
-            Point { x: 1234, y: 11 },
-            Point { x: 1233, y: 11 },
-        ];
+        let points = vec![p(1, 11), p(1234, 11), p(1233, 11)];
         let iter = 10000;
         let _result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
     }
@@ -767,11 +692,7 @@ mod test {
             token_count: 10,
             tokens: vec![SToken { id: 0, count: 10 }],
         }];
-        let points = vec![
-            Point { x: 1, y: 11 },
-            Point { x: 1233, y: 11 },
-            Point { x: 1235, y: 11 },
-        ];
+        let points = vec![p(1, 11), p(1233, 11), p(1235, 11)];
         let iter = 10000;
         let _result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
     }
@@ -783,32 +704,12 @@ mod test {
             token_count: 10,
             tokens: vec![SToken { id: 0, count: 10 }],
         }];
-        let points = vec![
-            Point { x: 1, y: 2 },
-            Point { x: 1233, y: 2 },
-            Point { x: 1234, y: 2 },
-        ];
+        let points = vec![p(1, 2), p(1233, 2), p(1234, 2)];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
         assert_eq!(
             result,
-            vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-            ]
+            vec![pr(iter, 0, iter), pr(iter, 0, iter), pr(iter, 0, iter),]
         );
     }
 
@@ -819,32 +720,12 @@ mod test {
             token_count: 10,
             tokens: vec![SToken { id: 0, count: 10 }],
         }];
-        let points = vec![
-            Point { x: 1, y: 2 },
-            Point { x: 1233, y: 2 },
-            Point { x: 1234, y: 2 },
-        ];
+        let points = vec![p(1, 2), p(1233, 2), p(1234, 2)];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
         assert_eq!(
             result,
-            vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-            ]
+            vec![pr(iter, 0, iter), pr(iter, 0, iter), pr(iter, 0, iter),]
         );
     }
 
@@ -868,66 +749,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 4 },
-            Point { x: 122, y: 4 },
-            Point { x: 123, y: 4 },
-            Point { x: 124, y: 4 },
-            Point { x: 245, y: 4 },
-            Point { x: 246, y: 4 },
-            Point { x: 247, y: 4 },
-            Point { x: 368, y: 4 },
-            Point { x: 369, y: 4 },
+            p(1, 4),
+            p(122, 4),
+            p(123, 4),
+            p(124, 4),
+            p(245, 4),
+            p(246, 4),
+            p(247, 4),
+            p(368, 4),
+            p(369, 4),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
             ]
         );
     }
@@ -952,66 +797,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 4 },
-            Point { x: 122, y: 4 },
-            Point { x: 123, y: 4 },
-            Point { x: 124, y: 4 },
-            Point { x: 245, y: 4 },
-            Point { x: 246, y: 4 },
-            Point { x: 247, y: 4 },
-            Point { x: 368, y: 4 },
-            Point { x: 369, y: 4 },
+            p(1, 4),
+            p(122, 4),
+            p(123, 4),
+            p(124, 4),
+            p(245, 4),
+            p(246, 4),
+            p(247, 4),
+            p(368, 4),
+            p(369, 4),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
             ]
         );
     }
@@ -1036,66 +845,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 2 },
-            Point { x: 122, y: 2 },
-            Point { x: 123, y: 2 },
-            Point { x: 124, y: 2 },
-            Point { x: 245, y: 2 },
-            Point { x: 246, y: 2 },
-            Point { x: 247, y: 2 },
-            Point { x: 368, y: 2 },
-            Point { x: 369, y: 2 },
+            p(1, 2),
+            p(122, 2),
+            p(123, 2),
+            p(124, 2),
+            p(245, 2),
+            p(246, 2),
+            p(247, 2),
+            p(368, 2),
+            p(369, 2),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, iter, iter),
             ]
         );
     }
@@ -1120,66 +893,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 2 },
-            Point { x: 122, y: 2 },
-            Point { x: 123, y: 2 },
-            Point { x: 124, y: 2 },
-            Point { x: 245, y: 2 },
-            Point { x: 246, y: 2 },
-            Point { x: 247, y: 2 },
-            Point { x: 368, y: 2 },
-            Point { x: 369, y: 2 },
+            p(1, 2),
+            p(122, 2),
+            p(123, 2),
+            p(124, 2),
+            p(245, 2),
+            p(246, 2),
+            p(247, 2),
+            p(368, 2),
+            p(369, 2),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, iter, iter),
             ]
         );
     }
@@ -1204,66 +941,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 2 },
-            Point { x: 122, y: 2 },
-            Point { x: 123, y: 2 },
-            Point { x: 124, y: 2 },
-            Point { x: 245, y: 2 },
-            Point { x: 246, y: 2 },
-            Point { x: 247, y: 2 },
-            Point { x: 368, y: 2 },
-            Point { x: 369, y: 2 },
+            p(1, 2),
+            p(122, 2),
+            p(123, 2),
+            p(124, 2),
+            p(245, 2),
+            p(246, 2),
+            p(247, 2),
+            p(368, 2),
+            p(369, 2),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
+                pr(iter, 0, iter),
             ]
         );
     }
@@ -1288,66 +989,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 1 },
-            Point { x: 122, y: 1 },
-            Point { x: 123, y: 1 },
-            Point { x: 124, y: 1 },
-            Point { x: 245, y: 1 },
-            Point { x: 246, y: 1 },
-            Point { x: 247, y: 1 },
-            Point { x: 368, y: 1 },
-            Point { x: 369, y: 1 },
+            p(1, 1),
+            p(122, 1),
+            p(123, 1),
+            p(124, 1),
+            p(245, 1),
+            p(246, 1),
+            p(247, 1),
+            p(368, 1),
+            p(369, 1),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, iter, iter),
+                pr(0, iter, iter),
+                pr(0, iter, iter),
+                pr(0, iter, iter),
             ]
         );
     }
@@ -1372,66 +1037,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 1 },
-            Point { x: 122, y: 1 },
-            Point { x: 123, y: 1 },
-            Point { x: 124, y: 1 },
-            Point { x: 245, y: 1 },
-            Point { x: 246, y: 1 },
-            Point { x: 247, y: 1 },
-            Point { x: 368, y: 1 },
-            Point { x: 369, y: 1 },
+            p(1, 1),
+            p(122, 1),
+            p(123, 1),
+            p(124, 1),
+            p(245, 1),
+            p(246, 1),
+            p(247, 1),
+            p(368, 1),
+            p(369, 1),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: iter,
-                    iter: iter
-                },
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(0, iter, iter),
+                pr(0, iter, iter),
+                pr(0, iter, iter),
+                pr(0, iter, iter),
             ]
         );
     }
@@ -1456,66 +1085,30 @@ mod test {
             },
         ];
         let points = vec![
-            Point { x: 1, y: 1 },
-            Point { x: 122, y: 1 },
-            Point { x: 123, y: 1 },
-            Point { x: 124, y: 1 },
-            Point { x: 245, y: 1 },
-            Point { x: 246, y: 1 },
-            Point { x: 247, y: 1 },
-            Point { x: 368, y: 1 },
-            Point { x: 369, y: 1 },
+            p(1, 1),
+            p(122, 1),
+            p(123, 1),
+            p(124, 1),
+            p(245, 1),
+            p(246, 1),
+            p(247, 1),
+            p(368, 1),
+            p(369, 1),
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: 0,
-                    below: 0,
-                    iter: iter
-                },
-                PointResult {
-                    above: iter,
-                    below: 0,
-                    iter: iter
-                },
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(iter, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(iter, 0, iter),
+                pr(0, 0, iter),
+                pr(0, 0, iter),
+                pr(iter, 0, iter),
             ]
         );
     }
@@ -1539,40 +1132,14 @@ mod test {
                 tokens: vec![SToken { id: 2, count: 10 }],
             },
         ];
-        let points = vec![
-            Point { x: 50, y: 1 },
-            Point { x: 150, y: 1 },
-            Point { x: 250, y: 1 },
-            Point { x: 350, y: 1 },
-        ];
+        let points = vec![p(50, 1), p(150, 1), p(250, 1), p(350, 1)];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
-        assert_eq!(
-            result[0],
-            PointResult {
-                above: 0,
-                below: 0,
-                iter: iter
-            }
-        );
-        assert_eq!(
-            result[1],
-            PointResult {
-                above: 0,
-                below: 0,
-                iter: iter
-            }
-        );
+        assert_eq!(result[0], pr(0, 0, iter));
+        assert_eq!(result[1], pr(0, 0, iter));
         assert_eq!(result[2].above, 0);
         assert!(result[2].below as f64 >= 0.31 * (iter as f64));
         assert!(result[2].below as f64 <= 0.35 * (iter as f64));
-        assert_eq!(
-            result[3],
-            PointResult {
-                above: 0,
-                below: iter,
-                iter: iter
-            }
-        );
+        assert_eq!(result[3], pr(0, iter, iter));
     }
 }
