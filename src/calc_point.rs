@@ -77,21 +77,22 @@ fn calc_one<TCounter>(
             let p = &points[j];
             match counter.get_x().cmp(&p.x) {
                 Ordering::Less => break,
-                Ordering::Equal => {
+                Ordering::Equal =>
+                {
                     #[allow(clippy::comparison_chain)]
                     if cur_y < p.y {
                         result.elems[j].above += 1;
                     } else if cur_y > p.y {
                         result.elems[j].below += 1;
                     }
-                },
+                }
                 Ordering::Greater => {
                     if high_y < p.y {
                         result.elems[j].above += 1;
                     } else if low_y > p.y {
                         result.elems[j].below += 1;
                     }
-                },
+                }
             }
             j += 1;
             if j == points.len() {
