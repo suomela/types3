@@ -50,6 +50,10 @@ what="$base --count-tokens"
 $what calc/ceec-tokens-vs-tokens.json
 what="$base --count-tokens --split-samples"
 $what calc/ceec-tokens-vs-tokens-split.json
+what="$base --count-samples --words"
+$what calc/ceec-samples-vs-words.json
+what="$base --count-samples"
+$what calc/ceec-samples-vs-tokens.json
 
 cd calc
 for a in *.json; do

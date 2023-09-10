@@ -35,6 +35,9 @@ struct Args {
     /// Count hapaxes (instead of types)
     #[arg(long, default_value_t = false)]
     count_hapaxes: bool,
+    /// Count samples (instead of types)
+    #[arg(long, default_value_t = false)]
+    count_samples: bool,
     /// Compare with running words (instead of tokens)
     #[arg(long, default_value_t = false)]
     words: bool,
@@ -136,12 +139,19 @@ impl<'a> Calc<'a> {
                 "cannot select both --words and --split-samples",
             ));
         }
-        if args.count_tokens && args.count_hapaxes {
-            return Err(errors::invalid_argument_ref(
-                "cannot select both --count-tokens and --count-hapaxes",
-            ));
+        {
+            let mut counters = 0;
+            for f in [args.count_tokens, args.count_hapaxes, args.count_samples] {
+                if f {
+                    counters += 1;
+                }
+            }
+            if counters > 1 {
+                return Err(errors::invalid_argument_ref(
+                    "can select at most one of --count-tokens, --count-hapaxes, and --count-samples",
+                ));
+            }
         }
-
         let measure_x = if args.words {
             MeasureX::Words
         } else {
@@ -151,6 +161,8 @@ impl<'a> Calc<'a> {
             MeasureY::Tokens
         } else if args.count_hapaxes {
             MeasureY::Hapaxes
+        } else if args.count_samples {
+            MeasureY::Samples
         } else {
             MeasureY::Types
         };

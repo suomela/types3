@@ -1,5 +1,5 @@
 use crate::calculation::Sample;
-use crate::counter::{self, Counter, HapaxCounter, TokenCounter, TypeCounter};
+use crate::counter::{self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter};
 use crate::output::{AvgResult, MeasureY};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
@@ -15,6 +15,7 @@ pub fn average_at_limit(
         MeasureY::Types => do_count::<TypeCounter>(samples, iter, limit),
         MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, limit),
         MeasureY::Hapaxes => do_count::<HapaxCounter>(samples, iter, limit),
+        MeasureY::Samples => do_count::<SampleCounter>(samples, iter, limit),
     }
 }
 
@@ -857,6 +858,60 @@ mod test {
         let fiter = iter as f64;
         let expect_low = 5.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
         let expect_high = 10.0 * fiter / 2.0 + 5.0 * fiter / 2.0;
+        let tolerance = 0.1;
+        assert_eq!(result.iter, iter);
+        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
+        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
+        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
+        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+    }
+
+    #[test]
+    fn average_at_limit_samples_1() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 1, count: 5 }],
+            },
+        ];
+        let iter = 10000;
+        let result = average_at_limit(MeasureY::Samples, &samples, iter, 2000);
+        let fiter = iter as f64;
+        let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
+        let expect_high = 2.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
+        let tolerance = 0.1;
+        assert_eq!(result.iter, iter);
+        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
+        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
+        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
+        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+    }
+
+    #[test]
+    fn average_at_limit_samples_2() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let iter = 10000;
+        let result = average_at_limit(MeasureY::Samples, &samples, iter, 2000);
+        let fiter = iter as f64;
+        let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
+        let expect_high = 2.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
         let tolerance = 0.1;
         assert_eq!(result.iter, iter);
         assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);

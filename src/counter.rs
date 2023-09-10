@@ -170,6 +170,34 @@ impl Counter for TokenCounter {
     }
 }
 
+pub struct SampleCounter {
+    x: u64,
+    samples: u64,
+}
+
+impl Counter for SampleCounter {
+    fn new(_total_types: usize) -> SampleCounter {
+        SampleCounter { x: 0, samples: 0 }
+    }
+
+    fn reset(&mut self) {
+        self.x = 0;
+        self.samples = 0;
+    }
+
+    fn feed_sample(&mut self, sample: &Sample) -> CounterState {
+        let prev_samples = self.samples;
+        self.x += sample.x;
+        self.samples += 1;
+        CounterState {
+            x: self.x,
+            y: self.samples,
+            low_y: prev_samples,
+            high_y: self.samples,
+        }
+    }
+}
+
 pub fn count_types(samples: &[Sample]) -> usize {
     let mut max_type = 0;
     for sample in samples {
@@ -185,6 +213,7 @@ pub fn count_xy(measure_y: MeasureY, samples: &[Sample]) -> (u64, u64) {
         MeasureY::Types => count_xy_variant::<TypeCounter>(samples),
         MeasureY::Tokens => count_xy_variant::<TokenCounter>(samples),
         MeasureY::Hapaxes => count_xy_variant::<HapaxCounter>(samples),
+        MeasureY::Samples => count_xy_variant::<SampleCounter>(samples),
     }
 }
 

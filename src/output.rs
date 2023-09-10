@@ -9,6 +9,7 @@ pub enum MeasureY {
     Types,
     Tokens,
     Hapaxes,
+    Samples,
 }
 
 impl fmt::Display for MeasureY {
@@ -17,6 +18,7 @@ impl fmt::Display for MeasureY {
             MeasureY::Types => write!(f, "types"),
             MeasureY::Tokens => write!(f, "tokens"),
             MeasureY::Hapaxes => write!(f, "hapaxes"),
+            MeasureY::Samples => write!(f, "samples"),
         }
     }
 }
