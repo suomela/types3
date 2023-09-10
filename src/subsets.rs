@@ -1,6 +1,7 @@
 use crate::calc_point::Point;
 use crate::calculation::{SToken, Sample};
 use crate::categories::{self, Category};
+use crate::counter;
 use crate::errors::{self, Result};
 use crate::output::{self, MeasureX, MeasureY, Years};
 use crate::samples::CSample;
@@ -95,8 +96,6 @@ pub fn build_subset<'a>(
     let mut lemmas = lemmas.into_iter().collect_vec();
     lemmas.sort();
     let lemmamap: HashMap<&str, usize> = lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
-    let total_types = lemmas.len() as u64;
-
     let samples = if split_samples {
         assert_eq!(measure_x, MeasureX::Tokens);
         let mut split = vec![];
@@ -141,12 +140,7 @@ pub fn build_subset<'a>(
             })
             .collect_vec()
     };
-    let total_x: u64 = samples.iter().map(|s| s.x).sum();
-    let total_tokens = samples.iter().map(|s| s.token_count).sum();
-    let total_y = match measure_y {
-        MeasureY::Types => total_types,
-        MeasureY::Tokens => total_tokens,
-    };
+    let (total_x, total_y) = counter::count_xy(measure_y, &samples);
     let s = Subset {
         category,
         period,

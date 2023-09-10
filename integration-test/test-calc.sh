@@ -28,6 +28,17 @@ $what calc/ceec-types-vs-words-female.json --restrict-samples gender=female
 $what calc/ceec-types-vs-words-gender.json --category gender
 $what calc/ceec-types-vs-words-socmob.json --category socmob
 $what calc/ceec-types-vs-words-gender-ity.json --category gender --restrict-tokens variant=ity
+what="$base --count-hapaxes"
+$what calc/ceec-hapaxes-vs-tokens.json
+$what calc/ceec-hapaxes-vs-tokens-ity.json --restrict-tokens variant=ity
+$what calc/ceec-hapaxes-vs-tokens-female.json --restrict-samples gender=female
+$what calc/ceec-hapaxes-vs-tokens-gender.json --category gender
+$what calc/ceec-hapaxes-vs-tokens-socmob.json --category socmob
+$what calc/ceec-hapaxes-vs-tokens-gender-ity.json --category gender --restrict-tokens variant=ity
+what="$base --count-hapaxes --split-samples"
+$what calc/ceec-hapaxes-vs-tokens-split.json
+what="$base --count-hapaxes --words"
+$what calc/ceec-hapaxes-vs-words.json
 what="$base --count-tokens --words"
 $what calc/ceec-tokens-vs-words.json
 $what calc/ceec-tokens-vs-words-ity.json --restrict-tokens variant=ity

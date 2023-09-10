@@ -1,0 +1,443 @@
+{
+  "restrict_samples": null,
+  "restrict_tokens": null,
+  "curves": [
+    {
+      "category": [
+        "socmob",
+        "soc. mob. D"
+      ],
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 25238,
+            "high": 188925,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 525,
+            "below": 3057,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 831,
+            "below": 1406,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 130000,
+            "high": 130000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 760,
+            "below": 315,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 952,
+            "below": 845,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 26984,
+            "high": 211777,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 422,
+            "below": 2914,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 138,
+            "below": 4062,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 17138,
+            "high": 249713,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3788,
+            "below": 318,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 1929,
+            "below": 478,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 126985,
+            "high": 227895,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3935,
+            "below": 534,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 550,
+            "below": 210,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 0,
+            "high": 800000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 1811,
+            "below": 976,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 848,
+            "below": 848,
+            "iter": 10000
+          }
+        }
+      ]
+    },
+    {
+      "category": [
+        "socmob",
+        "soc. mob. N"
+      ],
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 22495,
+            "high": 335280,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 972,
+            "below": 2370,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 5012,
+            "below": 599,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 25668,
+            "high": 367673,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 56,
+            "below": 7363,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 2651,
+            "below": 677,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 48907,
+            "high": 243483,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 1123,
+            "below": 2495,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 4561,
+            "below": 810,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 31441,
+            "high": 372123,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 1345,
+            "below": 3551,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 1015,
+            "below": 3038,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 23087,
+            "high": 392890,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3121,
+            "below": 1707,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 899,
+            "below": 3507,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 14342,
+            "high": 378598,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 6627,
+            "below": 684,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 5982,
+            "below": 112,
+            "iter": 10000
+          }
+        }
+      ]
+    },
+    {
+      "category": [
+        "socmob",
+        "soc. mob. U"
+      ],
+      "results": [
+        {
+          "period": [
+            1680,
+            1700
+          ],
+          "average_at_limit": {
+            "low": 4781,
+            "high": 294723,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 107,
+            "below": 5912,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 2366,
+            "below": 2306,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1700,
+            1720
+          ],
+          "average_at_limit": {
+            "low": 53148,
+            "high": 204796,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 647,
+            "below": 2372,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 2322,
+            "below": 570,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1720,
+            1740
+          ],
+          "average_at_limit": {
+            "low": 44400,
+            "high": 330191,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 1702,
+            "below": 744,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 3384,
+            "below": 834,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 8122,
+            "high": 407629,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 4816,
+            "below": 109,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 5746,
+            "below": 21,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 14118,
+            "high": 472006,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 5402,
+            "below": 205,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 4209,
+            "below": 299,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 14761,
+            "high": 433837,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3705,
+            "below": 682,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 3235,
+            "below": 504,
+            "iter": 10000
+          }
+        }
+      ]
+    }
+  ],
+  "years": [
+    1680,
+    1781
+  ],
+  "periods": [
+    [
+      1680,
+      1700
+    ],
+    [
+      1700,
+      1720
+    ],
+    [
+      1720,
+      1740
+    ],
+    [
+      1740,
+      1760
+    ],
+    [
+      1760,
+      1780
+    ],
+    [
+      1780,
+      1800
+    ]
+  ],
+  "measure_y": "hapaxes",
+  "measure_x": "tokens",
+  "split_samples": false,
+  "limit": 29,
+  "iter": 10000
+}

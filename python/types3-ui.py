@@ -366,6 +366,9 @@ class App:
             'types vs. tokens, using samples',
             'types vs. tokens, individually',
             'types vs. words, using samples',
+            'hapaxes vs. tokens, using samples',
+            'hapaxes vs. tokens, individually',
+            'hapaxes vs. words, using samples',
             'tokens vs. words, using samples',
             # Useful for testing:
             # 'tokens vs. tokens, using samples',
@@ -598,10 +601,14 @@ class App:
             'types vs. tokens, using samples': [],
             'types vs. tokens, individually': ['--split-samples'],
             'types vs. words, using samples': ['--words'],
-            'tokens vs. words, using samples': ['--count-tokens', '--words'],
+            'hapaxes vs. tokens, using samples': ['--count-hapaxes'],
+            'hapaxes vs. tokens, individually':
+            ['--count-hapaxes', '--split-samples'],
+            'hapaxes vs. words, using samples': ['--count-hapaxes', '--words'],
             'tokens vs. tokens, using samples': ['--count-tokens'],
             'tokens vs. tokens, individually':
             ['--count-tokens', '--split-samples'],
+            'tokens vs. words, using samples': ['--count-tokens', '--words'],
         }.get(what, [])
         if errors:
             logging.debug(errors)

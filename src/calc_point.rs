@@ -1,5 +1,5 @@
 use crate::calculation::Sample;
-use crate::counter::{self, Counter, TokenCounter, TypeCounter};
+use crate::counter::{self, Counter, HapaxCounter, TokenCounter, TypeCounter};
 use crate::output::{MeasureY, PointResult};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
@@ -22,6 +22,7 @@ pub fn compare_with_points(
     match measure_y {
         MeasureY::Types => do_count::<TypeCounter>(samples, iter, points),
         MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, points),
+        MeasureY::Hapaxes => do_count::<HapaxCounter>(samples, iter, points),
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::calculation::Sample;
-use crate::counter::{self, Counter, TokenCounter, TypeCounter};
+use crate::counter::{self, Counter, HapaxCounter, TokenCounter, TypeCounter};
 use crate::output::{AvgResult, MeasureY};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
@@ -14,6 +14,7 @@ pub fn average_at_limit(
     match measure_y {
         MeasureY::Types => do_count::<TypeCounter>(samples, iter, limit),
         MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, limit),
+        MeasureY::Hapaxes => do_count::<HapaxCounter>(samples, iter, limit),
     }
 }
 
@@ -250,6 +251,33 @@ mod test {
     }
 
     #[test]
+    fn calc_one_hapaxes_1() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 0, count: 5 }],
+            },
+        ];
+        let mut counter = HapaxCounter::new(counter::count_types(&samples));
+        let mut result = AvgParResult { low: 0, high: 0 };
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 0, high: 0 });
+        let idx = vec![1, 0];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 0, high: 1 });
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 0, high: 1 });
+    }
+
+    #[test]
     fn calc_one_types_2() {
         let samples = vec![
             Sample {
@@ -274,6 +302,33 @@ mod test {
         let idx = vec![0, 1];
         calc_one(&samples, 2000, &idx, &mut counter, &mut result);
         assert_eq!(result, AvgParResult { low: 2, high: 5 });
+    }
+
+    #[test]
+    fn calc_one_hapaxes_2() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![SToken { id: 1, count: 5 }],
+            },
+        ];
+        let mut counter = HapaxCounter::new(counter::count_types(&samples));
+        let mut result = AvgParResult { low: 0, high: 0 };
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 0, high: 1 });
+        let idx = vec![1, 0];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 0, high: 2 });
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 0, high: 3 });
     }
 
     #[test]
@@ -308,6 +363,50 @@ mod test {
             },
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
+        let mut result = AvgParResult { low: 0, high: 0 };
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 10, high: 15 });
+        let idx = vec![1, 0];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 10, high: 20 });
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 20, high: 35 });
+    }
+
+    #[test]
+    fn calc_one_hapaxes_3() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![
+                    SToken { id: 0, count: 1 },
+                    SToken { id: 1, count: 1 },
+                    SToken { id: 2, count: 1 },
+                    SToken { id: 3, count: 1 },
+                    SToken { id: 4, count: 1 },
+                    SToken { id: 5, count: 1 },
+                    SToken { id: 6, count: 1 },
+                    SToken { id: 7, count: 1 },
+                    SToken { id: 8, count: 1 },
+                    SToken { id: 9, count: 1 },
+                ],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![
+                    SToken { id: 10, count: 1 },
+                    SToken { id: 11, count: 1 },
+                    SToken { id: 12, count: 1 },
+                    SToken { id: 13, count: 1 },
+                    SToken { id: 14, count: 1 },
+                ],
+            },
+        ];
+        let mut counter = HapaxCounter::new(counter::count_types(&samples));
         let mut result = AvgParResult { low: 0, high: 0 };
         let idx = vec![0, 1];
         calc_one(&samples, 2000, &idx, &mut counter, &mut result);
@@ -362,6 +461,50 @@ mod test {
         let idx = vec![0, 1];
         calc_one(&samples, 2000, &idx, &mut counter, &mut result);
         assert_eq!(result, AvgParResult { low: 20, high: 25 });
+    }
+
+    #[test]
+    fn calc_one_hapaxes_4() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 10,
+                tokens: vec![
+                    SToken { id: 0, count: 1 },
+                    SToken { id: 1, count: 1 },
+                    SToken { id: 2, count: 1 },
+                    SToken { id: 3, count: 1 },
+                    SToken { id: 4, count: 1 },
+                    SToken { id: 5, count: 1 },
+                    SToken { id: 6, count: 1 },
+                    SToken { id: 7, count: 1 },
+                    SToken { id: 8, count: 1 },
+                    SToken { id: 9, count: 1 },
+                ],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![
+                    SToken { id: 0, count: 1 },
+                    SToken { id: 1, count: 1 },
+                    SToken { id: 2, count: 1 },
+                    SToken { id: 3, count: 1 },
+                    SToken { id: 4, count: 1 },
+                ],
+            },
+        ];
+        let mut counter = HapaxCounter::new(counter::count_types(&samples));
+        let mut result = AvgParResult { low: 0, high: 0 };
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 5, high: 10 });
+        let idx = vec![1, 0];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 5, high: 15 });
+        let idx = vec![0, 1];
+        calc_one(&samples, 2000, &idx, &mut counter, &mut result);
+        assert_eq!(result, AvgParResult { low: 10, high: 25 });
     }
 
     #[test]

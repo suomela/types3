@@ -8,6 +8,7 @@ use std::fmt;
 pub enum MeasureY {
     Types,
     Tokens,
+    Hapaxes,
 }
 
 impl fmt::Display for MeasureY {
@@ -15,6 +16,7 @@ impl fmt::Display for MeasureY {
         match self {
             MeasureY::Types => write!(f, "types"),
             MeasureY::Tokens => write!(f, "tokens"),
+            MeasureY::Hapaxes => write!(f, "hapaxes"),
         }
     }
 }
