@@ -71,7 +71,7 @@
           },
           "vs_time": {
             "above": 845,
-            "below": 8869,
+            "below": 8892,
             "iter": 10000
           },
           "vs_categories": null
@@ -88,7 +88,7 @@
           },
           "vs_time": {
             "above": 4337,
-            "below": 5026,
+            "below": 5063,
             "iter": 10000
           },
           "vs_categories": null

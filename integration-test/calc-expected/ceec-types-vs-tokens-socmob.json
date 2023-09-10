@@ -20,12 +20,12 @@
           },
           "vs_time": {
             "above": 206,
-            "below": 5629,
+            "below": 5720,
             "iter": 10000
           },
           "vs_categories": {
             "above": 1311,
-            "below": 3067,
+            "below": 3161,
             "iter": 10000
           }
         },
@@ -41,12 +41,12 @@
           },
           "vs_time": {
             "above": 2560,
-            "below": 87,
+            "below": 154,
             "iter": 10000
           },
           "vs_categories": {
             "above": 2622,
-            "below": 401,
+            "below": 682,
             "iter": 10000
           }
         },
@@ -62,12 +62,12 @@
           },
           "vs_time": {
             "above": 1342,
-            "below": 2991,
+            "below": 3143,
             "iter": 10000
           },
           "vs_categories": {
             "above": 490,
-            "below": 4068,
+            "below": 4295,
             "iter": 10000
           }
         },
@@ -83,12 +83,12 @@
           },
           "vs_time": {
             "above": 4684,
-            "below": 373,
+            "below": 398,
             "iter": 10000
           },
           "vs_categories": {
             "above": 2972,
-            "below": 845,
+            "below": 901,
             "iter": 10000
           }
         },
@@ -104,12 +104,12 @@
           },
           "vs_time": {
             "above": 4021,
-            "below": 984,
+            "below": 1063,
             "iter": 10000
           },
           "vs_categories": {
             "above": 585,
-            "below": 484,
+            "below": 603,
             "iter": 10000
           }
         },
@@ -125,12 +125,12 @@
           },
           "vs_time": {
             "above": 2625,
-            "below": 1014,
+            "below": 1069,
             "iter": 10000
           },
           "vs_categories": {
             "above": 2554,
-            "below": 832,
+            "below": 858,
             "iter": 10000
           }
         }
@@ -154,12 +154,12 @@
           },
           "vs_time": {
             "above": 2837,
-            "below": 2316,
+            "below": 2363,
             "iter": 10000
           },
           "vs_categories": {
             "above": 8504,
-            "below": 147,
+            "below": 152,
             "iter": 10000
           }
         },
@@ -175,12 +175,12 @@
           },
           "vs_time": {
             "above": 11,
-            "below": 9434,
+            "below": 9441,
             "iter": 10000
           },
           "vs_categories": {
             "above": 2338,
-            "below": 2880,
+            "below": 2930,
             "iter": 10000
           }
         },
@@ -196,12 +196,12 @@
           },
           "vs_time": {
             "above": 1600,
-            "below": 4004,
+            "below": 4057,
             "iter": 10000
           },
           "vs_categories": {
             "above": 3613,
-            "below": 2341,
+            "below": 2416,
             "iter": 10000
           }
         },
@@ -217,12 +217,12 @@
           },
           "vs_time": {
             "above": 1803,
-            "below": 5251,
+            "below": 5274,
             "iter": 10000
           },
           "vs_categories": {
             "above": 1116,
-            "below": 4215,
+            "below": 4266,
             "iter": 10000
           }
         },
@@ -238,12 +238,12 @@
           },
           "vs_time": {
             "above": 7093,
-            "below": 801,
+            "below": 813,
             "iter": 10000
           },
           "vs_categories": {
             "above": 1240,
-            "below": 5077,
+            "below": 5133,
             "iter": 10000
           }
         },
@@ -259,12 +259,12 @@
           },
           "vs_time": {
             "above": 5198,
-            "below": 2687,
+            "below": 2708,
             "iter": 10000
           },
           "vs_categories": {
             "above": 1722,
-            "below": 4771,
+            "below": 4796,
             "iter": 10000
           }
         }
@@ -288,12 +288,12 @@
           },
           "vs_time": {
             "above": 16,
-            "below": 9208,
+            "below": 9225,
             "iter": 10000
           },
           "vs_categories": {
             "above": 1104,
-            "below": 6380,
+            "below": 6430,
             "iter": 10000
           }
         },
@@ -309,12 +309,12 @@
           },
           "vs_time": {
             "above": 920,
-            "below": 4172,
+            "below": 4224,
             "iter": 10000
           },
           "vs_categories": {
             "above": 3771,
-            "below": 1187,
+            "below": 1223,
             "iter": 10000
           }
         },
@@ -330,12 +330,12 @@
           },
           "vs_time": {
             "above": 4296,
-            "below": 392,
+            "below": 420,
             "iter": 10000
           },
           "vs_categories": {
             "above": 7474,
-            "below": 105,
+            "below": 115,
             "iter": 10000
           }
         },
@@ -351,12 +351,12 @@
           },
           "vs_time": {
             "above": 5401,
-            "below": 608,
+            "below": 642,
             "iter": 10000
           },
           "vs_categories": {
             "above": 6693,
-            "below": 121,
+            "below": 130,
             "iter": 10000
           }
         },
@@ -372,12 +372,12 @@
           },
           "vs_time": {
             "above": 7980,
-            "below": 199,
+            "below": 205,
             "iter": 10000
           },
           "vs_categories": {
             "above": 7016,
-            "below": 220,
+            "below": 230,
             "iter": 10000
           }
         },
@@ -393,12 +393,12 @@
           },
           "vs_time": {
             "above": 4675,
-            "below": 1638,
+            "below": 1660,
             "iter": 10000
           },
           "vs_categories": {
             "above": 5228,
-            "below": 808,
+            "below": 827,
             "iter": 10000
           }
         }

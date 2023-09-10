@@ -5,6 +5,7 @@ use crate::parallelism::{self, ParResult};
 use crate::shuffle;
 use is_sorted::IsSorted;
 use itertools::Itertools;
+use std::cmp::Ordering;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Point {
@@ -74,13 +75,22 @@ fn calc_one<TCounter>(
         let high_y = cur_y.max(prev_y);
         loop {
             let p = &points[j];
-            if counter.get_x() < p.x {
-                break;
-            }
-            if high_y < p.y {
-                result.elems[j].above += 1;
-            } else if low_y > p.y {
-                result.elems[j].below += 1;
+            match counter.get_x().cmp(&p.x) {
+                Ordering::Less => break,
+                Ordering::Equal => {
+                    if cur_y < p.y {
+                        result.elems[j].above += 1;
+                    } else if cur_y > p.y {
+                        result.elems[j].below += 1;
+                    }
+                },
+                Ordering::Greater => {
+                    if high_y < p.y {
+                        result.elems[j].above += 1;
+                    } else if low_y > p.y {
+                        result.elems[j].below += 1;
+                    }
+                },
             }
             j += 1;
             if j == points.len() {
@@ -159,7 +169,7 @@ mod test {
                 elems: vec![
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
-                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1234
                     PointParResultElem { above: 0, below: 1 }, // 1235
                     PointParResultElem { above: 0, below: 1 }, // 1234 + 5678
                 ]
@@ -203,7 +213,7 @@ mod test {
                 elems: vec![
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
-                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1234
                     PointParResultElem { above: 0, below: 1 }, // 1235
                     PointParResultElem { above: 0, below: 1 }, // 1234 + 5678
                 ]
@@ -249,7 +259,7 @@ mod test {
                     PointParResultElem { above: 0, below: 0 }, // 1233
                     PointParResultElem { above: 0, below: 0 }, // 1234
                     PointParResultElem { above: 0, below: 0 }, // 1235
-                    PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
+                    PointParResultElem { above: 0, below: 1 }, // 1234 + 5678
                 ]
             }
         );
@@ -293,7 +303,7 @@ mod test {
                     PointParResultElem { above: 1, below: 0 }, // 1233
                     PointParResultElem { above: 1, below: 0 }, // 1234
                     PointParResultElem { above: 0, below: 0 }, // 1235
-                    PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
+                    PointParResultElem { above: 0, below: 1 }, // 1234 + 5678
                 ]
             }
         );
@@ -423,7 +433,7 @@ mod test {
                 elems: vec![
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
-                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1234
                     PointParResultElem { above: 0, below: 1 }, // 1235
                     PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
                 ]
@@ -548,7 +558,7 @@ mod test {
                 elems: vec![
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
-                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1234
                     PointParResultElem { above: 0, below: 1 }, // 1235
                     PointParResultElem { above: 1, below: 0 }, // 1234 + 5678
                 ]
@@ -592,7 +602,7 @@ mod test {
                 elems: vec![
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
-                    PointParResultElem { above: 0, below: 0 }, // 1234
+                    PointParResultElem { above: 0, below: 1 }, // 1234
                     PointParResultElem { above: 0, below: 1 }, // 1235
                     PointParResultElem { above: 0, below: 0 }, // 1234 + 5678
                 ]
@@ -690,7 +700,7 @@ mod test {
                 },
                 PointResult {
                     above: 0,
-                    below: 0,
+                    below: iter,
                     iter: iter
                 },
             ]
@@ -964,7 +974,7 @@ mod test {
                 },
                 PointResult {
                     above: 0,
-                    below: 0,
+                    below: iter,
                     iter: iter
                 },
             ]
@@ -1033,7 +1043,7 @@ mod test {
                 },
                 PointResult {
                     above: 0,
-                    below: 0,
+                    below: iter,
                     iter: iter
                 },
                 PointResult {

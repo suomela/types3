@@ -20,7 +20,7 @@
           },
           "vs_time": {
             "above": 658,
-            "below": 2147,
+            "below": 2234,
             "iter": 10000
           },
           "vs_categories": null
@@ -37,7 +37,7 @@
           },
           "vs_time": {
             "above": 319,
-            "below": 4694,
+            "below": 4753,
             "iter": 10000
           },
           "vs_categories": null
@@ -54,7 +54,7 @@
           },
           "vs_time": {
             "above": 2567,
-            "below": 830,
+            "below": 867,
             "iter": 10000
           },
           "vs_categories": null
@@ -71,7 +71,7 @@
           },
           "vs_time": {
             "above": 1100,
-            "below": 3578,
+            "below": 3626,
             "iter": 10000
           },
           "vs_categories": null
@@ -88,7 +88,7 @@
           },
           "vs_time": {
             "above": 7044,
-            "below": 58,
+            "below": 63,
             "iter": 10000
           },
           "vs_categories": null
@@ -105,7 +105,7 @@
           },
           "vs_time": {
             "above": 2643,
-            "below": 3677,
+            "below": 3700,
             "iter": 10000
           },
           "vs_categories": null
