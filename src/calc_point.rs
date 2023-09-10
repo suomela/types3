@@ -813,6 +813,42 @@ mod test {
     }
 
     #[test]
+    fn compare_with_points_hapaxes_1() {
+        let samples = vec![Sample {
+            x: 1234,
+            token_count: 10,
+            tokens: vec![SToken { id: 0, count: 10 }],
+        }];
+        let points = vec![
+            Point { x: 1, y: 2 },
+            Point { x: 1233, y: 2 },
+            Point { x: 1234, y: 2 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        assert_eq!(
+            result,
+            vec![
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+            ]
+        );
+    }
+
+    #[test]
     fn compare_with_points_types_2() {
         let samples = vec![
             Sample {
@@ -844,6 +880,90 @@ mod test {
         ];
         let iter = 10000;
         let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        assert_eq!(
+            result,
+            vec![
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn compare_with_points_hapaxes_2() {
+        let samples = vec![
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 1, count: 10 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 2, count: 10 }],
+            },
+        ];
+        let points = vec![
+            Point { x: 1, y: 4 },
+            Point { x: 122, y: 4 },
+            Point { x: 123, y: 4 },
+            Point { x: 124, y: 4 },
+            Point { x: 245, y: 4 },
+            Point { x: 246, y: 4 },
+            Point { x: 247, y: 4 },
+            Point { x: 368, y: 4 },
+            Point { x: 369, y: 4 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
         assert_eq!(
             result,
             vec![
@@ -981,6 +1101,174 @@ mod test {
     }
 
     #[test]
+    fn compare_with_points_hapaxes_3a() {
+        let samples = vec![
+            Sample {
+                x: 123,
+                token_count: 1,
+                tokens: vec![SToken { id: 0, count: 1 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 1,
+                tokens: vec![SToken { id: 1, count: 1 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 1,
+                tokens: vec![SToken { id: 2, count: 1 }],
+            },
+        ];
+        let points = vec![
+            Point { x: 1, y: 2 },
+            Point { x: 122, y: 2 },
+            Point { x: 123, y: 2 },
+            Point { x: 124, y: 2 },
+            Point { x: 245, y: 2 },
+            Point { x: 246, y: 2 },
+            Point { x: 247, y: 2 },
+            Point { x: 368, y: 2 },
+            Point { x: 369, y: 2 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        assert_eq!(
+            result,
+            vec![
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: iter,
+                    iter: iter
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn compare_with_points_hapaxes_3b() {
+        let samples = vec![
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 1, count: 10 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 2, count: 10 }],
+            },
+        ];
+        let points = vec![
+            Point { x: 1, y: 2 },
+            Point { x: 122, y: 2 },
+            Point { x: 123, y: 2 },
+            Point { x: 124, y: 2 },
+            Point { x: 245, y: 2 },
+            Point { x: 246, y: 2 },
+            Point { x: 247, y: 2 },
+            Point { x: 368, y: 2 },
+            Point { x: 369, y: 2 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        assert_eq!(
+            result,
+            vec![
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+            ]
+        );
+    }
+
+    #[test]
     fn compare_with_points_types_4() {
         let samples = vec![
             Sample {
@@ -1058,6 +1346,174 @@ mod test {
                 PointResult {
                     above: 0,
                     below: iter,
+                    iter: iter
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn compare_with_points_hapaxes_4a() {
+        let samples = vec![
+            Sample {
+                x: 123,
+                token_count: 1,
+                tokens: vec![SToken { id: 0, count: 1 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 1,
+                tokens: vec![SToken { id: 1, count: 1 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 1,
+                tokens: vec![SToken { id: 2, count: 1 }],
+            },
+        ];
+        let points = vec![
+            Point { x: 1, y: 1 },
+            Point { x: 122, y: 1 },
+            Point { x: 123, y: 1 },
+            Point { x: 124, y: 1 },
+            Point { x: 245, y: 1 },
+            Point { x: 246, y: 1 },
+            Point { x: 247, y: 1 },
+            Point { x: 368, y: 1 },
+            Point { x: 369, y: 1 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        assert_eq!(
+            result,
+            vec![
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: iter,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: iter,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: iter,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: iter,
+                    iter: iter
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn compare_with_points_hapaxes_4b() {
+        let samples = vec![
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 0, count: 10 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 1, count: 10 }],
+            },
+            Sample {
+                x: 123,
+                token_count: 10,
+                tokens: vec![SToken { id: 2, count: 10 }],
+            },
+        ];
+        let points = vec![
+            Point { x: 1, y: 1 },
+            Point { x: 122, y: 1 },
+            Point { x: 123, y: 1 },
+            Point { x: 124, y: 1 },
+            Point { x: 245, y: 1 },
+            Point { x: 246, y: 1 },
+            Point { x: 247, y: 1 },
+            Point { x: 368, y: 1 },
+            Point { x: 369, y: 1 },
+        ];
+        let iter = 10000;
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        assert_eq!(
+            result,
+            vec![
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: 0,
+                    below: 0,
+                    iter: iter
+                },
+                PointResult {
+                    above: iter,
+                    below: 0,
                     iter: iter
                 },
             ]
