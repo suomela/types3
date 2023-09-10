@@ -68,28 +68,24 @@ fn calc_one<TCounter>(
     counter.reset();
     let mut j = 0;
     for i in idx {
-        let prev_y = counter.get_y();
-        counter.feed_sample(&samples[*i]);
-        let cur_y = counter.get_y();
-        let low_y = cur_y.min(prev_y);
-        let high_y = cur_y.max(prev_y);
+        let c = counter.feed_sample(&samples[*i]);
         loop {
             let p = &points[j];
-            match counter.get_x().cmp(&p.x) {
+            match c.x.cmp(&p.x) {
                 Ordering::Less => break,
                 Ordering::Equal =>
                 {
                     #[allow(clippy::comparison_chain)]
-                    if cur_y < p.y {
+                    if c.y < p.y {
                         result.elems[j].above += 1;
-                    } else if cur_y > p.y {
+                    } else if c.y > p.y {
                         result.elems[j].below += 1;
                     }
                 }
                 Ordering::Greater => {
-                    if high_y < p.y {
+                    if c.high_y < p.y {
                         result.elems[j].above += 1;
-                    } else if low_y > p.y {
+                    } else if c.low_y > p.y {
                         result.elems[j].below += 1;
                     }
                 }

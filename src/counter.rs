@@ -1,11 +1,16 @@
 use crate::calculation::{SToken, Sample};
 
+pub struct CounterState {
+    pub x: u64,
+    pub y: u64,
+    pub low_y: u64,
+    pub high_y: u64,
+}
+
 pub trait Counter {
     fn new(total_types: usize) -> Self;
-    fn get_x(&self) -> u64;
-    fn get_y(&self) -> u64;
     fn reset(&mut self);
-    fn feed_sample(&mut self, sample: &Sample);
+    fn feed_sample(&mut self, sample: &Sample) -> CounterState;
 }
 
 pub struct TypeCounter {
@@ -24,14 +29,6 @@ impl TypeCounter {
 }
 
 impl Counter for TypeCounter {
-    fn get_x(&self) -> u64 {
-        self.x
-    }
-
-    fn get_y(&self) -> u64 {
-        self.types
-    }
-
     fn new(total_types: usize) -> TypeCounter {
         TypeCounter {
             x: 0,
@@ -48,11 +45,18 @@ impl Counter for TypeCounter {
         }
     }
 
-    fn feed_sample(&mut self, sample: &Sample) {
+    fn feed_sample(&mut self, sample: &Sample) -> CounterState {
+        let prev_types = self.types;
         for t in &sample.tokens {
             self.feed_token(t);
         }
         self.x += sample.x;
+        CounterState {
+            x: self.x,
+            y: self.types,
+            low_y: prev_types,
+            high_y: self.types,
+        }
     }
 }
 
@@ -72,14 +76,6 @@ pub struct TokenCounter {
 }
 
 impl Counter for TokenCounter {
-    fn get_x(&self) -> u64 {
-        self.x
-    }
-
-    fn get_y(&self) -> u64 {
-        self.tokens
-    }
-
     fn new(_total_types: usize) -> TokenCounter {
         TokenCounter { x: 0, tokens: 0 }
     }
@@ -89,8 +85,15 @@ impl Counter for TokenCounter {
         self.tokens = 0;
     }
 
-    fn feed_sample(&mut self, sample: &Sample) {
+    fn feed_sample(&mut self, sample: &Sample) -> CounterState {
+        let prev_tokens = self.tokens;
         self.x += sample.x;
         self.tokens += sample.token_count;
+        CounterState {
+            x: self.x,
+            y: self.tokens,
+            low_y: prev_tokens,
+            high_y: self.tokens,
+        }
     }
 }
