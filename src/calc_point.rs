@@ -78,6 +78,7 @@ fn calc_one<TCounter>(
             match counter.get_x().cmp(&p.x) {
                 Ordering::Less => break,
                 Ordering::Equal => {
+                    #[allow(clippy::comparison_chain)]
                     if cur_y < p.y {
                         result.elems[j].above += 1;
                     } else if cur_y > p.y {
