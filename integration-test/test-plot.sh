@@ -6,6 +6,13 @@ cd integration-test
 rm -rf plot
 mkdir -p plot
 
+for a in calc/ceec-types-vs-tokens.json; do
+    x="${a#calc/}"
+    x="${x%.json}"
+    b="plot/$x.pdf"
+    ../types3-plot --legend 'lower right' "$a" "$b"
+done
+
 for a in calc/*.json; do
     x="${a#calc/}"
     x="${x%.json}"
