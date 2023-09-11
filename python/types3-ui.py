@@ -20,7 +20,7 @@ from matplotlib.figure import Figure
 
 matplotlib.rcParams['axes.titlesize'] = 'medium'
 
-OUTPUT_VERSION = 'v2'
+OUTPUT_VERSION = 'v3'
 MIN_ITER = 1_000
 MAX_ITER = 1_000_000
 ITER_STEP = 10
