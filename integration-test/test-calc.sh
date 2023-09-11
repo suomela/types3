@@ -54,6 +54,18 @@ what="$base --count-samples --words"
 $what calc/ceec-samples-vs-words.json
 what="$base --count-samples"
 $what calc/ceec-samples-vs-tokens.json
+what="$base --type-ratio"
+$what calc/ceec-type-ratio-none.json
+what="$base --type-ratio --split-samples"
+$what calc/ceec-type-ratio-split-none.json
+what="$base --type-ratio --mark-tokens variant=ity"
+$what calc/ceec-type-ratio-ity.json
+$what calc/ceec-type-ratio-ity-female.json --restrict-samples gender=female
+$what calc/ceec-type-ratio-ity-gender.json --category gender
+what="$base --type-ratio --split-samples --mark-tokens variant=ity"
+$what calc/ceec-type-ratio-split-ity.json
+$what calc/ceec-type-ratio-split-ity-female.json --restrict-samples gender=female
+$what calc/ceec-type-ratio-split-ity-gender.json --category gender
 
 cd calc
 for a in *.json; do
