@@ -1,9 +1,9 @@
 use crate::input::Year;
 use itertools::Itertools;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::fmt;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MeasureY {
     Types,
@@ -25,7 +25,7 @@ impl fmt::Display for MeasureY {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MeasureX {
     Words,
@@ -46,21 +46,21 @@ impl fmt::Display for MeasureX {
 pub type Years = (Year, Year);
 pub type OCategory = Option<(String, String)>;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize)]
 pub struct AvgResult {
     pub low: u64,
     pub high: u64,
     pub iter: u64,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize)]
 pub struct PointResult {
     pub above: u64,
     pub below: u64,
     pub iter: u64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize)]
 pub struct OResult {
     pub period: Years,
     pub average_at_limit: AvgResult,
@@ -68,13 +68,13 @@ pub struct OResult {
     pub vs_categories: Option<PointResult>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize)]
 pub struct OCurve {
     pub category: OCategory,
     pub results: Vec<OResult>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize)]
 pub struct Output {
     pub restrict_samples: OCategory,
     pub restrict_tokens: OCategory,
@@ -89,7 +89,7 @@ pub struct Output {
     pub iter: u64,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize)]
 pub struct OError {
     pub error: String,
 }
