@@ -232,7 +232,8 @@ def plot(fig, data, dims, legend):
         def plotter(ax, points):
             xx, yy1, yy2 = zip(*points)
             ax.fill_between(xx, yy1, yy2, color=color, alpha=0.7, linewidth=0)
-            for i in range(1, MAX_SIGNIFICANCE):
+            msig = min(math.ceil(max(max(yy1), -min(yy2))), MAX_SIGNIFICANCE)
+            for i in range(1, msig):
                 ax.fill_between(xx,
                                 -i,
                                 +i,
