@@ -2,6 +2,7 @@
 pub struct SToken {
     pub count: u64,
     pub id: usize,
+    pub marked: bool,
 }
 
 #[derive(PartialEq, Eq, Debug)]

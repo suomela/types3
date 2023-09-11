@@ -104,6 +104,7 @@ pub fn build_subset<'a>(
                 let token = SToken {
                     count: 1,
                     id: lemmamap[lemma],
+                    marked: false,
                 };
                 split.push(Sample {
                     x: 1,
@@ -124,7 +125,11 @@ pub fn build_subset<'a>(
                 }
                 let mut tokens = tokencount
                     .iter()
-                    .map(|(&id, &count)| SToken { id, count })
+                    .map(|(&id, &count)| SToken {
+                        id,
+                        count,
+                        marked: false,
+                    })
                     .collect_vec();
                 tokens.sort_by_key(|t| t.id);
                 let token_count = tokens.iter().map(|t| t.count).sum();
@@ -170,6 +175,14 @@ pub fn build_subset<'a>(
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn st(id: usize, count: u64) -> SToken {
+        SToken {
+            id,
+            count,
+            marked: false,
+        }
+    }
 
     fn meta(l: &[(&str, &str)]) -> HashMap<String, String> {
         let mut m = HashMap::new();
@@ -296,12 +309,12 @@ mod test {
                 Sample {
                     x: 1234,
                     token_count: 3,
-                    tokens: vec![SToken { count: 2, id: 0 }, SToken { count: 1, id: 1 },]
+                    tokens: vec![st(0, 2), st(1, 1),]
                 },
                 Sample {
                     x: 5678,
                     token_count: 2,
-                    tokens: vec![SToken { count: 1, id: 2 }, SToken { count: 1, id: 3 },]
+                    tokens: vec![st(2, 1), st(3, 1),]
                 }
             ]
         );
@@ -342,12 +355,12 @@ mod test {
                 Sample {
                     x: 1234,
                     token_count: 3,
-                    tokens: vec![SToken { count: 1, id: 0 }, SToken { count: 2, id: 1 },]
+                    tokens: vec![st(0, 1), st(1, 2),]
                 },
                 Sample {
                     x: 5678,
                     token_count: 2,
-                    tokens: vec![SToken { count: 1, id: 1 }, SToken { count: 1, id: 2 },]
+                    tokens: vec![st(1, 1), st(2, 1),]
                 }
             ]
         );
@@ -388,12 +401,12 @@ mod test {
                 Sample {
                     x: 3,
                     token_count: 3,
-                    tokens: vec![SToken { count: 1, id: 0 }, SToken { count: 2, id: 1 },]
+                    tokens: vec![st(0, 1), st(1, 2),]
                 },
                 Sample {
                     x: 2,
                     token_count: 2,
-                    tokens: vec![SToken { count: 1, id: 1 }, SToken { count: 1, id: 2 },]
+                    tokens: vec![st(1, 1), st(2, 1),]
                 }
             ]
         );
@@ -434,12 +447,12 @@ mod test {
                 Sample {
                     x: 1234,
                     token_count: 3,
-                    tokens: vec![SToken { count: 1, id: 0 }, SToken { count: 2, id: 1 },]
+                    tokens: vec![st(0, 1), st(1, 2),]
                 },
                 Sample {
                     x: 5678,
                     token_count: 2,
-                    tokens: vec![SToken { count: 1, id: 1 }, SToken { count: 1, id: 2 },]
+                    tokens: vec![st(1, 1), st(2, 1),]
                 }
             ]
         );
@@ -480,27 +493,27 @@ mod test {
                 Sample {
                     x: 1,
                     token_count: 1,
-                    tokens: vec![SToken { count: 1, id: 1 },]
+                    tokens: vec![st(1, 1),]
                 },
                 Sample {
                     x: 1,
                     token_count: 1,
-                    tokens: vec![SToken { count: 1, id: 1 },]
+                    tokens: vec![st(1, 1),]
                 },
                 Sample {
                     x: 1,
                     token_count: 1,
-                    tokens: vec![SToken { count: 1, id: 0 },]
+                    tokens: vec![st(0, 1),]
                 },
                 Sample {
                     x: 1,
                     token_count: 1,
-                    tokens: vec![SToken { count: 1, id: 1 },]
+                    tokens: vec![st(1, 1),]
                 },
                 Sample {
                     x: 1,
                     token_count: 1,
-                    tokens: vec![SToken { count: 1, id: 2 },]
+                    tokens: vec![st(2, 1),]
                 },
             ]
         );
@@ -541,7 +554,7 @@ mod test {
             vec![Sample {
                 x: 1234,
                 token_count: 3,
-                tokens: vec![SToken { count: 1, id: 0 }, SToken { count: 2, id: 1 },]
+                tokens: vec![st(0, 1), st(1, 2),]
             },]
         );
         assert_eq!(r.total_x, 1234);
@@ -581,7 +594,7 @@ mod test {
             vec![Sample {
                 x: 1234,
                 token_count: 3,
-                tokens: vec![SToken { count: 1, id: 0 }, SToken { count: 2, id: 1 },]
+                tokens: vec![st(0, 1), st(1, 2),]
             },]
         );
         assert_eq!(r.total_x, 1234);

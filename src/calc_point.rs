@@ -133,6 +133,14 @@ mod test {
     use super::*;
     use crate::calculation::SToken;
 
+    fn st(id: usize, count: u64) -> SToken {
+        SToken {
+            id,
+            count,
+            marked: false,
+        }
+    }
+
     fn p(x: u64, y: u64) -> Point {
         Point { x, y }
     }
@@ -147,12 +155,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -188,12 +196,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -229,12 +237,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -270,12 +278,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -311,12 +319,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -352,12 +360,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -393,12 +401,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -434,12 +442,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -476,12 +484,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
@@ -506,12 +514,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 0, count: 5 }],
+                tokens: vec![st(0, 5)],
             },
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
@@ -547,12 +555,12 @@ mod test {
             Sample {
                 x: 1234,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![SToken { id: 1, count: 5 }],
+                tokens: vec![st(1, 5)],
             },
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
@@ -589,28 +597,22 @@ mod test {
                 x: 1234,
                 token_count: 10,
                 tokens: vec![
-                    SToken { id: 0, count: 1 },
-                    SToken { id: 1, count: 1 },
-                    SToken { id: 2, count: 1 },
-                    SToken { id: 3, count: 1 },
-                    SToken { id: 4, count: 1 },
-                    SToken { id: 5, count: 1 },
-                    SToken { id: 6, count: 1 },
-                    SToken { id: 7, count: 1 },
-                    SToken { id: 8, count: 1 },
-                    SToken { id: 9, count: 1 },
+                    st(0, 1),
+                    st(1, 1),
+                    st(2, 1),
+                    st(3, 1),
+                    st(4, 1),
+                    st(5, 1),
+                    st(6, 1),
+                    st(7, 1),
+                    st(8, 1),
+                    st(9, 1),
                 ],
             },
             Sample {
                 x: 5678,
                 token_count: 5,
-                tokens: vec![
-                    SToken { id: 10, count: 1 },
-                    SToken { id: 11, count: 1 },
-                    SToken { id: 12, count: 1 },
-                    SToken { id: 13, count: 1 },
-                    SToken { id: 14, count: 1 },
-                ],
+                tokens: vec![st(10, 1), st(11, 1), st(12, 1), st(13, 1), st(14, 1)],
             },
         ];
         let mut counter = TypeCounter::new(counter::count_types(&samples));
@@ -645,7 +647,7 @@ mod test {
         let samples = vec![Sample {
             x: 1234,
             token_count: 10,
-            tokens: vec![SToken { id: 0, count: 10 }],
+            tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 7), p(1233, 7), p(1234, 7)];
         let iter = 10000;
@@ -661,7 +663,7 @@ mod test {
         let samples = vec![Sample {
             x: 1234,
             token_count: 10,
-            tokens: vec![SToken { id: 0, count: 10 }],
+            tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 11), p(1233, 11), p(1234, 11)];
         let iter = 10000;
@@ -678,7 +680,7 @@ mod test {
         let samples = vec![Sample {
             x: 1234,
             token_count: 10,
-            tokens: vec![SToken { id: 0, count: 10 }],
+            tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 11), p(1234, 11), p(1233, 11)];
         let iter = 10000;
@@ -691,7 +693,7 @@ mod test {
         let samples = vec![Sample {
             x: 1234,
             token_count: 10,
-            tokens: vec![SToken { id: 0, count: 10 }],
+            tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 11), p(1233, 11), p(1235, 11)];
         let iter = 10000;
@@ -703,7 +705,7 @@ mod test {
         let samples = vec![Sample {
             x: 1234,
             token_count: 10,
-            tokens: vec![SToken { id: 0, count: 10 }],
+            tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 2), p(1233, 2), p(1234, 2)];
         let iter = 10000;
@@ -719,7 +721,7 @@ mod test {
         let samples = vec![Sample {
             x: 1234,
             token_count: 10,
-            tokens: vec![SToken { id: 0, count: 10 }],
+            tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 2), p(1233, 2), p(1234, 2)];
         let iter = 10000;
@@ -736,17 +738,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![
@@ -784,17 +786,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![
@@ -832,17 +834,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![
@@ -880,17 +882,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 1,
-                tokens: vec![SToken { id: 0, count: 1 }],
+                tokens: vec![st(0, 1)],
             },
             Sample {
                 x: 123,
                 token_count: 1,
-                tokens: vec![SToken { id: 1, count: 1 }],
+                tokens: vec![st(1, 1)],
             },
             Sample {
                 x: 123,
                 token_count: 1,
-                tokens: vec![SToken { id: 2, count: 1 }],
+                tokens: vec![st(2, 1)],
             },
         ];
         let points = vec![
@@ -928,17 +930,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![
@@ -976,17 +978,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![
@@ -1024,17 +1026,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 1,
-                tokens: vec![SToken { id: 0, count: 1 }],
+                tokens: vec![st(0, 1)],
             },
             Sample {
                 x: 123,
                 token_count: 1,
-                tokens: vec![SToken { id: 1, count: 1 }],
+                tokens: vec![st(1, 1)],
             },
             Sample {
                 x: 123,
                 token_count: 1,
-                tokens: vec![SToken { id: 2, count: 1 }],
+                tokens: vec![st(2, 1)],
             },
         ];
         let points = vec![
@@ -1072,17 +1074,17 @@ mod test {
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 123,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![
@@ -1120,17 +1122,17 @@ mod test {
             Sample {
                 x: 100,
                 token_count: 10,
-                tokens: vec![SToken { id: 0, count: 10 }],
+                tokens: vec![st(0, 10)],
             },
             Sample {
                 x: 200,
                 token_count: 10,
-                tokens: vec![SToken { id: 1, count: 10 }],
+                tokens: vec![st(1, 10)],
             },
             Sample {
                 x: 100,
                 token_count: 10,
-                tokens: vec![SToken { id: 2, count: 10 }],
+                tokens: vec![st(2, 10)],
             },
         ];
         let points = vec![p(50, 1), p(150, 1), p(250, 1), p(350, 1)];
