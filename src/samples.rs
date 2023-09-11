@@ -6,14 +6,19 @@ use itertools::Itertools;
 use log::info;
 use std::collections::{HashMap, HashSet};
 
+pub struct CToken<'a> {
+    pub token: &'a str,
+    pub marked: bool,
+}
+
 pub struct CSample<'a> {
     pub year: Year,
     pub metadata: &'a HashMap<String, String>,
     pub words: u64,
-    pub tokens: Vec<&'a str>,
+    pub tokens: Vec<CToken<'a>>,
 }
 
-fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
+fn get_sample<'a>(restrict_tokens: Category, mark_tokens: Category, s: &'a ISample) -> CSample<'a> {
     CSample {
         year: s.year,
         metadata: &s.metadata,
@@ -23,7 +28,10 @@ fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
             .iter()
             .filter_map(|t| {
                 if categories::matches(restrict_tokens, &t.metadata) {
-                    Some(&t.lemma as &str)
+                    Some(CToken {
+                        token: &t.lemma as &str,
+                        marked: categories::matches(mark_tokens, &t.metadata),
+                    })
                 } else {
                     None
                 }
@@ -35,13 +43,14 @@ fn get_sample<'a>(restrict_tokens: Category, s: &'a ISample) -> CSample<'a> {
 pub fn get_samples<'a>(
     restrict_samples: Category,
     restrict_tokens: Category,
+    mark_tokens: Category,
     samples: &'a [ISample],
 ) -> Vec<CSample<'a>> {
     samples
         .iter()
         .filter_map(|s| {
             if categories::matches(restrict_samples, &s.metadata) {
-                Some(get_sample(restrict_tokens, s))
+                Some(get_sample(restrict_tokens, mark_tokens, s))
             } else {
                 None
             }

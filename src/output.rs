@@ -10,6 +10,7 @@ pub enum MeasureY {
     Tokens,
     Hapaxes,
     Samples,
+    MarkedTypes,
 }
 
 impl fmt::Display for MeasureY {
@@ -19,6 +20,7 @@ impl fmt::Display for MeasureY {
             MeasureY::Tokens => write!(f, "tokens"),
             MeasureY::Hapaxes => write!(f, "hapaxes"),
             MeasureY::Samples => write!(f, "samples"),
+            MeasureY::MarkedTypes => write!(f, "marked types"),
         }
     }
 }
@@ -28,6 +30,7 @@ impl fmt::Display for MeasureY {
 pub enum MeasureX {
     Words,
     Tokens,
+    Types,
 }
 
 impl fmt::Display for MeasureX {
@@ -35,6 +38,7 @@ impl fmt::Display for MeasureX {
         match self {
             MeasureX::Words => write!(f, "words"),
             MeasureX::Tokens => write!(f, "tokens"),
+            MeasureX::Types => write!(f, "types"),
         }
     }
 }
@@ -74,6 +78,7 @@ pub struct OCurve {
 pub struct Output {
     pub restrict_samples: OCategory,
     pub restrict_tokens: OCategory,
+    pub mark_tokens: OCategory,
     pub curves: Vec<OCurve>,
     pub years: Years,
     pub periods: Vec<Years>,

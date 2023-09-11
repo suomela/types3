@@ -142,6 +142,61 @@ impl Counter for HapaxCounter {
     }
 }
 
+pub struct TypeRatioCounter {
+    types: u64,
+    types_marked: u64,
+    seen: Vec<bool>,
+    seen_marked: Vec<bool>,
+}
+
+impl TypeRatioCounter {
+    fn feed_token(&mut self, t: &SToken) {
+        if !self.seen[t.id] {
+            self.types += 1;
+            self.seen[t.id] = true;
+        }
+        if t.marked_count > 0 && !self.seen_marked[t.id] {
+            self.types_marked += 1;
+            self.seen_marked[t.id] = true;
+        }
+    }
+}
+
+impl Counter for TypeRatioCounter {
+    fn new(total_types: usize) -> TypeRatioCounter {
+        TypeRatioCounter {
+            types: 0,
+            types_marked: 0,
+            seen: vec![false; total_types],
+            seen_marked: vec![false; total_types],
+        }
+    }
+
+    fn reset(&mut self) {
+        self.types = 0;
+        self.types_marked = 0;
+        for e in self.seen.iter_mut() {
+            *e = false;
+        }
+        for e in self.seen_marked.iter_mut() {
+            *e = false;
+        }
+    }
+
+    fn feed_sample(&mut self, sample: &Sample) -> CounterState {
+        let prev_types_marked = self.types_marked;
+        for t in &sample.tokens {
+            self.feed_token(t);
+        }
+        CounterState {
+            x: self.types,
+            y: self.types_marked,
+            low_y: prev_types_marked,
+            high_y: self.types_marked,
+        }
+    }
+}
+
 pub struct TokenCounter {
     x: u64,
     tokens: u64,
@@ -214,6 +269,7 @@ pub fn count_xy(measure_y: MeasureY, samples: &[Sample]) -> (u64, u64) {
         MeasureY::Tokens => count_xy_variant::<TokenCounter>(samples),
         MeasureY::Hapaxes => count_xy_variant::<HapaxCounter>(samples),
         MeasureY::Samples => count_xy_variant::<SampleCounter>(samples),
+        MeasureY::MarkedTypes => count_xy_variant::<TypeRatioCounter>(samples),
     }
 }
 

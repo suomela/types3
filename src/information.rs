@@ -52,7 +52,7 @@ pub fn post_statistics(samples: &[CSample]) {
     for s in samples {
         for lemma in &s.tokens {
             tokencount += 1;
-            lemmas.insert(lemma);
+            lemmas.insert(lemma.token);
         }
     }
     info!("after filtering: samples: {}", samples.len());

@@ -1,5 +1,7 @@
 use crate::calculation::Sample;
-use crate::counter::{self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter};
+use crate::counter::{
+    self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter, TypeRatioCounter,
+};
 use crate::output::{AvgResult, MeasureY};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
@@ -16,6 +18,7 @@ pub fn average_at_limit(
         MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, limit),
         MeasureY::Hapaxes => do_count::<HapaxCounter>(samples, iter, limit),
         MeasureY::Samples => do_count::<SampleCounter>(samples, iter, limit),
+        MeasureY::MarkedTypes => do_count::<TypeRatioCounter>(samples, iter, limit),
     }
 }
 
@@ -94,7 +97,7 @@ mod test {
         SToken {
             id,
             count,
-            marked: false,
+            marked_count: 0,
         }
     }
 

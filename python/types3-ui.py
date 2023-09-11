@@ -47,7 +47,7 @@ def sanity_check():
         sys.exit(1)
 
 
-def metadata_choices(metadata):
+def metadata_choices(metadata, with_everything=True):
     r = ['everything']
     m = {'everything': None}
     for k in sorted(metadata.keys()):
@@ -372,6 +372,8 @@ class App:
             'tokens vs. words, using samples',
             'samples vs. tokens',
             'samples vs. words',
+            'type ratio, using samples',
+            'type ratio, individually',
             # Useful for testing:
             # 'tokens vs. tokens, using samples',
             # 'tokens vs. tokens, individually',
@@ -379,6 +381,18 @@ class App:
         e = ttk.OptionMenu(widgetframe, self.what, what_choices[0],
                            *what_choices)
         e.grid(column=1, row=row, sticky='w')
+        row += 1
+
+        e = ttk.Label(widgetframe, text='What is relevant:')
+        e.grid(column=0, row=row, sticky='e')
+        self.mark_tokens = tk.StringVar()
+        self.mark_tokens_map, mark_tokens_choices = metadata_choices(
+            self.token_metadata)
+        e = ttk.OptionMenu(widgetframe, self.mark_tokens,
+                           mark_tokens_choices[0], *mark_tokens_choices)
+        e.grid(column=1, row=row, sticky='w')
+        self.mark_tokens_menu = e
+        self.mark_tokens_menu.configure(state="disabled")
         row += 1
 
         e = ttk.Label(widgetframe, text='Categories:')
@@ -531,6 +545,7 @@ class App:
         self.category.trace_add('write', self.update)
         self.restrict_samples.trace_add('write', self.update)
         self.restrict_tokens.trace_add('write', self.update)
+        self.mark_tokens.trace_add('write', self.update)
         root.bind('<<NewResults>>', self.new_results)
         self.result_queue = queue.Queue()
         self.runner_queue = queue.Queue()
@@ -598,22 +613,35 @@ class App:
         restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
         if restrict_tokens is not None:
             args += ['--restrict-tokens', '='.join(restrict_tokens)]
+        mark_tokens = self.mark_tokens_map[self.mark_tokens.get()]
+        if mark_tokens is not None:
+            args += ['--mark-tokens', '='.join(mark_tokens)]
         what = self.what.get()
-        args += {
-            'types vs. tokens, using samples': [],
-            'types vs. tokens, individually': ['--split-samples'],
-            'types vs. words, using samples': ['--words'],
-            'hapaxes vs. tokens, using samples': ['--count-hapaxes'],
+        extra, marked = {
+            'types vs. tokens, using samples': ([], False),
+            'types vs. tokens, individually': (['--split-samples'], False),
+            'types vs. words, using samples': (['--words'], False),
+            'hapaxes vs. tokens, using samples': (['--count-hapaxes'], False),
             'hapaxes vs. tokens, individually':
             ['--count-hapaxes', '--split-samples'],
-            'hapaxes vs. words, using samples': ['--count-hapaxes', '--words'],
-            'tokens vs. tokens, using samples': ['--count-tokens'],
+            'hapaxes vs. words, using samples':
+            (['--count-hapaxes', '--words'], False),
+            'tokens vs. tokens, using samples': (['--count-tokens'], False),
             'tokens vs. tokens, individually':
             ['--count-tokens', '--split-samples'],
-            'tokens vs. words, using samples': ['--count-tokens', '--words'],
-            'samples vs. tokens': ['--count-samples'],
-            'samples vs. words': ['--count-samples', '--words'],
-        }.get(what, [])
+            'tokens vs. words, using samples': (['--count-tokens',
+                                                 '--words'], False),
+            'samples vs. tokens': (['--count-samples'], False),
+            'samples vs. words': (['--count-samples', '--words'], False),
+            'type ratio, using samples': (['--type-ratio'], True),
+            'type ratio, individually': (['--type-ratio',
+                                          '--split-samples'], True),
+        }.get(what, ([], False))
+        args += extra
+        if marked:
+            self.mark_tokens_menu.configure(state="normal")
+        else:
+            self.mark_tokens_menu.configure(state="disabled")
         if errors:
             logging.debug(errors)
             self.error.set('\n'.join(errors))

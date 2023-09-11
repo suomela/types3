@@ -99,6 +99,22 @@ def _upcase(x):
     return x[0].upper() + x[1:]
 
 
+def _title(data):
+    measure_x = data['measure_x']
+    measure_y = data['measure_y']
+    mark_tokens = data['mark_tokens']
+    limit = data['limit']
+    if measure_y == 'markedtypes':
+        if mark_tokens is None:
+            return f'Types in subcorpora with {limit} {measure_x}'
+        else:
+            what = mark_tokens[1]
+            return f'"{what}" types in subcorpora with {limit} total {measure_x}'
+    else:
+        measure_y_cased = _upcase(measure_y)
+        return f'{measure_y_cased} in subcorpora with {limit} {measure_x}'
+
+
 def set_height(data, dims):
     curves = data['curves']
     nn = len(curves)
@@ -131,10 +147,6 @@ def set_height(data, dims):
 
 
 def plot(fig, data, dims, legend):
-    measure_x = data['measure_x']
-    measure_y = data['measure_y']
-    measure_y_cased = _upcase(measure_y)
-    limit = data['limit']
     periods = data['periods']
     curves = data['curves']
     restrictions = [data['restrict_samples'], data['restrict_tokens']]
@@ -152,7 +164,7 @@ def plot(fig, data, dims, legend):
         col / dims.width, 1 - y / dims.height, dims.w / dims.width,
         dims.h1 / dims.height
     ])
-    ax.set_title(f'{measure_y_cased} in subcorpora with {limit} {measure_x}')
+    ax.set_title(_title(data))
     ax.set_xticks(xx, [])
     ax1 = ax
     last = ax
@@ -199,7 +211,7 @@ def plot(fig, data, dims, legend):
             last = ax
     last.set_xticks(xx, periodlabels, rotation='vertical')
 
-    ymax = 0
+    ymax = 1
     for i, curve in enumerate(curves):
         if curve['category']:
             color = COLORS[i]

@@ -1,5 +1,7 @@
 use crate::calculation::Sample;
-use crate::counter::{self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter};
+use crate::counter::{
+    self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter, TypeRatioCounter,
+};
 use crate::output::{MeasureY, PointResult};
 use crate::parallelism::{self, ParResult};
 use crate::shuffle;
@@ -24,6 +26,7 @@ pub fn compare_with_points(
         MeasureY::Tokens => do_count::<TokenCounter>(samples, iter, points),
         MeasureY::Hapaxes => do_count::<HapaxCounter>(samples, iter, points),
         MeasureY::Samples => do_count::<SampleCounter>(samples, iter, points),
+        MeasureY::MarkedTypes => do_count::<TypeRatioCounter>(samples, iter, points),
     }
 }
 
@@ -137,7 +140,7 @@ mod test {
         SToken {
             id,
             count,
-            marked: false,
+            marked_count: 0,
         }
     }
 

@@ -4,6 +4,7 @@
     "female"
   ],
   "restrict_tokens": null,
+  "mark_tokens": null,
   "curves": [
     {
       "category": null,

@@ -41,6 +41,9 @@ struct Args {
     /// Compare with running words (instead of tokens)
     #[arg(long, default_value_t = false)]
     words: bool,
+    /// Compare marked types vs. types
+    #[arg(long, default_value_t = false)]
+    type_ratio: bool,
     /// Number of iterations
     #[arg(short, long, default_value_t = DEFAULT_ITER)]
     iter: u64,
@@ -65,6 +68,9 @@ struct Args {
     /// Token category restriction, of the form key=value
     #[arg(long)]
     restrict_tokens: Option<String>,
+    /// Which tokens to mark, of the form key=value
+    #[arg(long)]
+    mark_tokens: Option<String>,
     /// Can we split samples?
     #[arg(long)]
     split_samples: bool,
@@ -77,6 +83,36 @@ struct Args {
     /// Verbosity
     #[command(flatten)]
     verbose: Verbosity<WarnLevel>,
+}
+
+fn arg_sanity(args: &Args) -> Result<()> {
+    if args.words && args.split_samples {
+        return Err(errors::invalid_argument_ref(
+            "cannot select both --words and --split-samples",
+        ));
+    }
+    if args.words && args.type_ratio {
+        return Err(errors::invalid_argument_ref(
+            "cannot select both --words and --type-ratio",
+        ));
+    }
+    let mut c = 0;
+    for f in [
+        args.count_tokens,
+        args.count_hapaxes,
+        args.count_samples,
+        args.type_ratio,
+    ] {
+        if f {
+            c += 1;
+        }
+    }
+    if c > 1 {
+        return Err(errors::invalid_argument_ref(
+            "can select at most one of --count-tokens, --count-hapaxes, --count-samples, and --type-ratio",
+        ));
+    }
+    Ok(())
 }
 
 fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
@@ -129,35 +165,25 @@ struct Calc<'a> {
     measure_x: MeasureX,
     restrict_samples: Category<'a>,
     restrict_tokens: Category<'a>,
+    mark_tokens: Category<'a>,
     split_samples: bool,
 }
 
 impl<'a> Calc<'a> {
     fn new(args: &'a Args, input: &'a Input) -> Result<Calc<'a>> {
-        if args.words && args.split_samples {
-            return Err(errors::invalid_argument_ref(
-                "cannot select both --words and --split-samples",
-            ));
-        }
-        {
-            let mut counters = 0;
-            for f in [args.count_tokens, args.count_hapaxes, args.count_samples] {
-                if f {
-                    counters += 1;
-                }
-            }
-            if counters > 1 {
-                return Err(errors::invalid_argument_ref(
-                    "can select at most one of --count-tokens, --count-hapaxes, and --count-samples",
-                ));
-            }
-        }
-        let measure_x = if args.words {
+        let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
+        let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
+        let mark_tokens = categories::parse_restriction(&args.mark_tokens)?;
+        let measure_x = if args.type_ratio {
+            MeasureX::Types
+        } else if args.words {
             MeasureX::Words
         } else {
             MeasureX::Tokens
         };
-        let measure_y = if args.count_tokens {
+        let measure_y = if args.type_ratio {
+            MeasureY::MarkedTypes
+        } else if args.count_tokens {
             MeasureY::Tokens
         } else if args.count_hapaxes {
             MeasureY::Hapaxes
@@ -167,9 +193,12 @@ impl<'a> Calc<'a> {
             MeasureY::Types
         };
         information::statistics(&input.samples);
-        let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
-        let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
-        let samples = samples::get_samples(restrict_samples, restrict_tokens, &input.samples);
+        let samples = samples::get_samples(
+            restrict_samples,
+            restrict_tokens,
+            mark_tokens,
+            &input.samples,
+        );
         information::post_statistics(&samples);
         if samples.is_empty() {
             return Err(errors::invalid_input_ref("no samples found"));
@@ -223,6 +252,7 @@ impl<'a> Calc<'a> {
             measure_x,
             restrict_samples,
             restrict_tokens,
+            mark_tokens,
             split_samples: args.split_samples,
         })
     }
@@ -266,6 +296,7 @@ impl<'a> Calc<'a> {
             limit,
             restrict_tokens: categories::owned_cat(self.restrict_tokens),
             restrict_samples: categories::owned_cat(self.restrict_samples),
+            mark_tokens: categories::owned_cat(self.mark_tokens),
             split_samples: self.split_samples,
         })
     }
@@ -340,6 +371,7 @@ impl<'a> Calc<'a> {
 }
 
 fn process(args: &Args) -> Result<()> {
+    arg_sanity(args)?;
     info!("read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;

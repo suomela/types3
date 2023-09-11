@@ -1,8 +1,8 @@
 #[derive(PartialEq, Eq, Debug)]
 pub struct SToken {
-    pub count: u64,
     pub id: usize,
-    pub marked: bool,
+    pub count: u64,
+    pub marked_count: u64,
 }
 
 #[derive(PartialEq, Eq, Debug)]

@@ -91,20 +91,22 @@ pub fn build_subset<'a>(
 
     let mut lemmas = HashSet::new();
     for s in &samples {
-        lemmas.extend(&s.tokens);
+        for t in &s.tokens {
+            lemmas.insert(t.token);
+        }
     }
     let mut lemmas = lemmas.into_iter().collect_vec();
     lemmas.sort();
     let lemmamap: HashMap<&str, usize> = lemmas.iter().enumerate().map(|(i, &x)| (x, i)).collect();
     let samples = if split_samples {
-        assert_eq!(measure_x, MeasureX::Tokens);
+        assert!(measure_x != MeasureX::Words);
         let mut split = vec![];
         for s in samples {
-            for lemma in &s.tokens {
+            for t in &s.tokens {
                 let token = SToken {
+                    id: lemmamap[t.token],
                     count: 1,
-                    id: lemmamap[lemma],
-                    marked: false,
+                    marked_count: if t.marked { 1 } else { 0 },
                 };
                 split.push(Sample {
                     x: 1,
@@ -115,20 +117,32 @@ pub fn build_subset<'a>(
         }
         split
     } else {
+        #[derive(Clone, Copy)]
+        struct TokenCount {
+            count: u64,
+            marked_count: u64,
+        }
         samples
             .into_iter()
             .map(|s| {
                 let mut tokencount = HashMap::new();
-                for lemma in &s.tokens {
-                    let id = lemmamap[lemma];
-                    *tokencount.entry(id).or_insert(0) += 1;
+                for t in &s.tokens {
+                    let id = lemmamap[t.token];
+                    let e = tokencount.entry(id).or_insert(TokenCount {
+                        count: 0,
+                        marked_count: 0,
+                    });
+                    e.count += 1;
+                    if t.marked {
+                        e.marked_count += 1;
+                    }
                 }
                 let mut tokens = tokencount
                     .iter()
-                    .map(|(&id, &count)| SToken {
+                    .map(|(&id, &x)| SToken {
                         id,
-                        count,
-                        marked: false,
+                        count: x.count,
+                        marked_count: x.marked_count,
                     })
                     .collect_vec();
                 tokens.sort_by_key(|t| t.id);
@@ -136,6 +150,7 @@ pub fn build_subset<'a>(
                 let x = match measure_x {
                     MeasureX::Tokens => token_count,
                     MeasureX::Words => s.words,
+                    MeasureX::Types => 0,
                 };
                 Sample {
                     x,
@@ -175,11 +190,19 @@ pub fn build_subset<'a>(
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::samples::CToken;
 
     fn st(id: usize, count: u64) -> SToken {
         SToken {
             id,
             count,
+            marked_count: 0,
+        }
+    }
+
+    fn ct(token: &str) -> CToken {
+        CToken {
+            token,
             marked: false,
         }
     }
@@ -287,13 +310,13 @@ mod test {
                 year: 1555,
                 metadata: &no_metadata,
                 words: 1234,
-                tokens: vec!["a", "a", "b"],
+                tokens: vec![ct("a"), ct("a"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &no_metadata,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
@@ -333,13 +356,13 @@ mod test {
                 year: 1555,
                 metadata: &no_metadata,
                 words: 1234,
-                tokens: vec!["c", "c", "b"],
+                tokens: vec![ct("c"), ct("c"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &no_metadata,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
@@ -379,13 +402,13 @@ mod test {
                 year: 1555,
                 metadata: &no_metadata,
                 words: 1234,
-                tokens: vec!["c", "c", "b"],
+                tokens: vec![ct("c"), ct("c"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &no_metadata,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
@@ -425,13 +448,13 @@ mod test {
                 year: 1555,
                 metadata: &no_metadata,
                 words: 1234,
-                tokens: vec!["c", "c", "b"],
+                tokens: vec![ct("c"), ct("c"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &no_metadata,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
@@ -471,13 +494,13 @@ mod test {
                 year: 1555,
                 metadata: &no_metadata,
                 words: 1234,
-                tokens: vec!["c", "c", "b"],
+                tokens: vec![ct("c"), ct("c"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &no_metadata,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
@@ -533,13 +556,13 @@ mod test {
                 year: 1555,
                 metadata: &meta1,
                 words: 1234,
-                tokens: vec!["c", "c", "b"],
+                tokens: vec![ct("c"), ct("c"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &meta2,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
@@ -573,13 +596,13 @@ mod test {
                 year: 1555,
                 metadata: &meta1,
                 words: 1234,
-                tokens: vec!["c", "c", "b"],
+                tokens: vec![ct("c"), ct("c"), ct("b")],
             },
             CSample {
                 year: 1666,
                 metadata: &meta2,
                 words: 5678,
-                tokens: vec!["c", "d"],
+                tokens: vec![ct("c"), ct("d")],
             },
         ];
         let key = SubsetKey {
