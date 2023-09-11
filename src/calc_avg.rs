@@ -1,4 +1,4 @@
-use crate::calculation::Sample;
+use crate::calculation::{self, Sample};
 use crate::counter::{
     self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter, TypeRatioCounter,
 };
@@ -26,6 +26,7 @@ fn do_count<TCounter>(samples: &[Sample], iter: u64, limit: u64) -> AvgResult
 where
     TCounter: Counter,
 {
+    calculation::verify_samples(samples);
     let total_types = counter::count_types(samples);
     let (r, iter) = parallelism::compute_parallel(
         || AvgParResult { low: 0, high: 0 },

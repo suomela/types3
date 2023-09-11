@@ -1,4 +1,4 @@
-use crate::calculation::Sample;
+use crate::calculation::{self, Sample};
 use crate::counter::{
     self, Counter, HapaxCounter, SampleCounter, TokenCounter, TypeCounter, TypeRatioCounter,
 };
@@ -34,6 +34,7 @@ fn do_count<TCounter>(samples: &[Sample], iter: u64, points: &[Point]) -> Vec<Po
 where
     TCounter: Counter,
 {
+    calculation::verify_samples(samples);
     assert!(!points.is_empty());
     assert!(IsSorted::is_sorted(&mut points.iter()));
     let total_types = counter::count_types(samples);
