@@ -108,8 +108,8 @@ def _title(data):
         if mark_tokens is None:
             return f'Types in subcorpora with {limit} {measure_x}'
         else:
-            what = mark_tokens[1]
-            return f'"{what}" types in subcorpora with {limit} total {measure_x}'
+            what = _upcase(mark_tokens[1])
+            return f'{what} types in subcorpora with {limit} total {measure_x}'
     else:
         measure_y_cased = _upcase(measure_y)
         return f'{measure_y_cased} in subcorpora with {limit} {measure_x}'
