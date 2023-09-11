@@ -200,10 +200,25 @@ mod test {
         }
     }
 
+    fn stm(id: usize, count: u64, marked_count: u64) -> SToken {
+        SToken {
+            id,
+            count,
+            marked_count,
+        }
+    }
+
     fn ct(token: &str) -> CToken {
         CToken {
             token,
             marked: false,
+        }
+    }
+
+    fn ctm(token: &str) -> CToken {
+        CToken {
+            token,
+            marked: true,
         }
     }
 
@@ -621,6 +636,144 @@ mod test {
             },]
         );
         assert_eq!(r.total_x, 1234);
+        assert_eq!(r.total_y, 2);
+        assert_eq!(r.points, HashSet::new());
+    }
+
+    #[test]
+    fn build_subsets_marked_types_none() {
+        let my = MeasureY::MarkedTypes;
+        let mx = MeasureX::Types;
+        let no_metadata = HashMap::new();
+        let samples = vec![
+            CSample {
+                year: 1555,
+                metadata: &no_metadata,
+                words: 1234,
+                tokens: vec![ct("c"), ct("c"), ct("b")],
+            },
+            CSample {
+                year: 1666,
+                metadata: &no_metadata,
+                words: 5678,
+                tokens: vec![ct("c"), ct("d")],
+            },
+        ];
+        let key = SubsetKey {
+            category: None,
+            period: (1500, 1700),
+        };
+        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        assert_eq!(r.category, key.category);
+        assert_eq!(r.period, key.period);
+        assert_eq!(
+            r.samples,
+            vec![
+                Sample {
+                    x: 0,
+                    token_count: 3,
+                    tokens: vec![st(0, 1), st(1, 2),]
+                },
+                Sample {
+                    x: 0,
+                    token_count: 2,
+                    tokens: vec![st(1, 1), st(2, 1),]
+                }
+            ]
+        );
+        assert_eq!(r.total_x, 3);
+        assert_eq!(r.total_y, 0);
+        assert_eq!(r.points, HashSet::new());
+    }
+
+    #[test]
+    fn build_subsets_marked_types_all() {
+        let my = MeasureY::MarkedTypes;
+        let mx = MeasureX::Types;
+        let no_metadata = HashMap::new();
+        let samples = vec![
+            CSample {
+                year: 1555,
+                metadata: &no_metadata,
+                words: 1234,
+                tokens: vec![ctm("c"), ctm("c"), ctm("b")],
+            },
+            CSample {
+                year: 1666,
+                metadata: &no_metadata,
+                words: 5678,
+                tokens: vec![ctm("c"), ctm("d")],
+            },
+        ];
+        let key = SubsetKey {
+            category: None,
+            period: (1500, 1700),
+        };
+        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        assert_eq!(r.category, key.category);
+        assert_eq!(r.period, key.period);
+        assert_eq!(
+            r.samples,
+            vec![
+                Sample {
+                    x: 0,
+                    token_count: 3,
+                    tokens: vec![stm(0, 1, 1), stm(1, 2, 2),]
+                },
+                Sample {
+                    x: 0,
+                    token_count: 2,
+                    tokens: vec![stm(1, 1, 1), stm(2, 1, 1),]
+                }
+            ]
+        );
+        assert_eq!(r.total_x, 3);
+        assert_eq!(r.total_y, 3);
+        assert_eq!(r.points, HashSet::new());
+    }
+
+    #[test]
+    fn build_subsets_marked_types_some() {
+        let my = MeasureY::MarkedTypes;
+        let mx = MeasureX::Types;
+        let no_metadata = HashMap::new();
+        let samples = vec![
+            CSample {
+                year: 1555,
+                metadata: &no_metadata,
+                words: 1234,
+                tokens: vec![ctm("c"), ct("c"), ctm("b")],
+            },
+            CSample {
+                year: 1666,
+                metadata: &no_metadata,
+                words: 5678,
+                tokens: vec![ctm("c"), ct("d")],
+            },
+        ];
+        let key = SubsetKey {
+            category: None,
+            period: (1500, 1700),
+        };
+        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        assert_eq!(r.category, key.category);
+        assert_eq!(r.period, key.period);
+        assert_eq!(
+            r.samples,
+            vec![
+                Sample {
+                    x: 0,
+                    token_count: 3,
+                    tokens: vec![stm(0, 1, 1), stm(1, 2, 1),]
+                },
+                Sample {
+                    x: 0,
+                    token_count: 2,
+                    tokens: vec![stm(1, 1, 1), stm(2, 1, 0),]
+                }
+            ]
+        );
+        assert_eq!(r.total_x, 3);
         assert_eq!(r.total_y, 2);
         assert_eq!(r.points, HashSet::new());
     }
