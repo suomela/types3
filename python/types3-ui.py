@@ -52,7 +52,7 @@ def metadata_choices(metadata, with_everything=True):
     m = {'everything': None}
     for k in sorted(metadata.keys()):
         for v in sorted(metadata[k]):
-            l = f'{k} = {v}'
+            l = f'{k}: {v}'
             assert l not in m
             m[l] = (k, v)
             r.append(l)
