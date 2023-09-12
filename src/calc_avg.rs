@@ -102,6 +102,14 @@ mod test {
         }
     }
 
+    fn stm(id: usize, count: u64, marked_count: u64) -> SToken {
+        SToken {
+            id,
+            count,
+            marked_count,
+        }
+    }
+
     #[test]
     fn calc_one_tokens_1() {
         let samples = vec![
@@ -876,6 +884,54 @@ mod test {
         let fiter = iter as f64;
         let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
         let expect_high = 2.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
+        let tolerance = 0.1;
+        assert_eq!(result.iter, iter);
+        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
+        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
+        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
+        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+    }
+
+    #[test]
+    fn average_at_limit_type_ratio_1() {
+        let samples = vec![
+            Sample {
+                x: 0,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 0,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        let iter = 10000;
+        let result = average_at_limit(MeasureY::MarkedTypes, &samples, iter, 2);
+        assert_eq!(result.iter, iter);
+        assert_eq!(result.low, iter);
+        assert_eq!(result.high, iter);
+    }
+
+    #[test]
+    fn average_at_limit_type_ratio_2() {
+        let samples = vec![
+            Sample {
+                x: 0,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 0,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        let iter = 10000;
+        let result = average_at_limit(MeasureY::MarkedTypes, &samples, iter, 1);
+        let fiter = iter as f64;
+        let expect_low = 0.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
+        let expect_high = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
         let tolerance = 0.1;
         assert_eq!(result.iter, iter);
         assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
