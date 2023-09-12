@@ -3,8 +3,8 @@
 set -e
 
 cd integration-test
-rm -rf calc
-mkdir -p calc
+rm -rf calc2
+mkdir -p calc2
 
 base="../types3-calc --window 20 --step 20 --iter 100000 ../sample-data/ceec.json -v -v"
 what="$base"
