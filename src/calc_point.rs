@@ -137,6 +137,12 @@ mod test {
     use super::*;
     use crate::calculation::SToken;
 
+    const TOLERANCE: f64 = 0.02;
+    const T1: f64 = 1.0 - TOLERANCE;
+    const T2: f64 = 1.0 + TOLERANCE;
+    const ITER: u64 = 100000;
+    const FITER: f64 = ITER as f64;
+
     fn st(id: usize, count: u64) -> SToken {
         SToken {
             id,
@@ -654,11 +660,10 @@ mod test {
             tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 7), p(1233, 7), p(1234, 7)];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Tokens, &samples, ITER, &points);
         assert_eq!(
             result,
-            vec![pr(0, 0, iter), pr(0, 0, iter), pr(0, iter, iter),]
+            vec![pr(0, 0, ITER), pr(0, 0, ITER), pr(0, ITER, ITER),]
         );
     }
 
@@ -670,11 +675,10 @@ mod test {
             tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 11), p(1233, 11), p(1234, 11)];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Tokens, &samples, ITER, &points);
         assert_eq!(
             result,
-            vec![pr(iter, 0, iter), pr(iter, 0, iter), pr(iter, 0, iter),]
+            vec![pr(ITER, 0, ITER), pr(ITER, 0, ITER), pr(ITER, 0, ITER),]
         );
     }
 
@@ -687,8 +691,7 @@ mod test {
             tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 11), p(1234, 11), p(1233, 11)];
-        let iter = 10000;
-        let _result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+        let _result = compare_with_points(MeasureY::Tokens, &samples, ITER, &points);
     }
 
     #[test]
@@ -700,8 +703,7 @@ mod test {
             tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 11), p(1233, 11), p(1235, 11)];
-        let iter = 10000;
-        let _result = compare_with_points(MeasureY::Tokens, &samples, iter, &points);
+        let _result = compare_with_points(MeasureY::Tokens, &samples, ITER, &points);
     }
 
     #[test]
@@ -712,11 +714,10 @@ mod test {
             tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 2), p(1233, 2), p(1234, 2)];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Types, &samples, ITER, &points);
         assert_eq!(
             result,
-            vec![pr(iter, 0, iter), pr(iter, 0, iter), pr(iter, 0, iter),]
+            vec![pr(ITER, 0, ITER), pr(ITER, 0, ITER), pr(ITER, 0, ITER),]
         );
     }
 
@@ -728,11 +729,10 @@ mod test {
             tokens: vec![st(0, 10)],
         }];
         let points = vec![p(1, 2), p(1233, 2), p(1234, 2)];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, ITER, &points);
         assert_eq!(
             result,
-            vec![pr(iter, 0, iter), pr(iter, 0, iter), pr(iter, 0, iter),]
+            vec![pr(ITER, 0, ITER), pr(ITER, 0, ITER), pr(ITER, 0, ITER),]
         );
     }
 
@@ -766,20 +766,19 @@ mod test {
             p(368, 4),
             p(369, 4),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Types, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
             ]
         );
     }
@@ -814,20 +813,19 @@ mod test {
             p(368, 4),
             p(369, 4),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
             ]
         );
     }
@@ -862,20 +860,19 @@ mod test {
             p(368, 2),
             p(369, 2),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Types, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, iter, iter),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, ITER, ITER),
             ]
         );
     }
@@ -910,20 +907,19 @@ mod test {
             p(368, 2),
             p(369, 2),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Types, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, iter, iter),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, ITER, ITER),
             ]
         );
     }
@@ -958,20 +954,19 @@ mod test {
             p(368, 2),
             p(369, 2),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
-                pr(iter, 0, iter),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(ITER, 0, ITER),
             ]
         );
     }
@@ -1006,20 +1001,19 @@ mod test {
             p(368, 1),
             p(369, 1),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Types, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, iter, iter),
-                pr(0, iter, iter),
-                pr(0, iter, iter),
-                pr(0, iter, iter),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, ITER, ITER),
+                pr(0, ITER, ITER),
+                pr(0, ITER, ITER),
+                pr(0, ITER, ITER),
             ]
         );
     }
@@ -1054,20 +1048,19 @@ mod test {
             p(368, 1),
             p(369, 1),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(0, iter, iter),
-                pr(0, iter, iter),
-                pr(0, iter, iter),
-                pr(0, iter, iter),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, ITER, ITER),
+                pr(0, ITER, ITER),
+                pr(0, ITER, ITER),
+                pr(0, ITER, ITER),
             ]
         );
     }
@@ -1102,20 +1095,19 @@ mod test {
             p(368, 1),
             p(369, 1),
         ];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Hapaxes, &samples, iter, &points);
+        let result = compare_with_points(MeasureY::Hapaxes, &samples, ITER, &points);
         assert_eq!(
             result,
             vec![
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(iter, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(iter, 0, iter),
-                pr(0, 0, iter),
-                pr(0, 0, iter),
-                pr(iter, 0, iter),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(ITER, 0, ITER),
+                pr(0, 0, ITER),
+                pr(0, 0, ITER),
+                pr(ITER, 0, ITER),
             ]
         );
     }
@@ -1140,13 +1132,13 @@ mod test {
             },
         ];
         let points = vec![p(50, 1), p(150, 1), p(250, 1), p(350, 1)];
-        let iter = 10000;
-        let result = compare_with_points(MeasureY::Types, &samples, iter, &points);
-        assert_eq!(result[0], pr(0, 0, iter));
-        assert_eq!(result[1], pr(0, 0, iter));
+        let result = compare_with_points(MeasureY::Types, &samples, ITER, &points);
+        let expected_below = FITER / 3.0;
+        assert_eq!(result[0], pr(0, 0, ITER));
+        assert_eq!(result[1], pr(0, 0, ITER));
         assert_eq!(result[2].above, 0);
-        assert!(result[2].below as f64 >= 0.31 * (iter as f64));
-        assert!(result[2].below as f64 <= 0.35 * (iter as f64));
-        assert_eq!(result[3], pr(0, iter, iter));
+        assert!(result[2].below as f64 >= T1 * expected_below);
+        assert!(result[2].below as f64 <= T2 * expected_below);
+        assert_eq!(result[3], pr(0, ITER, ITER));
     }
 }

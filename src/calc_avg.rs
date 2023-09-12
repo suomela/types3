@@ -94,6 +94,12 @@ mod test {
     use super::*;
     use crate::calculation::SToken;
 
+    const TOLERANCE: f64 = 0.01;
+    const T1: f64 = 1.0 - TOLERANCE;
+    const T2: f64 = 1.0 + TOLERANCE;
+    const ITER: u64 = 100000;
+    const FITER: f64 = ITER as f64;
+
     fn st(id: usize, count: u64) -> SToken {
         SToken {
             id,
@@ -511,11 +517,10 @@ mod test {
             token_count: 10,
             tokens: vec![st(0, 10)],
         }];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Tokens, &samples, iter, 1000);
-        assert_eq!(result.iter, iter);
-        assert_eq!(result.low, 0 * iter);
-        assert_eq!(result.high, 10 * iter);
+        let result = average_at_limit(MeasureY::Tokens, &samples, ITER, 1000);
+        assert_eq!(result.iter, ITER);
+        assert_eq!(result.low, 0 * ITER);
+        assert_eq!(result.high, 10 * ITER);
     }
 
     #[test]
@@ -525,11 +530,10 @@ mod test {
             token_count: 10,
             tokens: vec![st(0, 10)],
         }];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Tokens, &samples, iter, 1234);
-        assert_eq!(result.iter, iter);
-        assert_eq!(result.low, 10 * iter);
-        assert_eq!(result.high, 10 * iter);
+        let result = average_at_limit(MeasureY::Tokens, &samples, ITER, 1234);
+        assert_eq!(result.iter, ITER);
+        assert_eq!(result.low, 10 * ITER);
+        assert_eq!(result.high, 10 * ITER);
     }
 
     #[test]
@@ -546,17 +550,14 @@ mod test {
                 tokens: vec![st(0, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Tokens, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 10.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 15.0 * fiter / 2.0 + 5.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Tokens, &samples, ITER, 2000);
+        let expect_low = 10.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 15.0 * FITER / 2.0 + 5.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -574,8 +575,7 @@ mod test {
                 tokens: vec![st(0, 5)],
             },
         ];
-        let iter = 10000;
-        let _result = average_at_limit(MeasureY::Tokens, &samples, iter, 1234 + 5678 + 1);
+        let _result = average_at_limit(MeasureY::Tokens, &samples, ITER, 1234 + 5678 + 1);
     }
 
     #[test]
@@ -592,17 +592,14 @@ mod test {
                 tokens: vec![st(0, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Types, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 1.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Types, &samples, ITER, 2000);
+        let expect_low = 1.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 1.0 * FITER / 2.0 + 1.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -619,17 +616,14 @@ mod test {
                 tokens: vec![st(0, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Hapaxes, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 0.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 0.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Hapaxes, &samples, ITER, 2000);
+        let expect_low = 0.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 0.0 * FITER / 2.0 + 1.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -646,17 +640,14 @@ mod test {
                 tokens: vec![st(1, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Types, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 2.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Types, &samples, ITER, 2000);
+        let expect_low = 1.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 2.0 * FITER / 2.0 + 1.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -673,17 +664,14 @@ mod test {
                 tokens: vec![st(1, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Hapaxes, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 0.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 1.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Hapaxes, &samples, ITER, 2000);
+        let expect_low = 0.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 1.0 * FITER / 2.0 + 1.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -711,17 +699,14 @@ mod test {
                 tokens: vec![st(10, 1), st(11, 1), st(12, 1), st(13, 1), st(14, 1)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Types, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 10.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 15.0 * fiter / 2.0 + 5.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Types, &samples, ITER, 2000);
+        let expect_low = 10.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 15.0 * FITER / 2.0 + 5.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -749,17 +734,14 @@ mod test {
                 tokens: vec![st(10, 1), st(11, 1), st(12, 1), st(13, 1), st(14, 1)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Hapaxes, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 10.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 15.0 * fiter / 2.0 + 5.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Hapaxes, &samples, ITER, 2000);
+        let expect_low = 10.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 15.0 * FITER / 2.0 + 5.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -787,17 +769,14 @@ mod test {
                 tokens: vec![st(0, 1), st(1, 1), st(2, 1), st(3, 1), st(4, 1)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Types, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 10.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 10.0 * fiter / 2.0 + 5.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Types, &samples, ITER, 2000);
+        let expect_low = 10.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 10.0 * FITER / 2.0 + 5.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -825,17 +804,14 @@ mod test {
                 tokens: vec![st(0, 1), st(1, 1), st(2, 1), st(3, 1), st(4, 1)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Hapaxes, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 5.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 10.0 * fiter / 2.0 + 5.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Hapaxes, &samples, ITER, 2000);
+        let expect_low = 5.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 10.0 * FITER / 2.0 + 5.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -852,17 +828,14 @@ mod test {
                 tokens: vec![st(1, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Samples, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 2.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Samples, &samples, ITER, 2000);
+        let expect_low = 1.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 2.0 * FITER / 2.0 + 1.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -879,17 +852,14 @@ mod test {
                 tokens: vec![st(0, 5)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::Samples, &samples, iter, 2000);
-        let fiter = iter as f64;
-        let expect_low = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 2.0 * fiter / 2.0 + 1.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::Samples, &samples, ITER, 2000);
+        let expect_low = 1.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 2.0 * FITER / 2.0 + 1.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 
     #[test]
@@ -906,11 +876,10 @@ mod test {
                 tokens: vec![stm(1, 5, 0)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::MarkedTypes, &samples, iter, 2);
-        assert_eq!(result.iter, iter);
-        assert_eq!(result.low, iter);
-        assert_eq!(result.high, iter);
+        let result = average_at_limit(MeasureY::MarkedTypes, &samples, ITER, 2);
+        assert_eq!(result.iter, ITER);
+        assert_eq!(result.low, ITER);
+        assert_eq!(result.high, ITER);
     }
 
     #[test]
@@ -927,16 +896,13 @@ mod test {
                 tokens: vec![stm(1, 5, 0)],
             },
         ];
-        let iter = 10000;
-        let result = average_at_limit(MeasureY::MarkedTypes, &samples, iter, 1);
-        let fiter = iter as f64;
-        let expect_low = 0.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let expect_high = 1.0 * fiter / 2.0 + 0.0 * fiter / 2.0;
-        let tolerance = 0.1;
-        assert_eq!(result.iter, iter);
-        assert!(result.low as f64 >= (1.0 - tolerance) * expect_low);
-        assert!(result.low as f64 <= (1.0 + tolerance) * expect_low);
-        assert!(result.high as f64 >= (1.0 - tolerance) * expect_high);
-        assert!(result.high as f64 <= (1.0 + tolerance) * expect_high);
+        let result = average_at_limit(MeasureY::MarkedTypes, &samples, ITER, 1);
+        let expect_low = 0.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 1.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
     }
 }
