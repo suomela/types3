@@ -170,6 +170,7 @@ pub fn build_subset<'a>(
         points: HashSet::new(),
     };
     debug!(
+        target: "types3",
         "{}: {} samples, {} {} / {} {}",
         s.pretty(),
         s.samples.len(),

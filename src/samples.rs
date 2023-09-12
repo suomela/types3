@@ -92,6 +92,6 @@ pub fn get_categories<'a>(key: &'a str, samples: &[CSample<'a>]) -> Result<Vec<C
         .into_iter()
         .map(|val| Some((key as &str, val as &str)))
         .collect_vec();
-    info!("categories: {} = {}", key, valstring);
+    info!(target: "types3","categories: {} = {}", key, valstring);
     Ok(categories)
 }
