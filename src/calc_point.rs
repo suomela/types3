@@ -1264,4 +1264,57 @@ mod test {
         assert_eq!(result[6], pr(ITER, 0, ITER));
         assert_eq!(result[7], pr(ITER, 0, ITER));
     }
+
+    #[test]
+    fn compare_with_points_type_ratio_4() {
+        let mut samples = vec![];
+        let mut tokens = vec![];
+        for i in 0..100 {
+            if i == 0 {
+                tokens.push(stm(i, 1, 1));
+            } else {
+                tokens.push(st(i, 1));
+            }
+        }
+        samples.push(Sample {
+            x: 0,
+            token_count: 100,
+            tokens,
+        });
+        let mut tokens = vec![];
+        for i in 100..300 {
+            if i == 100 {
+                tokens.push(stm(i, 1, 1));
+            } else {
+                tokens.push(st(i, 1));
+            }
+        }
+        samples.push(Sample {
+            x: 0,
+            token_count: 200,
+            tokens,
+        });
+        let mut tokens = vec![];
+        for i in 300..400 {
+            if i == 300 {
+                tokens.push(stm(i, 1, 1));
+            } else {
+                tokens.push(st(i, 1));
+            }
+        }
+        samples.push(Sample {
+            x: 0,
+            token_count: 100,
+            tokens,
+        });
+        let points = vec![p(50, 1), p(150, 1), p(250, 1), p(350, 1)];
+        let result = compare_with_points(MeasureY::MarkedTypes, &samples, ITER, &points);
+        let expected_below = FITER / 3.0;
+        assert_eq!(result[0], pr(0, 0, ITER));
+        assert_eq!(result[1], pr(0, 0, ITER));
+        assert_eq!(result[2].above, 0);
+        assert!(result[2].below as f64 >= T1 * expected_below);
+        assert!(result[2].below as f64 <= T2 * expected_below);
+        assert_eq!(result[3], pr(0, ITER, ITER));
+    }
 }
