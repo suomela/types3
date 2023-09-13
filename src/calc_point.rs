@@ -151,6 +151,14 @@ mod test {
         }
     }
 
+    fn stm(id: usize, count: u64, marked_count: u64) -> SToken {
+        SToken {
+            id,
+            count,
+            marked_count,
+        }
+    }
+
     fn p(x: u64, y: u64) -> Point {
         Point { x, y }
     }
@@ -1140,5 +1148,120 @@ mod test {
         assert!(result[2].below as f64 >= T1 * expected_below);
         assert!(result[2].below as f64 <= T2 * expected_below);
         assert_eq!(result[3], pr(0, ITER, ITER));
+    }
+
+    #[test]
+    fn compare_with_points_type_ratio_1() {
+        let samples = vec![Sample {
+            x: 0,
+            token_count: 2,
+            tokens: vec![st(0, 1), stm(1, 1, 1)],
+        }];
+        let points = vec![
+            p(1, 0),
+            p(1, 1),
+            p(1, 2),
+            p(1, 3),
+            p(2, 0),
+            p(2, 1),
+            p(2, 2),
+            p(2, 3),
+        ];
+        let result = compare_with_points(MeasureY::MarkedTypes, &samples, ITER, &points);
+        assert_eq!(result[0], pr(0, 0, ITER));
+        assert_eq!(result[1], pr(0, 0, ITER));
+        assert_eq!(result[2], pr(ITER, 0, ITER));
+        assert_eq!(result[3], pr(ITER, 0, ITER));
+        assert_eq!(result[4], pr(0, ITER, ITER));
+        assert_eq!(result[5], pr(0, 0, ITER));
+        assert_eq!(result[6], pr(ITER, 0, ITER));
+        assert_eq!(result[7], pr(ITER, 0, ITER));
+    }
+
+    #[test]
+    fn compare_with_points_type_ratio_2() {
+        let samples = vec![Sample {
+            x: 0,
+            token_count: 7,
+            tokens: vec![
+                stm(0, 1, 1),
+                stm(1, 1, 1),
+                stm(2, 1, 1),
+                st(3, 1),
+                st(4, 1),
+                st(5, 1),
+                st(6, 1),
+            ],
+        }];
+        let points = vec![
+            p(6, 0),
+            p(6, 1),
+            p(6, 2),
+            p(6, 3),
+            p(6, 4),
+            p(7, 0),
+            p(7, 1),
+            p(7, 2),
+            p(7, 3),
+            p(7, 4),
+        ];
+        let result = compare_with_points(MeasureY::MarkedTypes, &samples, ITER, &points);
+        assert_eq!(result[0], pr(0, 0, ITER));
+        assert_eq!(result[1], pr(0, 0, ITER));
+        assert_eq!(result[2], pr(0, 0, ITER));
+        assert_eq!(result[3], pr(0, 0, ITER));
+        assert_eq!(result[4], pr(ITER, 0, ITER));
+        assert_eq!(result[5], pr(0, ITER, ITER));
+        assert_eq!(result[6], pr(0, ITER, ITER));
+        assert_eq!(result[7], pr(0, ITER, ITER));
+        assert_eq!(result[8], pr(0, 0, ITER));
+        assert_eq!(result[9], pr(ITER, 0, ITER));
+    }
+
+    #[test]
+    fn compare_with_points_type_ratio_3() {
+        let samples = vec![
+            Sample {
+                x: 0,
+                token_count: 1,
+                tokens: vec![st(0, 1)],
+            },
+            Sample {
+                x: 0,
+                token_count: 1,
+                tokens: vec![stm(1, 1, 1)],
+            },
+        ];
+        let points = vec![
+            p(1, 0),
+            p(1, 1),
+            p(1, 2),
+            p(1, 3),
+            p(2, 0),
+            p(2, 1),
+            p(2, 2),
+            p(2, 3),
+        ];
+        let result = compare_with_points(MeasureY::MarkedTypes, &samples, ITER, &points);
+        assert!(result[0].above as f64 >= T1 * 0.0 * FITER);
+        assert!(result[0].above as f64 <= T2 * 0.0 * FITER);
+        assert!(result[0].below as f64 >= T1 * 0.5 * FITER);
+        assert!(result[0].below as f64 <= T2 * 0.5 * FITER);
+        assert!(result[1].above as f64 >= T1 * 0.5 * FITER);
+        assert!(result[1].above as f64 <= T2 * 0.5 * FITER);
+        assert!(result[1].below as f64 >= T1 * 0.0 * FITER);
+        assert!(result[1].below as f64 <= T2 * 0.0 * FITER);
+        assert!(result[2].above as f64 >= T1 * 1.0 * FITER);
+        assert!(result[2].above as f64 <= T2 * 1.0 * FITER);
+        assert!(result[2].below as f64 >= T1 * 0.0 * FITER);
+        assert!(result[2].below as f64 <= T2 * 0.0 * FITER);
+        assert!(result[3].above as f64 >= T1 * 1.0 * FITER);
+        assert!(result[3].above as f64 <= T2 * 1.0 * FITER);
+        assert!(result[3].below as f64 >= T1 * 0.0 * FITER);
+        assert!(result[3].below as f64 <= T2 * 0.0 * FITER);
+        assert_eq!(result[4], pr(0, ITER, ITER));
+        assert_eq!(result[5], pr(0, 0, ITER));
+        assert_eq!(result[6], pr(ITER, 0, ITER));
+        assert_eq!(result[7], pr(ITER, 0, ITER));
     }
 }
