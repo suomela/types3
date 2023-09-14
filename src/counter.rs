@@ -288,3 +288,101 @@ where
         Some(c) => (c.x, c.y),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn stm(id: usize, count: u64, marked_count: u64) -> SToken {
+        SToken {
+            id,
+            count,
+            marked_count,
+        }
+    }
+
+    #[test]
+    fn count_xy_tokens() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        assert_eq!(count_xy(MeasureY::Tokens, &samples), (1234 + 5678, 16));
+    }
+
+    #[test]
+    fn count_xy_types() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        assert_eq!(count_xy(MeasureY::Types, &samples), (1234 + 5678, 2));
+    }
+
+    #[test]
+    fn count_xy_samples() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        assert_eq!(count_xy(MeasureY::Samples, &samples), (1234 + 5678, 2));
+    }
+
+    #[test]
+    fn count_xy_hapaxes() {
+        let samples = vec![
+            Sample {
+                x: 1234,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 5678,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        assert_eq!(count_xy(MeasureY::Hapaxes, &samples), (1234 + 5678, 0));
+    }
+
+    #[test]
+    fn count_xy_marked_types() {
+        let samples = vec![
+            Sample {
+                x: 0,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 0,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        assert_eq!(count_xy(MeasureY::MarkedTypes, &samples), (2, 1));
+    }
+}
