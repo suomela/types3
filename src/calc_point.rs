@@ -73,6 +73,15 @@ fn calc_one<TCounter>(
 {
     counter.reset();
     let mut j = 0;
+    while points[j].x == 0 {
+        if points[j].y > 0 {
+            result.elems[j].above += 1;
+        }
+        j += 1;
+        if j == points.len() {
+            return;
+        }
+    }
     for i in idx {
         let c = counter.feed_sample(&samples[*i]);
         loop {
@@ -183,6 +192,7 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
+            p(0, 0),
             p(1, 0),
             p(1233, 0),
             p(1234, 0),
@@ -198,6 +208,7 @@ mod test {
             result,
             PointParResult {
                 elems: vec![
+                    PointParResultElem { above: 0, below: 0 }, // 0
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
                     PointParResultElem { above: 0, below: 1 }, // 1234
@@ -224,6 +235,7 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
+            p(0, 7),
             p(1, 7),
             p(1233, 7),
             p(1234, 7),
@@ -239,6 +251,7 @@ mod test {
             result,
             PointParResult {
                 elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 0
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
                     PointParResultElem { above: 0, below: 1 }, // 1234
@@ -265,6 +278,7 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
+            p(0, 10),
             p(1, 10),
             p(1233, 10),
             p(1234, 10),
@@ -280,6 +294,7 @@ mod test {
             result,
             PointParResult {
                 elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 0
                     PointParResultElem { above: 0, below: 0 }, // 1
                     PointParResultElem { above: 0, below: 0 }, // 1233
                     PointParResultElem { above: 0, below: 0 }, // 1234
@@ -306,6 +321,7 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
+            p(0, 11),
             p(1, 11),
             p(1233, 11),
             p(1234, 11),
@@ -321,6 +337,7 @@ mod test {
             result,
             PointParResult {
                 elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 0
                     PointParResultElem { above: 1, below: 0 }, // 1
                     PointParResultElem { above: 1, below: 0 }, // 1233
                     PointParResultElem { above: 1, below: 0 }, // 1234
@@ -347,6 +364,7 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let points = vec![
+            p(0, 15),
             p(1, 15),
             p(1233, 15),
             p(1234, 15),
@@ -362,6 +380,7 @@ mod test {
             result,
             PointParResult {
                 elems: vec![
+                    PointParResultElem { above: 1, below: 0 }, // 0
                     PointParResultElem { above: 1, below: 0 }, // 1
                     PointParResultElem { above: 1, below: 0 }, // 1233
                     PointParResultElem { above: 1, below: 0 }, // 1234

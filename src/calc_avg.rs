@@ -57,6 +57,9 @@ fn calc_one<TCounter>(
     TCounter: Counter,
 {
     counter.reset();
+    if limit == 0 {
+        return;
+    }
     for i in idx {
         let c = counter.feed_sample(&samples[*i]);
         match c.x.cmp(&limit) {
@@ -134,6 +137,11 @@ mod test {
         let idx = vec![0, 1];
         {
             let mut result = AvgParResult { low: 0, high: 0 };
+            calc_one(&samples, 0, &idx, &mut counter, &mut result);
+            assert_eq!(result, AvgParResult { low: 0, high: 0 });
+        }
+        {
+            let mut result = AvgParResult { low: 0, high: 0 };
             calc_one(&samples, 1, &idx, &mut counter, &mut result);
             assert_eq!(result, AvgParResult { low: 0, high: 10 });
         }
@@ -175,6 +183,11 @@ mod test {
         ];
         let mut counter = TokenCounter::new(counter::count_types(&samples));
         let idx = vec![1, 0];
+        {
+            let mut result = AvgParResult { low: 0, high: 0 };
+            calc_one(&samples, 0, &idx, &mut counter, &mut result);
+            assert_eq!(result, AvgParResult { low: 0, high: 0 });
+        }
         {
             let mut result = AvgParResult { low: 0, high: 0 };
             calc_one(&samples, 1, &idx, &mut counter, &mut result);
@@ -899,6 +912,30 @@ mod test {
         let result = average_at_limit(MeasureY::MarkedTypes, &samples, ITER, 1);
         let expect_low = 0.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
         let expect_high = 1.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        assert_eq!(result.iter, ITER);
+        assert!(result.low as f64 >= T1 * expect_low);
+        assert!(result.low as f64 <= T2 * expect_low);
+        assert!(result.high as f64 >= T1 * expect_high);
+        assert!(result.high as f64 <= T2 * expect_high);
+    }
+
+    #[test]
+    fn average_at_limit_type_ratio_3() {
+        let samples = vec![
+            Sample {
+                x: 0,
+                token_count: 11,
+                tokens: vec![stm(0, 10, 2), stm(1, 1, 0)],
+            },
+            Sample {
+                x: 0,
+                token_count: 5,
+                tokens: vec![stm(1, 5, 0)],
+            },
+        ];
+        let result = average_at_limit(MeasureY::MarkedTypes, &samples, ITER, 0);
+        let expect_low = 0.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
+        let expect_high = 0.0 * FITER / 2.0 + 0.0 * FITER / 2.0;
         assert_eq!(result.iter, ITER);
         assert!(result.low as f64 >= T1 * expect_low);
         assert!(result.low as f64 <= T2 * expect_low);
