@@ -14,11 +14,8 @@ use std::collections::HashMap;
 
 pub struct DriverArgs<'a> {
     pub category: Option<&'a str>,
-    pub count_tokens: bool,
-    pub count_hapaxes: bool,
-    pub count_samples: bool,
-    pub words: bool,
-    pub type_ratio: bool,
+    pub measure_y: MeasureY,
+    pub measure_x: MeasureX,
     pub iter: u64,
     pub offset: Year,
     pub start: Year,
@@ -87,24 +84,6 @@ pub struct Calc<'a> {
 
 impl<'a> Calc<'a> {
     pub fn new(args: &'a DriverArgs, input: &'a Input) -> Result<Calc<'a>> {
-        let measure_x = if args.type_ratio {
-            MeasureX::Types
-        } else if args.words {
-            MeasureX::Words
-        } else {
-            MeasureX::Tokens
-        };
-        let measure_y = if args.type_ratio {
-            MeasureY::MarkedTypes
-        } else if args.count_tokens {
-            MeasureY::Tokens
-        } else if args.count_hapaxes {
-            MeasureY::Hapaxes
-        } else if args.count_samples {
-            MeasureY::Samples
-        } else {
-            MeasureY::Types
-        };
         information::statistics(&input.samples);
         let samples = samples::get_samples(
             args.restrict_samples,
@@ -131,8 +110,8 @@ impl<'a> Calc<'a> {
         for curve in &curves {
             for key in &curve.keys {
                 let subset = subsets::build_subset(
-                    measure_x,
-                    measure_y,
+                    args.measure_x,
+                    args.measure_y,
                     &samples,
                     *key,
                     args.split_samples,
@@ -144,8 +123,8 @@ impl<'a> Calc<'a> {
                     let x = match subset_map.entry(*parent) {
                         Occupied(e) => e.into_mut(),
                         Vacant(e) => e.insert(subsets::build_subset(
-                            measure_x,
-                            measure_y,
+                            args.measure_x,
+                            args.measure_y,
                             &samples,
                             *parent,
                             args.split_samples,
@@ -161,8 +140,8 @@ impl<'a> Calc<'a> {
             curves,
             subset_map,
             iter: args.iter,
-            measure_y,
-            measure_x,
+            measure_y: args.measure_y,
+            measure_x: args.measure_x,
             restrict_samples: args.restrict_samples,
             restrict_tokens: args.restrict_tokens,
             mark_tokens: args.mark_tokens,
@@ -290,11 +269,8 @@ mod test {
     fn build_args<'a>(window: Year, step: Year, offset: Year) -> DriverArgs<'a> {
         DriverArgs {
             category: None,
-            count_tokens: false,
-            count_hapaxes: false,
-            count_samples: false,
-            words: false,
-            type_ratio: false,
+            measure_y: MeasureY::Types,
+            measure_x: MeasureX::Tokens,
             iter: 0,
             offset,
             start: 0,

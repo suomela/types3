@@ -6,7 +6,7 @@ use types3::categories;
 use types3::driver::{Calc, DriverArgs};
 use types3::errors::{self, Result};
 use types3::input::{Input, Year};
-use types3::output::OError;
+use types3::output::{MeasureX, MeasureY, OError};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
@@ -77,6 +77,36 @@ struct Args {
 }
 
 impl Args {
+    fn sanity(&self) -> Result<()> {
+        if self.words && self.split_samples {
+            return Err(errors::invalid_argument_ref(
+                "cannot select both --words and --split-samples",
+            ));
+        }
+        if self.words && self.type_ratio {
+            return Err(errors::invalid_argument_ref(
+                "cannot select both --words and --type-ratio",
+            ));
+        }
+        let mut c = 0;
+        for f in [
+            self.count_tokens,
+            self.count_hapaxes,
+            self.count_samples,
+            self.type_ratio,
+        ] {
+            if f {
+                c += 1;
+            }
+        }
+        if c > 1 {
+            return Err(errors::invalid_argument_ref(
+                "can select at most one of --count-tokens, --count-hapaxes, --count-samples, and --type-ratio",
+            ));
+        }
+        Ok(())
+    }
+
     fn to_driver_args(&self) -> Result<DriverArgs> {
         let category: Option<&str> = match &self.category {
             None => None,
@@ -85,13 +115,28 @@ impl Args {
         let restrict_samples = categories::parse_restriction(&self.restrict_samples)?;
         let restrict_tokens = categories::parse_restriction(&self.restrict_tokens)?;
         let mark_tokens = categories::parse_restriction(&self.mark_tokens)?;
+        let measure_x = if self.type_ratio {
+            MeasureX::Types
+        } else if self.words {
+            MeasureX::Words
+        } else {
+            MeasureX::Tokens
+        };
+        let measure_y = if self.type_ratio {
+            MeasureY::MarkedTypes
+        } else if self.count_tokens {
+            MeasureY::Tokens
+        } else if self.count_hapaxes {
+            MeasureY::Hapaxes
+        } else if self.count_samples {
+            MeasureY::Samples
+        } else {
+            MeasureY::Types
+        };
         Ok(DriverArgs {
             category,
-            count_tokens: self.count_tokens,
-            count_hapaxes: self.count_hapaxes,
-            count_samples: self.count_samples,
-            words: self.words,
-            type_ratio: self.type_ratio,
+            measure_x,
+            measure_y,
             iter: self.iter,
             offset: self.offset,
             start: self.start,
@@ -106,38 +151,8 @@ impl Args {
     }
 }
 
-fn arg_sanity(args: &Args) -> Result<()> {
-    if args.words && args.split_samples {
-        return Err(errors::invalid_argument_ref(
-            "cannot select both --words and --split-samples",
-        ));
-    }
-    if args.words && args.type_ratio {
-        return Err(errors::invalid_argument_ref(
-            "cannot select both --words and --type-ratio",
-        ));
-    }
-    let mut c = 0;
-    for f in [
-        args.count_tokens,
-        args.count_hapaxes,
-        args.count_samples,
-        args.type_ratio,
-    ] {
-        if f {
-            c += 1;
-        }
-    }
-    if c > 1 {
-        return Err(errors::invalid_argument_ref(
-            "can select at most one of --count-tokens, --count-hapaxes, --count-samples, and --type-ratio",
-        ));
-    }
-    Ok(())
-}
-
 fn process(args: &Args) -> Result<()> {
-    arg_sanity(args)?;
+    args.sanity()?;
     info!(target: "types3", "read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
@@ -186,5 +201,76 @@ fn main() {
             }
             process::exit(1);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn args_minimal() {
+        let args = Args::parse_from(["", "--window", "100", "--step", "10", "a", "b"]);
+        args.sanity().unwrap();
+        let da = args.to_driver_args().unwrap();
+        assert_eq!(da.measure_y, MeasureY::Types);
+        assert_eq!(da.measure_x, MeasureX::Tokens);
+        assert_eq!(da.window, 100);
+        assert_eq!(da.step, 10);
+        assert_eq!(da.offset, 0);
+        assert_eq!(da.iter, DEFAULT_ITER);
+    }
+
+    #[test]
+    fn args_basic() {
+        let args = Args::parse_from([
+            "", "--window", "100", "--step", "10", "--offset", "1234", "--iter", "55555",
+            "--words", "a", "b",
+        ]);
+        args.sanity().unwrap();
+        let da = args.to_driver_args().unwrap();
+        assert_eq!(da.measure_y, MeasureY::Types);
+        assert_eq!(da.measure_x, MeasureX::Words);
+        assert_eq!(da.window, 100);
+        assert_eq!(da.step, 10);
+        assert_eq!(da.offset, 1234);
+        assert_eq!(da.iter, 55555);
+    }
+
+    #[test]
+    fn args_type_ratio() {
+        let args = Args::parse_from([
+            "",
+            "--window",
+            "100",
+            "--step",
+            "10",
+            "--type-ratio",
+            "a",
+            "b",
+        ]);
+        args.sanity().unwrap();
+        let da = args.to_driver_args().unwrap();
+        assert_eq!(da.measure_y, MeasureY::MarkedTypes);
+        assert_eq!(da.measure_x, MeasureX::Types);
+        assert_eq!(da.window, 100);
+        assert_eq!(da.step, 10);
+        assert_eq!(da.iter, DEFAULT_ITER);
+    }
+
+    #[test]
+    fn args_bad() {
+        let args = Args::parse_from([
+            "",
+            "--window",
+            "100",
+            "--step",
+            "10",
+            "--count-samples",
+            "--count-hapaxes",
+            "a",
+            "b",
+        ]);
+        args.sanity().unwrap_err();
     }
 }
