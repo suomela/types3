@@ -12,6 +12,7 @@ def check_file(expected, filename):
         year = int(exp['collectioncode'])
         years = (year, year + 20)
         got = by_years[years]
+        assert got['above'] + got['below'] <= got['iter'] == 100000
         for side in ['above', 'below']:
             x1 = got[side]
             n1 = got['iter']
