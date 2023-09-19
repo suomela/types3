@@ -129,7 +129,7 @@ fn get_periods(args: &Args, years: &Years) -> Vec<Years> {
         }
         y += args.step;
     }
-    info!(target: "types3","periods: {}", output::pretty_periods(&periods));
+    info!(target: "types3", "periods: {}", output::pretty_periods(&periods));
     periods
 }
 
@@ -280,7 +280,7 @@ impl<'a> Calc<'a> {
             self.calc_top(subset, &mut top_results);
         }
         let limit = self.size_limit();
-        debug!(target: "types3","size limit: {} {}", limit, self.measure_x);
+        debug!(target: "types3", "size limit: {} {}", limit, self.measure_x);
         let curves = self
             .curves
             .iter()
@@ -313,7 +313,7 @@ impl<'a> Calc<'a> {
         for (i, p) in points.into_iter().enumerate() {
             top_results.insert((key, p), results[i]);
         }
-        debug!(target: "types3","{}: calculated {} points", subset.pretty(), results.len());
+        debug!(target: "types3", "{}: calculated {} points", subset.pretty(), results.len());
     }
 
     fn calc_curve(&self, curve: &Curve, limit: u64, top_results: &TopResults) -> OCurve {
@@ -360,7 +360,7 @@ impl<'a> Calc<'a> {
                 Some(pr)
             }
         };
-        debug!(target: "types3","{msg}");
+        debug!(target: "types3", "{msg}");
         OResult {
             period: subset.period,
             average_at_limit,
@@ -372,11 +372,11 @@ impl<'a> Calc<'a> {
 
 fn process(args: &Args) -> Result<()> {
     arg_sanity(args)?;
-    info!(target: "types3","read: {}", args.infile);
+    info!(target: "types3", "read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
     let output = Calc::new(args, &input)?.calc()?;
-    info!(target: "types3","write: {}", args.outfile);
+    info!(target: "types3", "write: {}", args.outfile);
     let file = fs::File::create(&args.outfile)?;
     let writer = io::BufWriter::new(file);
     if args.compact {
@@ -411,11 +411,11 @@ fn main() {
                         info!(target: "types3", "error reported: {e}");
                     }
                     Err(e2) => {
-                        error!(target: "types3","{e}");
-                        error!(target: "types3","{e2}");
+                        error!(target: "types3", "{e}");
+                        error!(target: "types3", "{e2}");
                     }
                 },
-                None => error!(target: "types3","{e}"),
+                None => error!(target: "types3", "{e}"),
             }
             process::exit(1);
         }
