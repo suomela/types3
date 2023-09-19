@@ -3,6 +3,7 @@ pub mod calc_point;
 pub mod calculation;
 pub mod categories;
 mod counter;
+pub mod driver;
 pub mod errors;
 pub mod information;
 pub mod input;
