@@ -2,6 +2,8 @@
 
 This is a tool for analyzing textual diversity, richness, and productivity in text corpora and other data sets.
 
+![Screenshot: user interface](doc/types3.png)
+
 ## Setup
 
 You will need to have Rust. Just use [rustup](https://www.rust-lang.org/tools/install) as usual.
