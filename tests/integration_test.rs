@@ -45,6 +45,55 @@ fn test_basic() {
 }
 
 #[test]
+fn test_category() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let data = slurp("integration-test/calc-expected/ceec-types-vs-tokens-gender.json");
+    let expected: Output = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: Some("gender"),
+        measure_y: MeasureY::Types,
+        measure_x: MeasureX::Tokens,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    let output = driver::calc(&driver_args, &input).unwrap();
+    assert_eq!(output, expected);
+}
+
+#[test]
+fn test_bad_category() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: Some("nonexisting"),
+        measure_y: MeasureY::Types,
+        measure_x: MeasureX::Tokens,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    assert!(driver::calc(&driver_args, &input).is_err());
+}
+
+#[test]
 fn test_type_ratio() {
     init();
     let data = slurp("sample-data/ceec.json");
