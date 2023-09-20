@@ -30,6 +30,11 @@ To explore the sample data set that we have in `sample-data`, try:
 
     ./types3-ui sample-data/ceec.json
 
+
+## Prior versions
+
+- [types2](https://github.com/suomela/types)
+
 ## Author
 
 - [Jukka Suomela](https://jukkasuomela.fi/), Aalto University
