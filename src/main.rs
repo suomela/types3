@@ -3,7 +3,7 @@ use clap_verbosity_flag::{Verbosity, WarnLevel};
 use log::{error, info};
 use std::{error, fs, io, process};
 use types3::categories;
-use types3::driver::{Calc, DriverArgs};
+use types3::driver::{self, DriverArgs};
 use types3::errors::{self, Result};
 use types3::input::{Input, Year};
 use types3::output::{MeasureX, MeasureY, OError};
@@ -157,7 +157,7 @@ fn process(args: &Args) -> Result<()> {
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
     let driver_args = &args.to_driver_args()?;
-    let output = Calc::new(driver_args, &input)?.calc()?;
+    let output = driver::calc(driver_args, &input)?;
     info!(target: "types3", "write: {}", args.outfile);
     let file = fs::File::create(&args.outfile)?;
     let writer = io::BufWriter::new(file);

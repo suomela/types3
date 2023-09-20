@@ -68,7 +68,11 @@ fn build_curves<'a>(categories: &[Category<'a>], periods: &[Years]) -> Vec<Curve
 
 type TopResults<'a> = HashMap<(SubsetKey<'a>, Point), PointResult>;
 
-pub struct Calc<'a> {
+pub fn calc(args: &DriverArgs, input: &Input) -> Result<Output> {
+    Calc::new(args, input)?.calc()
+}
+
+struct Calc<'a> {
     years: Years,
     periods: Vec<Years>,
     curves: Vec<Curve<'a>>,
@@ -83,7 +87,7 @@ pub struct Calc<'a> {
 }
 
 impl<'a> Calc<'a> {
-    pub fn new(args: &'a DriverArgs, input: &'a Input) -> Result<Calc<'a>> {
+    fn new(args: &'a DriverArgs, input: &'a Input) -> Result<Calc<'a>> {
         information::statistics(&input.samples);
         let samples = samples::get_samples(
             args.restrict_samples,
@@ -166,7 +170,7 @@ impl<'a> Calc<'a> {
             .expect("at least one period")
     }
 
-    pub fn calc(self) -> Result<Output> {
+    fn calc(self) -> Result<Output> {
         let mut top_results = HashMap::new();
         for subset in self.subset_map.values() {
             self.calc_top(subset, &mut top_results);

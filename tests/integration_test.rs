@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
-use types3::driver::{Calc, DriverArgs};
+use types3::driver::{self, DriverArgs};
 use types3::input::Input;
 use types3::output::{MeasureX, MeasureY, Output};
 
@@ -32,8 +32,7 @@ fn test_basic() {
         mark_tokens: None,
         split_samples: false,
     };
-    let calc = Calc::new(&driver_args, &input).unwrap();
-    let output = calc.calc().unwrap();
+    let output = driver::calc(&driver_args, &input).unwrap();
     assert_eq!(output, expected);
 }
 
@@ -58,7 +57,6 @@ fn test_type_ratio() {
         mark_tokens: Some(("variant", "ity")),
         split_samples: true,
     };
-    let calc = Calc::new(&driver_args, &input).unwrap();
-    let output = calc.calc().unwrap();
+    let output = driver::calc(&driver_args, &input).unwrap();
     assert_eq!(output, expected);
 }
