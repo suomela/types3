@@ -4,6 +4,13 @@ use types3::driver::{self, DriverArgs};
 use types3::input::Input;
 use types3::output::{MeasureX, MeasureY, Output};
 
+fn init() {
+    let _ = pretty_env_logger::formatted_timed_builder()
+        .filter_level(log::LevelFilter::Trace)
+        .is_test(true)
+        .try_init();
+}
+
 fn slurp(filename: &str) -> String {
     let dir = env!("CARGO_MANIFEST_DIR");
     let mut path = PathBuf::from(dir);
@@ -13,6 +20,7 @@ fn slurp(filename: &str) -> String {
 
 #[test]
 fn test_basic() {
+    init();
     let data = slurp("sample-data/ceec.json");
     let input: Input = serde_json::from_str(&data).unwrap();
     let data = slurp("integration-test/calc-expected/ceec-types-vs-tokens.json");
@@ -38,6 +46,7 @@ fn test_basic() {
 
 #[test]
 fn test_type_ratio() {
+    init();
     let data = slurp("sample-data/ceec.json");
     let input: Input = serde_json::from_str(&data).unwrap();
     let data = slurp("integration-test/calc-expected/ceec-type-ratio-split-ity-female.json");
