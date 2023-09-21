@@ -33,7 +33,7 @@ To explore the sample data set that we have in `sample-data`, try:
 
 ## Prior versions
 
-- [types2](https://github.com/suomela/types): Type and hapax accumulation curves
+- [types2](https://github.com/suomela/types): type and hapax accumulation curves
 - [TypeRatio](https://github.com/suomela/type-ratio): comparing competing suffixes
 
 ## Author
