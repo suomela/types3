@@ -94,6 +94,84 @@ fn test_bad_category() {
 }
 
 #[test]
+fn test_tokens_words() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let data = slurp("integration-test/calc-expected/ceec-tokens-vs-words.json");
+    let expected: Output = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: None,
+        measure_y: MeasureY::Tokens,
+        measure_x: MeasureX::Words,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    let output = driver::calc(&driver_args, &input).unwrap();
+    assert_eq!(output, expected);
+}
+
+#[test]
+fn test_hapaxes_words() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let data = slurp("integration-test/calc-expected/ceec-hapaxes-vs-words.json");
+    let expected: Output = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: None,
+        measure_y: MeasureY::Hapaxes,
+        measure_x: MeasureX::Words,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    let output = driver::calc(&driver_args, &input).unwrap();
+    assert_eq!(output, expected);
+}
+
+#[test]
+fn test_samples_words() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let data = slurp("integration-test/calc-expected/ceec-samples-vs-words.json");
+    let expected: Output = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: None,
+        measure_y: MeasureY::Samples,
+        measure_x: MeasureX::Words,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    let output = driver::calc(&driver_args, &input).unwrap();
+    assert_eq!(output, expected);
+}
+
+#[test]
 fn test_type_ratio() {
     init();
     let data = slurp("sample-data/ceec.json");
