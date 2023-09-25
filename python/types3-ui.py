@@ -1,22 +1,22 @@
-import appdirs
 import argparse
 import hashlib
 import json
 import logging
 import math
-import matplotlib
 import os
 import queue
 import subprocess
 import sys
 import threading
 import tkinter as tk
-import types3.plot
 from collections import defaultdict
 from pathlib import Path
 from tkinter import ttk
+import appdirs
+import matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import types3.plot
 
 matplotlib.rcParams['axes.titlesize'] = 'medium'
 
@@ -47,7 +47,7 @@ def sanity_check():
         sys.exit(1)
 
 
-def metadata_choices(metadata, with_everything=True):
+def metadata_choices(metadata):
     r = ['everything']
     m = {'everything': None}
     for k in sorted(metadata.keys()):
@@ -112,7 +112,7 @@ class Runner:
             '--iter',
             str(self.iter)
         ]
-        for i in range(self.verbose):
+        for _ in range(self.verbose):
             base_args += ['--verbose']
         full_cmd = base_args + self.current
         logging.debug(f'starting: {full_cmd}...')
@@ -141,12 +141,12 @@ class Runner:
                     error = error_struct['error']
                 self.errfile.unlink()
             else:
-                logging.warning(f'process failed without telling why')
+                logging.warning('process failed without telling why')
             self.msg(('ERROR', self.current, self.iter, error))
             self.iter = None
             self.current = None
             return
-        logging.debug(f'process finished successfully')
+        logging.debug('process finished successfully')
         self.tempfile.rename(self.outfile)
         if self.iter < MAX_ITER:
             self.msg(('DONE-WORKING', self.current, self.iter, None))
@@ -154,7 +154,7 @@ class Runner:
             self.start_cmd()
         else:
             self.msg(('DONE', self.current, self.iter, None))
-            logging.debug(f'all iterations done')
+            logging.debug('all iterations done')
             self.iter = None
             self.current = None
 
@@ -162,11 +162,11 @@ class Runner:
         assert self.process is not None
         assert self.current is not None
         assert self.iter is not None
-        logging.debug(f'stopping...')
+        logging.debug('stopping...')
         self.process.terminate()
-        logging.debug(f'waiting...')
+        logging.debug('waiting...')
         self.process.wait()
-        logging.debug(f'stopped')
+        logging.debug('stopped')
         self.iter = None
         self.process = None
         self.current = None
@@ -191,7 +191,7 @@ class Runner:
                 break
         if all_done:
             self.msg(('DONE', self.current, self.iter, None))
-            logging.debug(f'all iterations in cache')
+            logging.debug('all iterations in cache')
             self.iter = None
             self.current = None
         else:
@@ -202,7 +202,7 @@ class Runner:
             self.start_cmd()
 
     def run(self):
-        logging.debug(f'runner started')
+        logging.debug('runner started')
         while True:
             if self.process:
                 need_poll = False
@@ -225,7 +225,7 @@ class Runner:
             self.iter = MIN_ITER
             self.current = cmd
             self.try_cache()
-        logging.debug(f'runner done')
+        logging.debug('runner done')
 
 
 class App:
@@ -241,7 +241,7 @@ class App:
         self._build_ui(root)
         self._setup_menu(root)
         self._setup_hooks(root)
-        logging.debug(f'ready')
+        logging.debug('ready')
 
     def _read_infile(self):
         logging.debug(f'read: {self.infile}')
@@ -555,14 +555,14 @@ class App:
         self.runner_thread.start()
         self.update()
 
-    def parse_required_int(self, errors, label, min, max, v):
-        x = self.parse_opt_int(errors, label, min, max, v)
+    def parse_required_int(self, errors, label, vmin, vmax, v):
+        x = self.parse_opt_int(errors, label, vmin, vmax, v)
         if x is None:
             errors.append(f'{label} is required.')
             return None
         return x
 
-    def parse_opt_int(self, errors, label, min, max, v):
+    def parse_opt_int(self, errors, label, vmin, vmax, v):
         if v is None:
             return None
         if v.strip() == '':
@@ -572,11 +572,11 @@ class App:
         except:
             errors.append(f'{label} is not a valid number.')
             return None
-        if min is not None and x < min:
-            errors.append(f'{label} should be at least {min}.')
+        if vmin is not None and x < vmin:
+            errors.append(f'{label} should be at least {vmin}.')
             return None
-        if max is not None and x > max:
-            errors.append(f'{label} should be at most {max}.')
+        if vmax is not None and x > vmax:
+            errors.append(f'{label} should be at most {vmax}.')
             return None
         return x
 
@@ -652,10 +652,10 @@ class App:
 
     def run(self, root):
         root.mainloop()
-        logging.debug(f'stopping...')
+        logging.debug('stopping...')
         self.runner_queue.put('STOP')
         self.runner_thread.join()
-        logging.debug(f'done')
+        logging.debug('done')
 
     def new_results(self, *_):
         to_draw = None
@@ -698,7 +698,7 @@ class App:
         types3.plot.plot(self.fig, data, dims, legend='lower right')
         self.canvas.draw()
 
-    def save(self, *x):
+    def save(self, *_):
         if self.cur_outfile is None:
             return
         ftmap = {
@@ -730,7 +730,7 @@ class App:
             cmd += ['--wide']
         if self.save_large.get() == 'large':
             cmd += ['--large']
-        for i in range(self.verbose):
+        for _ in range(self.verbose):
             cmd += ['--verbose']
         try:
             subprocess.run(cmd, check=True)
@@ -740,7 +740,7 @@ class App:
                 message=f'Could not export as {save_filename}')
 
 
-if __name__ == '__main__':
+def main():
     args = cli.parse_args()
     if args.verbose >= 2:
         loglevel = logging.DEBUG
@@ -752,3 +752,7 @@ if __name__ == '__main__':
     sanity_check()
     root = tk.Tk()
     App(root, args).run(root)
+
+
+if __name__ == '__main__':
+    main()

@@ -60,7 +60,7 @@ def _catname(cats):
     s = []
     for cat in cats:
         if cat is not None:
-            k, v = cat
+            _, v = cat
             s.append(v)
     if len(s) == 0:
         s.append('everything')
@@ -182,7 +182,7 @@ def plot(fig, data, dims, legend):
             dims.h2 / dims.height
         ])
         if i == 0:
-            ax.set_title(f'Significance of differences in time')
+            ax.set_title('Significance of differences in time')
         ax.set_ylim(
             (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
         ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
@@ -202,7 +202,7 @@ def plot(fig, data, dims, legend):
             ])
             if i == 0:
                 ax.set_title(
-                    f'Significance in comparison with other categories')
+                    'Significance in comparison with other categories')
             ax.set_ylim(
                 (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
             ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
