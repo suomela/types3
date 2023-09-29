@@ -1,3 +1,5 @@
+//! Data structures for representing the output.
+
 use crate::input::Year;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};

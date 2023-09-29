@@ -1,3 +1,5 @@
+//! Main entry point for calculating everything.
+
 use crate::calc_avg;
 use crate::calc_point::{self, Point};
 use crate::categories::{self, Category};
@@ -12,19 +14,61 @@ use log::{debug, info};
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
 
+/// What to calculate?
 pub struct DriverArgs<'a> {
+    /// Sample metadata category to consider.
+    /// If specified, calculate curves for each distinct value that we have for this metadata key in [crate::input::ISample::metadata].
+    /// If not specified, calculate just one curve for all data.
     pub category: Option<&'a str>,
+
+    /// What to calculate.
+    /// In the visualizations, this corresponds to what will be put in the y axis.
     pub measure_y: MeasureY,
+
+    /// Criterion used to compare subcorpora.
+    /// We will accumulate samples until they have the same size according to this measure.
     pub measure_x: MeasureX,
+
+    /// Number of iterations.
+    /// How many random permutations to produce.
     pub iter: u64,
+
+    /// Periodization offset.
+    /// If 0, period starting points will be multiples of the step size.
+    /// For example, if we use 100-year steps, we will have periods starting at 1800, 1900, 2000, etc.
+    /// By setting the `offset` e.g. to 12, we will switch to periods starting at 1812, 1912, 2012, etc.
     pub offset: Year,
+
+    /// Starting year.
+    /// Empty periods in the beginning will be automatically omitted,
+    /// so the starting year can be safely set to e.g. 0.
     pub start: Year,
+
+    /// Final year.
+    /// Empty periods in the end will be automatically omitted,
+    /// so the final year can be safely set to e.g. 9999.
     pub end: Year,
+
+    /// Windows size.
     pub window: Year,
+
+    /// Step size.
     pub step: Year,
+
+    /// Sample-level restriction.
+    /// Can be either a key-value pair (which refers to [crate::input::ISample::metadata]), or `None` if there is no need to restrict based on sample metadata.
     pub restrict_samples: Category<'a>,
+
+    /// Token-level restriction.
+    /// Can be either a key-value pair (which refers to [crate::input::IToken::metadata]), or `None` if there is no need to restrict based on token metadata.
     pub restrict_tokens: Category<'a>,
+
+    /// Which tokens are marked.
+    /// Can be either a key-value pair (which refers to [crate::input::IToken::metadata]), or `None` if there is no need to mark tokens.
+    /// Marking is relevant if [DriverArgs::measure_y] is set to [MeasureY::MarkedTypes].
     pub mark_tokens: Category<'a>,
+
+    /// Do we split samples?
     pub split_samples: bool,
 }
 
@@ -68,6 +112,9 @@ fn build_curves<'a>(categories: &[Category<'a>], periods: &[Years]) -> Vec<Curve
 
 type TopResults<'a> = HashMap<(SubsetKey<'a>, Point), PointResult>;
 
+/// Calculate everything.
+///
+/// This is the main entry point for the library.
 pub fn calc(args: &DriverArgs, input: &Input) -> Result<Output> {
     Calc::new(args, input)?.calc()
 }

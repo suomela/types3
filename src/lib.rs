@@ -1,3 +1,7 @@
+//! Type accumulation curves.
+//!
+//! See [driver] for the main entry point.
+
 mod calc_avg;
 mod calc_point;
 mod calculation;

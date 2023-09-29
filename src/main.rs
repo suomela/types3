@@ -17,7 +17,7 @@ struct Args {
     infile: String,
     /// Output file (JSON)
     outfile: String,
-    /// Metadata category
+    /// Sample metadata key to consider
     #[arg(long)]
     category: Option<String>,
     /// Count tokens (instead of types)
@@ -53,10 +53,10 @@ struct Args {
     /// Step length (years)
     #[arg(long)]
     step: Year,
-    /// Sample category restriction, of the form key=value
+    /// Sample metadata restriction, of the form key=value
     #[arg(long)]
     restrict_samples: Option<String>,
-    /// Token category restriction, of the form key=value
+    /// Token metadata restriction, of the form key=value
     #[arg(long)]
     restrict_tokens: Option<String>,
     /// Which tokens to mark, of the form key=value
