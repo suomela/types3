@@ -26,3 +26,5 @@ jobs:
       run: cargo test --release
     - name: Run clippy
       run: cargo clippy
+    - name: Build documentation
+      run: cargo doc
