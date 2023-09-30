@@ -36,6 +36,10 @@ jobs:
         run: |
           integration-test/test-calc2.sh
 
-      - name: test plot
+      - name: Test plotting
         run: |
           integration-test/test-plot.sh
+
+      - name: Check version numbers
+        run: |
+          integration-test/test-version.sh
