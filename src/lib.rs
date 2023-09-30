@@ -2,6 +2,8 @@
 //!
 //! See [driver] for the main entry point.
 
+#![warn(missing_docs)]
+
 mod calc_avg;
 mod calc_point;
 mod calculation;

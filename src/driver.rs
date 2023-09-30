@@ -56,19 +56,24 @@ pub struct DriverArgs<'a> {
     pub step: Year,
 
     /// Sample-level restriction.
-    /// Can be either a key-value pair (which refers to [crate::input::ISample::metadata]), or `None` if there is no need to restrict based on sample metadata.
+    /// Can be either a key-value pair (which refers to [crate::input::ISample::metadata]),
+    /// or `None` if there is no need to restrict based on sample metadata.
     pub restrict_samples: Category<'a>,
 
     /// Token-level restriction.
-    /// Can be either a key-value pair (which refers to [crate::input::IToken::metadata]), or `None` if there is no need to restrict based on token metadata.
+    /// Can be either a key-value pair (which refers to [crate::input::IToken::metadata]),
+    /// or `None` if there is no need to restrict based on token metadata.
     pub restrict_tokens: Category<'a>,
 
     /// Which tokens are marked.
-    /// Can be either a key-value pair (which refers to [crate::input::IToken::metadata]), or `None` if there is no need to mark tokens.
+    /// Can be either a key-value pair (which refers to [crate::input::IToken::metadata]),
+    /// or `None` if there is no need to mark tokens.
     /// Marking is relevant if [DriverArgs::measure_y] is set to [MeasureY::MarkedTypes].
     pub mark_tokens: Category<'a>,
 
     /// Do we split samples?
+    /// If false, we use the original samples as is when forming random subcorpora.
+    /// If true, we interpret each token as a "micro-sample" and ignore the sample structure.
     pub split_samples: bool,
 }
 
