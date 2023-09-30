@@ -19,6 +19,9 @@ cli.add_argument('--large', action='store_true', help='Large fonts')
 cli.add_argument('--dpi', default=300, type=int, help='PNG resolution')
 cli.add_argument('infile', help='Input file (JSON)')
 cli.add_argument('outfile', help='Output file (PDF or PNG)')
+cli.add_argument('--version',
+                 action='version',
+                 version='%(prog)s ' + types3.__version__)
 
 
 def plot(args):

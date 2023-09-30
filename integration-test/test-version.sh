@@ -3,17 +3,16 @@
 set -e
 
 WHERE=$(readlink -f "$0")
+WHERE=$(dirname "$WHERE")
 export TYPES3_BASEDIR=$(dirname "$WHERE")
 
 if [ ! -e "$TYPES3_BASEDIR/venv/bin/activate" ]; then
     echo "Cannot find Python virtual environment"
-    echo "Try to run util/setup.sh first!"
     exit 1
 fi
 
 if [ ! -e "$TYPES3_BASEDIR/target/release/types3" ]; then
     echo "Cannot find types-calc binary"
-    echo "Try to run util/setup.sh first!"
     exit 1
 fi
 
@@ -26,8 +25,7 @@ if [ "$v1" != "$v2" ]; then
     echo "Software version mismatch:"
     echo "- Rust code: $v1"
     echo "- Python code: $v2"
-    echo "Try to run util/setup.sh first!"
     exit 1
 fi
 
-exec python3 $TYPES3_BASEDIR/python/types3-ui.py "$@"
+echo "SUCCESS: version numbers agree."

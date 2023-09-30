@@ -35,6 +35,9 @@ cli.add_argument('--verbose',
                  default=0,
                  help='Increase verbosity')
 cli.add_argument('infile', help='Input file (JSON)')
+cli.add_argument('--version',
+                 action='version',
+                 version='%(prog)s ' + types3.__version__)
 
 
 def sanity_check():
