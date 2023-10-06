@@ -26,10 +26,10 @@ Try these:
 
 ## Sample data
 
-To explore the sample data set that we have in `sample-data`, try:
+To explore the sample data sets that we have in `sample-data`, try:
 
     ./types3-ui sample-data/ceec.json
-
+    ./types3-ui sample-data/ced-ppceme-chelar.json
 
 ## Prior versions
 
@@ -39,3 +39,7 @@ To explore the sample data set that we have in `sample-data`, try:
 ## Author
 
 - [Jukka Suomela](https://jukkasuomela.fi/), Aalto University
+
+## Acknowledgements
+
+Thanks to [Paula Rodríguez-Puente](https://www.usc-vlcg.es/PRP.htm) and [Tanja Säily](https://tanjasaily.fi/) for help with developing these tools.
