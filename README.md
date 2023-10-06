@@ -26,7 +26,7 @@ Try these:
 
 ## Sample data
 
-To explore the sample data sets that we have in `sample-data`, try:
+To explore the [sample data sets](sample-data), try:
 
     ./types3-ui sample-data/ceec.json
     ./types3-ui sample-data/ced-ppceme-chelar.json
