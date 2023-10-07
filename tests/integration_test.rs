@@ -203,3 +203,57 @@ fn test_type_ratio() {
     let output = driver::calc(&driver_args, &input).unwrap();
     assert_eq!(output, expected);
 }
+
+#[test]
+fn test_minimum() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let data = slurp("integration-test/calc-expected/ceec-types-vs-tokens-1000.json");
+    let expected: Output = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: None,
+        measure_y: MeasureY::Types,
+        measure_x: MeasureX::Tokens,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        minimum_size: 1000,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    let output = driver::calc(&driver_args, &input).unwrap();
+    assert_eq!(output, expected);
+}
+
+#[test]
+fn test_category_minimum() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let data = slurp("integration-test/calc-expected/ceec-types-vs-tokens-1000-gender.json");
+    let expected: Output = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: Some("gender"),
+        measure_y: MeasureY::Types,
+        measure_x: MeasureX::Tokens,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 9999,
+        window: 20,
+        step: 20,
+        minimum_size: 1000,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    let output = driver::calc(&driver_args, &input).unwrap();
+    assert_eq!(output, expected);
+}
