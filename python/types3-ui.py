@@ -20,7 +20,7 @@ import types3.plot
 
 matplotlib.rcParams['axes.titlesize'] = 'medium'
 
-OUTPUT_VERSION = 'v3'
+OUTPUT_VERSION = 'v4'
 MIN_ITER = 1_000
 MAX_ITER = 1_000_000
 ITER_STEP = 10
