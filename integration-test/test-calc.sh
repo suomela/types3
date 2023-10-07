@@ -81,6 +81,10 @@ $what calc/ceec-type-ratio-split-ity.json
 $what calc/ceec-type-ratio-split-ity-female.json --restrict-samples gender=female
 $what calc/ceec-type-ratio-split-ity-gender.json --category gender
 
+base="../types3-calc --window 50 --step 10 --iter 10000 ../sample-data/ced-ppceme-chelar.json"
+what="$base --minimum-size 100"
+$what calc/ced-ppceme-chelar-types-vs-tokens-100-corpus.json --category corpus
+
 cd calc
 for a in *.json; do
     diff ../calc-expected/$a $a
