@@ -1,0 +1,127 @@
+{
+  "restrict_samples": null,
+  "restrict_tokens": null,
+  "mark_tokens": null,
+  "curves": [
+    {
+      "category": [
+        "socmob",
+        "soc. mob. D"
+      ],
+      "results": []
+    },
+    {
+      "category": [
+        "socmob",
+        "soc. mob. N"
+      ],
+      "results": [
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 2330000,
+            "high": 2330000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 1803,
+            "below": 5274,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 1116,
+            "below": 4266,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 2518846,
+            "high": 2599663,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 7093,
+            "below": 813,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 1240,
+            "below": 5133,
+            "iter": 10000
+          }
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 2306846,
+            "high": 2478572,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 5198,
+            "below": 2708,
+            "iter": 10000
+          },
+          "vs_categories": {
+            "above": 1722,
+            "below": 4796,
+            "iter": 10000
+          }
+        }
+      ]
+    },
+    {
+      "category": [
+        "socmob",
+        "soc. mob. U"
+      ],
+      "results": []
+    }
+  ],
+  "years": [
+    1680,
+    1781
+  ],
+  "periods": [
+    [
+      1680,
+      1700
+    ],
+    [
+      1700,
+      1720
+    ],
+    [
+      1720,
+      1740
+    ],
+    [
+      1740,
+      1760
+    ],
+    [
+      1760,
+      1780
+    ],
+    [
+      1780,
+      1800
+    ]
+  ],
+  "measure_y": "types",
+  "measure_x": "tokens",
+  "split_samples": false,
+  "limit": 1160,
+  "iter": 10000
+}

@@ -14,6 +14,20 @@ $what calc/ceec-types-vs-tokens-female.json --restrict-samples gender=female
 $what calc/ceec-types-vs-tokens-gender.json --category gender
 $what calc/ceec-types-vs-tokens-socmob.json --category socmob
 $what calc/ceec-types-vs-tokens-gender-ity.json --category gender --restrict-tokens variant=ity
+what="$base --minimum-size 100"
+$what calc/ceec-types-vs-tokens-100.json
+$what calc/ceec-types-vs-tokens-100-ity.json --restrict-tokens variant=ity
+$what calc/ceec-types-vs-tokens-100-female.json --restrict-samples gender=female
+$what calc/ceec-types-vs-tokens-100-gender.json --category gender
+$what calc/ceec-types-vs-tokens-100-socmob.json --category socmob
+$what calc/ceec-types-vs-tokens-100-gender-ity.json --category gender --restrict-tokens variant=ity
+what="$base --minimum-size 1000"
+$what calc/ceec-types-vs-tokens-1000.json
+$what calc/ceec-types-vs-tokens-1000-ity.json --restrict-tokens variant=ity
+$what calc/ceec-types-vs-tokens-1000-female.json --restrict-samples gender=female
+$what calc/ceec-types-vs-tokens-1000-gender.json --category gender
+$what calc/ceec-types-vs-tokens-1000-socmob.json --category socmob
+$what calc/ceec-types-vs-tokens-1000-gender-ity.json --category gender --restrict-tokens variant=ity
 what="$base --split-samples"
 $what calc/ceec-types-vs-tokens-split.json
 $what calc/ceec-types-vs-tokens-split-ity.json --restrict-tokens variant=ity

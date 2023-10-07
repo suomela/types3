@@ -1,0 +1,101 @@
+{
+  "restrict_samples": null,
+  "restrict_tokens": [
+    "variant",
+    "ity"
+  ],
+  "mark_tokens": null,
+  "curves": [
+    {
+      "category": null,
+      "results": [
+        {
+          "period": [
+            1740,
+            1760
+          ],
+          "average_at_limit": {
+            "low": 1610000,
+            "high": 1610000,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 3085,
+            "below": 4906,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1760,
+            1780
+          ],
+          "average_at_limit": {
+            "low": 1666858,
+            "high": 1705475,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 6037,
+            "below": 2167,
+            "iter": 10000
+          },
+          "vs_categories": null
+        },
+        {
+          "period": [
+            1780,
+            1800
+          ],
+          "average_at_limit": {
+            "low": 1754779,
+            "high": 1815678,
+            "iter": 10000
+          },
+          "vs_time": {
+            "above": 9906,
+            "below": 28,
+            "iter": 10000
+          },
+          "vs_categories": null
+        }
+      ]
+    }
+  ],
+  "years": [
+    1680,
+    1781
+  ],
+  "periods": [
+    [
+      1680,
+      1700
+    ],
+    [
+      1700,
+      1720
+    ],
+    [
+      1720,
+      1740
+    ],
+    [
+      1740,
+      1760
+    ],
+    [
+      1760,
+      1780
+    ],
+    [
+      1780,
+      1800
+    ]
+  ],
+  "measure_y": "types",
+  "measure_x": "tokens",
+  "split_samples": false,
+  "limit": 1003,
+  "iter": 10000
+}
