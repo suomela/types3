@@ -66,6 +66,8 @@ def metadata_top_choices(metadata):
     r = ['none']
     m = {'none': None}
     for k in sorted(metadata.keys()):
+        if len(metadata[k]) > len(types3.plot.COLORS):
+            continue
         vv = ', '.join(sorted(metadata[k]))
         if len(vv) > 25:
             vv = vv[:20] + '…'
