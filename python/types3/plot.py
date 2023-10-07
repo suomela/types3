@@ -155,6 +155,14 @@ def plot(fig, data, dims, legend):
     xx = [a for (a, b) in periods]
     periodlabels = [f'{a}–{b-1}' for (a, b) in periods]
 
+    if len(xx) > 1:
+        xrange = xx[-1] - xx[0]
+        xmargin = xrange * 0.05
+        xlimits = (xx[0] - xmargin, xx[-1] + xmargin)
+    else:
+        xmargin = 1
+        xlimits = (xx[0] - xmargin, xx[0] + xmargin)
+
     col = dims.x0
     axs2 = []
     axs3 = []
@@ -165,6 +173,7 @@ def plot(fig, data, dims, legend):
         dims.h1 / dims.height
     ])
     ax.set_title(_title(data))
+    ax.set_xlim(xlimits)
     ax.set_xticks(xx, [])
     ax1 = ax
     last = ax
@@ -186,6 +195,7 @@ def plot(fig, data, dims, legend):
         ax.set_ylim(
             (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
         ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
+        ax.set_xlim(xlimits)
         ax.set_xticks([], [])
         axs2.append(ax)
         last = ax
@@ -206,6 +216,7 @@ def plot(fig, data, dims, legend):
             ax.set_ylim(
                 (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
             ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
+            ax.set_xlim(xlimits)
             ax.set_xticks([], [])
             axs3.append(ax)
             last = ax
