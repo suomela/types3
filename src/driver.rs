@@ -215,12 +215,11 @@ impl<'a> Calc<'a> {
         let mut limit: Option<u64> = None;
         for c in &self.curves {
             for key in &c.keys {
-                match self.subset_map.get(key) {
-                    Some(s) => match limit {
-                        Some(x) => limit = Some(x.min(s.total_x)),
-                        None => limit = Some(s.total_x),
-                    },
-                    None => (),
+                if let Some(s) = self.subset_map.get(key) {
+                    limit = match limit {
+                        Some(x) => Some(x.min(s.total_x)),
+                        None => Some(s.total_x),
+                    }
                 }
             }
         }
@@ -278,9 +277,11 @@ impl<'a> Calc<'a> {
             results: curve
                 .keys
                 .iter()
-                .filter_map(|k| match &self.subset_map.get(k) {
-                    Some(s) => Some(self.calc_relevant(s, limit, top_results)),
-                    None => None,
+                .filter_map(|k| {
+                    self.subset_map
+                        .get(k)
+                        .as_ref()
+                        .map(|s| self.calc_relevant(s, limit, top_results))
                 })
                 .collect_vec(),
         }
