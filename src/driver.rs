@@ -55,6 +55,9 @@ pub struct DriverArgs<'a> {
     /// Step size.
     pub step: Year,
 
+    /// Minimum size for subsets.
+    pub minimum_size: u64,
+
     /// Sample-level restriction.
     /// Can be either a key-value pair (which refers to [crate::input::ISample::metadata]),
     /// or `None` if there is no need to restrict based on sample metadata.
@@ -171,7 +174,10 @@ impl<'a> Calc<'a> {
                     &samples,
                     *key,
                     args.split_samples,
-                )?;
+                );
+                if subset.total_x < args.minimum_size {
+                    continue;
+                }
                 let point = subset.get_point();
                 let parents = subset.get_parents(years);
                 subset_map.insert(*key, subset);
@@ -184,7 +190,7 @@ impl<'a> Calc<'a> {
                             &samples,
                             *parent,
                             args.split_samples,
-                        )?),
+                        )),
                     };
                     x.points.insert(point);
                 }
@@ -205,21 +211,23 @@ impl<'a> Calc<'a> {
         })
     }
 
-    fn size_limit(&self) -> u64 {
-        self.curves
-            .iter()
-            .map(|c| self.curve_size_limit(c))
-            .min()
-            .expect("at least one curve")
-    }
-
-    fn curve_size_limit(&self, curve: &Curve) -> u64 {
-        curve
-            .keys
-            .iter()
-            .map(|k| self.subset_map[k].total_x)
-            .min()
-            .expect("at least one period")
+    fn size_limit(&self) -> Result<u64> {
+        let mut limit: Option<u64> = None;
+        for c in &self.curves {
+            for key in &c.keys {
+                match self.subset_map.get(key) {
+                    Some(s) => match limit {
+                        Some(x) => limit = Some(x.min(s.total_x)),
+                        None => limit = Some(s.total_x),
+                    },
+                    None => (),
+                }
+            }
+        }
+        match limit {
+            Some(x) => Ok(x),
+            None => Err(errors::invalid_input_ref("no valid subsets found")),
+        }
     }
 
     fn calc(self) -> Result<Output> {
@@ -227,7 +235,7 @@ impl<'a> Calc<'a> {
         for subset in self.subset_map.values() {
             self.calc_top(subset, &mut top_results);
         }
-        let limit = self.size_limit();
+        let limit = self.size_limit()?;
         debug!(target: "types3", "size limit: {} {}", limit, self.measure_x);
         let curves = self
             .curves
@@ -270,7 +278,10 @@ impl<'a> Calc<'a> {
             results: curve
                 .keys
                 .iter()
-                .map(|k| self.calc_relevant(&self.subset_map[k], limit, top_results))
+                .filter_map(|k| match &self.subset_map.get(k) {
+                    Some(s) => Some(self.calc_relevant(s, limit, top_results)),
+                    None => None,
+                })
                 .collect_vec(),
         }
     }
@@ -337,6 +348,7 @@ mod test {
             restrict_tokens: None,
             mark_tokens: None,
             split_samples: false,
+            minimum_size: 1,
         }
     }
 

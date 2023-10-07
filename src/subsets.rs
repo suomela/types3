@@ -2,7 +2,6 @@ use crate::calc_point::Point;
 use crate::calculation::{SToken, Sample};
 use crate::categories::{self, Category};
 use crate::counter;
-use crate::errors::{self, Result};
 use crate::output::{self, MeasureX, MeasureY, Years};
 use crate::samples::CSample;
 use itertools::Itertools;
@@ -81,7 +80,7 @@ pub fn build_subset<'a>(
     samples: &[CSample<'a>],
     key: SubsetKey<'a>,
     split_samples: bool,
-) -> Result<Subset<'a>> {
+) -> Subset<'a> {
     let category = key.category;
     let period = key.period;
     let filter = |s: &&CSample| {
@@ -179,13 +178,7 @@ pub fn build_subset<'a>(
         s.total_x,
         measure_x,
     );
-    if total_x == 0 {
-        return Err(errors::invalid_input(format!(
-            "{}: zero-size subset",
-            s.pretty()
-        )));
-    }
-    Ok(s)
+    s
 }
 
 #[cfg(test)]
@@ -254,7 +247,7 @@ mod test {
             category: None,
             period: (1500, 1600),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -293,7 +286,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -339,7 +332,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -385,7 +378,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -431,7 +424,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -477,7 +470,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -523,7 +516,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, true).unwrap();
+        let r = build_subset(mx, my, &samples, key, true);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -585,7 +578,7 @@ mod test {
             category: Some(("y", "b")),
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -625,7 +618,7 @@ mod test {
             category: Some(("x", "a")),
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -664,7 +657,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -710,7 +703,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(
@@ -756,7 +749,7 @@ mod test {
             category: None,
             period: (1500, 1700),
         };
-        let r = build_subset(mx, my, &samples, key, false).unwrap();
+        let r = build_subset(mx, my, &samples, key, false);
         assert_eq!(r.category, key.category);
         assert_eq!(r.period, key.period);
         assert_eq!(

@@ -213,6 +213,8 @@ def plot(fig, data, dims, legend):
 
     ymax = 1
     for i, curve in enumerate(curves):
+        if len(curve['results']) == 0:
+            continue
         if curve['category']:
             color = COLORS[i]
         else:

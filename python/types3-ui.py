@@ -430,6 +430,15 @@ class App:
         e.grid(column=1, row=row, sticky='w')
         row += 1
 
+        e = ttk.Label(widgetframe, text='Minimum size:')
+        e.grid(column=0, row=row, sticky='e')
+        self.minimum_size = tk.StringVar(value='10')
+        e = ttk.Entry(widgetframe, textvariable=self.minimum_size, width=6)
+        e.grid(column=1, row=row, sticky='w')
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
+        row += 1
+
         e = ttk.Separator(widgetframe, orient='horizontal')
         e.grid(column=0, row=row, columnspan=2, sticky='ew')
         row += 1
@@ -586,6 +595,10 @@ class App:
     def update(self, *x):
         args = []
         errors = []
+        minimum_size = self.parse_opt_int(errors, 'Minimum size', 1, None,
+                                          self.minimum_size.get())
+        if minimum_size is not None:
+            args += ['--minimum-size', str(minimum_size)]
         window = self.parse_required_int(errors, 'Window size', 1, None,
                                          self.window.get())
         if window is not None:

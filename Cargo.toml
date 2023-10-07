@@ -1,6 +1,6 @@
 [package]
 name = "types3"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Jukka Suomela"]
 edition = "2021"
 description = "Type accumulation curves"

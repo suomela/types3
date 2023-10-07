@@ -53,6 +53,9 @@ struct Args {
     /// Step length (years)
     #[arg(long)]
     step: Year,
+    /// Minimum size for subsets
+    #[arg(long, default_value_t = 1)]
+    minimum_size: u64,
     /// Sample metadata restriction, of the form key=value
     #[arg(long)]
     restrict_samples: Option<String>,
@@ -78,6 +81,9 @@ struct Args {
 
 impl Args {
     fn sanity(&self) -> Result<()> {
+        if self.minimum_size == 0 {
+            return Err(errors::invalid_argument_ref("minimum size cannot be 0"));
+        }
         if self.words && self.split_samples {
             return Err(errors::invalid_argument_ref(
                 "cannot select both --words and --split-samples",
@@ -143,6 +149,7 @@ impl Args {
             end: self.end,
             window: self.window,
             step: self.step,
+            minimum_size: self.minimum_size,
             restrict_samples,
             restrict_tokens,
             mark_tokens,
