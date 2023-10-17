@@ -641,7 +641,7 @@ class App:
             'types vs. words, using samples': (['--words'], False),
             'hapaxes vs. tokens, using samples': (['--count-hapaxes'], False),
             'hapaxes vs. tokens, individually':
-            ['--count-hapaxes', '--split-samples'],
+            (['--count-hapaxes', '--split-samples'], False),
             'hapaxes vs. words, using samples':
             (['--count-hapaxes', '--words'], False),
             'tokens vs. tokens, using samples': (['--count-tokens'], False),
