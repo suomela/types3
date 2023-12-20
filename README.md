@@ -18,7 +18,11 @@ Once everything is set up, you can compile the code and install the relevant Pyt
 
 ## Usage
 
-Try these:
+If you have input data in `data.json`, you can start to explore it with:
+
+    ./types3-ui data.json
+
+For more information, see:
 
     ./types3-ui --help
     ./types3-calc --help
@@ -29,7 +33,20 @@ Try these:
 To explore the [sample data sets](sample-data), try:
 
     ./types3-ui sample-data/ceec.json
+
+and:
+
     ./types3-ui sample-data/ced-ppceme-chelar.json
+
+## Tests
+
+To run all automatic tests, you will also need to have ImageMagick installed; on macOS:
+
+    brew install imagemagick
+
+Then run:
+
+    util/test.sh
 
 ## Prior versions
 
