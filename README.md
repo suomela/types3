@@ -71,7 +71,7 @@ Install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Su
 - Run `wsl --install` to install WSL.
 - Restart the computer when instructed to do so.
 - Open "Ubuntu" (from the Start menu).
-- Follow the instructions to set your Linux user name and password.
+- Follow the instructions to set your Linux username and password.
 
 Now you have got Ubuntu Linux running inside your Windows computer, and you can follow the instructions for Ubuntu Linux above. Just make sure that you run all commands inside "Ubuntu" (and not e.g. in the regular Windows terminal).
 
