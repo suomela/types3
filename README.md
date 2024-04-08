@@ -6,15 +6,74 @@ This is a tool for analyzing textual diversity, richness, and productivity in te
 
 ## Setup
 
-You will need to have Rust. Just use [rustup](https://www.rust-lang.org/tools/install) as usual.
+You will need some Unix-like operating system, Python with Tkinter support, and Rust. See below for detailed instructions for your operating system.
 
-You will need to have Python, with Tkinter support. On macOS, use [Homebrew](https://brew.sh) for that:
+### macOS
+
+Open a terminal.
+
+Make sure you have Homebrew installed and up-to-date:
+
+- Run `brew update` and `brew upgrade` and see if it works.
+- If not, follow the usual [Homebrew installation instructions](https://brew.sh).
+- After installation, you can close and re-open the terminal.
+
+Make sure you have got the relevant packages installed, by running this command:
 
     brew install python python-tk
 
-Once everything is set up, you can compile the code and install the relevant Python modules with:
+Make sure you have got Rust installed and up-to-date:
 
+- Run `rustup update` and see if it works.
+- If not, follow the usual [Rust installation instructions](https://www.rust-lang.org/tools/install). You need to copy-paste one command to the terminal and follow instructions (all default settings are fine).
+- After installation, you can close and re-open the terminal.
+
+Download and set up types3:
+
+    git clone https://github.com/suomela/types3.git
+    cd types3
     util/setup.sh
+
+Try it out with our sample data set:
+
+    ./types3-ui sample-data/ceec.json
+
+### Ubuntu Linux
+
+Open a terminal.
+
+Make sure you have got the relevant packages installed, by running these commands:
+
+    sudo apt-get update
+    sudo apt-get install git curl build-essential python3 python3-venv python3-tk
+
+Make sure you have got Rust installed and up-to-date:
+
+- Run `rustup update` and see if it works.
+- If not, follow the usual [Rust installation instructions](https://www.rust-lang.org/tools/install). You need to copy-paste one command to the terminal and follow instructions (all default settings are fine).
+- After installation, you can close and re-open the terminal.
+
+Download and set up types3:
+
+    git clone https://github.com/suomela/types3.git
+    cd types3
+    util/setup.sh
+
+Try it out with our sample data set:
+
+    ./types3-ui sample-data/ceec.json
+
+### Windows
+
+Install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Subsystem for Linux) if you do not have it yet:
+
+- Open a terminal.
+- Run `wsl --install` to install WSL.
+- Restart the computer when instructed to do so.
+- Open "Ubuntu" (from the Start menu).
+- Follow the instructions to set your Linux user name and password.
+
+Now you have got Ubuntu Linux running inside your Windows computer, and you can follow the instructions for Ubuntu Linux above. Just make sure that you run all commands inside "Ubuntu" (and not e.g. in the regular Windows terminal).
 
 ## Usage
 
@@ -40,9 +99,12 @@ and:
 
 ## Tests
 
-To run all automatic tests, you will also need to have ImageMagick installed; on macOS:
+To run all automatic tests, you will also need to have ImageMagick installed:
 
-    brew install imagemagick
+- On Ubuntu Linux run `apt-get install imagemagick`
+- On macOS run `brew install imagemagick`
+
+Depending on your operating system, you may also need to [adjust ImageMagick security policy](https://stackoverflow.com/questions/52998331/imagemagick-security-policy-pdf-blocking-conversion) to enable PDF-to-PNG conversion.
 
 Then run:
 
