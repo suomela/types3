@@ -720,17 +720,17 @@ class App:
         if self.cur_outfile is None:
             return
         ftmap = {
-            'PDF': [('PDF', '*.pdf')],
-            'PNG': [('PNG', '*.png')],
+            'PDF': ([('PDF', '*.pdf')], 'types3.pdf'),
+            'PNG': ([('PNG', '*.png')], 'types3.png'),
         }
         fmt = self.save_format.get()
         if fmt not in ftmap:
             fmt = 'PDF'
-        filetypes = ftmap[fmt]
+        filetypes, initialfile = ftmap[fmt]
         save_filename = tk.filedialog.asksaveasfilename(
             filetypes=filetypes,
             defaultextension=filetypes,
-            initialfile='types3')
+            initialfile=initialfile)
         if not save_filename:
             return
         basedir = Path(os.environ['TYPES3_BASEDIR'])
