@@ -18,7 +18,7 @@ jobs:
       - name: Install software
         run: |
           sudo apt-get update
-          sudo apt-get install ghostscript -y
+          sudo apt-get install python3-tk ghostscript -y
 
       - name: Change ImageMagick policy to allow PDF-to-PNG conversion
         run: |
