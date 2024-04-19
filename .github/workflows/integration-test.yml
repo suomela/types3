@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test-on-ubuntu:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Ghostscript
+      - name: Install software
         run: |
           sudo apt-get update
           sudo apt-get install ghostscript -y
@@ -23,6 +23,37 @@ jobs:
       - name: Change ImageMagick policy to allow PDF-to-PNG conversion
         run: |
           sudo mv /etc/ImageMagick-6/policy.xml /etc/ImageMagick-6/policy.xml.off
+
+      - name: Run setup
+        run: |
+          util/setup.sh
+
+      - name: Test calculations, part 1
+        run: |
+          integration-test/test-calc.sh
+
+      - name: Test calculations, part 2
+        run: |
+          integration-test/test-calc2.sh
+
+      - name: Test plotting
+        run: |
+          integration-test/test-plot.sh
+
+      - name: Check version numbers
+        run: |
+          integration-test/test-version.sh
+
+  test-on-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ghostscript
+        run: |
+          brew update
+          brew install imagemagick
 
       - name: Run setup
         run: |
