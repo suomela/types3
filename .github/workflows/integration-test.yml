@@ -28,6 +28,10 @@ jobs:
         run: |
           util/setup.sh
 
+      - name: Test UI
+        run: |
+          integration-test/test-ui.sh
+
       - name: Test calculations, part 1
         run: |
           integration-test/test-calc.sh
@@ -53,11 +57,14 @@ jobs:
       - name: Install Ghostscript
         run: |
           brew update
-          brew install imagemagick
 
       - name: Run setup
         run: |
           util/setup.sh
+
+      - name: Test UI
+        run: |
+          integration-test/test-ui.sh
 
       - name: Test calculations, part 1
         run: |
@@ -74,3 +81,7 @@ jobs:
       - name: Check version numbers
         run: |
           integration-test/test-version.sh
+
+      - name: Test UI
+        run: |
+          integration-test/test-ui.sh
