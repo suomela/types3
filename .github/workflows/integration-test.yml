@@ -57,7 +57,7 @@ jobs:
       - name: Install software
         run: |
           brew update
-          brew install python python-tk
+          brew install python python-tk imagemagick
 
       - name: Run setup
         run: |
