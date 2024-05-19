@@ -360,6 +360,12 @@ class App:
         e.grid(column=1, row=row, sticky='w')
         row += 1
 
+        e = ttk.Label(widgetframe, text='Statistics:')
+        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Button(widgetframe, text='Save as…', command=self.save_stat)
+        e.grid(column=1, row=row, sticky='w')
+        row += 1
+
         e = ttk.Separator(widgetframe, orient='horizontal')
         e.grid(column=0, row=row, columnspan=2, sticky='ew')
         row += 1
@@ -594,13 +600,9 @@ class App:
             return None
         return x
 
-    def update(self, *x):
+    def get_period_args(self):
         args = []
         errors = []
-        minimum_size = self.parse_opt_int(errors, 'Minimum size', 1, None,
-                                          self.minimum_size.get())
-        if minimum_size is not None:
-            args += ['--minimum-size', str(minimum_size)]
         window = self.parse_required_int(errors, 'Window size', 1, None,
                                          self.window.get())
         if window is not None:
@@ -621,6 +623,14 @@ class App:
                                     self.offset.get())
         if offset is not None:
             args += ['--offset', str(offset)]
+        return args, errors
+
+    def update(self, *x):
+        args, errors = self.get_period_args()
+        minimum_size = self.parse_opt_int(errors, 'Minimum size', 1, None,
+                                          self.minimum_size.get())
+        if minimum_size is not None:
+            args += ['--minimum-size', str(minimum_size)]
         category = self.category_map[self.category.get()]
         if category is not None:
             args += ['--category', category]
@@ -748,6 +758,53 @@ class App:
             cmd += ['--wide']
         if self.save_large.get() == 'large':
             cmd += ['--large']
+        for _ in range(self.verbose):
+            cmd += ['--verbose']
+        try:
+            subprocess.run(cmd, check=True)
+        except Exception as e:
+            logging.warning(f'starting {cmd} failed with {e}')
+            tk.messagebox.showerror(
+                message=f'Could not export as {save_filename}')
+
+    def save_stat(self, *_):
+        args, errors = self.get_period_args()
+        category = self.category_map[self.category.get()]
+        if category is not None:
+            args += ['--category', category]
+        restrict_samples = self.restrict_samples_map[
+            self.restrict_samples.get()]
+        if restrict_samples is not None:
+            args += ['--restrict-samples', '='.join(restrict_samples)]
+        restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
+        if restrict_tokens is not None:
+            args += ['--restrict-tokens', '='.join(restrict_tokens)]
+        if errors:
+            logging.debug(errors)
+            tk.messagebox.showerror(message='\n'.join(errors))
+            return
+
+        ftmap = {
+            'XLSX': ([('XLSX', '*.xlsx')], 'types3.xlsx'),
+        }
+        fmt = self.save_format.get()
+        if fmt not in ftmap:
+            fmt = 'XLSX'
+        filetypes, initialfile = ftmap[fmt]
+        save_filename = tk.filedialog.asksaveasfilename(
+            filetypes=filetypes,
+            defaultextension=filetypes,
+            initialfile=initialfile)
+        if not save_filename:
+            return
+
+        basedir = Path(os.environ['TYPES3_BASEDIR'])
+        tool = basedir / 'types3-stat'
+        cmd = [
+            tool,
+            self.infile,
+            save_filename,
+        ] + args
         for _ in range(self.verbose):
             cmd += ['--verbose']
         try:
