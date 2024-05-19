@@ -1,0 +1,18 @@
+Types in subcorpora with 178 types
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  172.855300 … 182.824300  typical
+    1700–1719:  173.632200 … 182.080800  typical
+    1720–1739:  178.000000 … 178.000000  typical
+    1740–1759:  168.744800 … 186.259100  typical
+    1760–1779:  170.186100 … 185.250900  typical
+    1780–1799:  162.310000 … 191.551700  typical
+
+(calculations done with 10000 iterations)
+

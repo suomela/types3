@@ -1,0 +1,17 @@
+Types in subcorpora with 196 tokens
+
+Sample restriction: gender = female
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1700–1719:  55.099600 …  81.481900  typical
+    1720–1739:  78.000000 …  78.000000  typical
+    1740–1759:  38.226700 … 111.336800  typical
+    1760–1779:  56.575300 … 101.130400  typical
+    1780–1799:  36.609700 …  90.928100  typical
+
+(calculations done with 10000 iterations)
+

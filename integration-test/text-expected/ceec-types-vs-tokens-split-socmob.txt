@@ -1,0 +1,65 @@
+Types in subcorpora with 29 tokens
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  socmob = soc. mob. D:
+
+    1680–1699:  16.467200 … 16.467200  significantly low (p = 0.000100)
+    1700–1719:  20.000000 … 20.000000  typical          
+    1720–1739:  19.106600 … 19.106600  significantly low (p = 0.011700)
+    1740–1759:  21.798000 … 21.798000  typical          
+    1760–1779:  20.945900 … 20.945900  typical          
+    1780–1799:  21.883100 … 21.883100  low               (p = 0.236700)
+
+  socmob = soc. mob. N:
+
+    1680–1699:  22.252900 … 22.252900  low               (p = 0.061200)
+    1700–1719:  20.557100 … 20.557100  significantly low (p = 0.000000)
+    1720–1739:  21.262400 … 21.262400  significantly low (p = 0.008400)
+    1740–1759:  22.794600 … 22.794600  significantly low (p = 0.017500)
+    1760–1779:  23.101600 … 23.101600  typical          
+    1780–1799:  21.268700 … 21.268700  typical          
+
+  socmob = soc. mob. U:
+
+    1680–1699:  18.001400 … 18.001400  significantly low  (p = 0.000000)
+    1700–1719:  19.574900 … 19.574900  significantly low  (p = 0.000100)
+    1720–1739:  23.476200 … 23.476200  typical           
+    1740–1759:  22.460700 … 22.460700  typical           
+    1760–1779:  23.772300 … 23.772300  significantly high (p = 0.029300)
+    1780–1799:  21.800100 … 21.800100  typical           
+
+Significance in comparison with other categories:
+
+  socmob = soc. mob. D:
+
+    1680–1699:  16.467200 … 16.467200  significantly low (p = 0.004000)
+    1700–1719:  20.000000 … 20.000000  typical          
+    1720–1739:  19.106600 … 19.106600  significantly low (p = 0.009200)
+    1740–1759:  21.798000 … 21.798000  typical          
+    1760–1779:  20.945900 … 20.945900  low               (p = 0.108300)
+    1780–1799:  21.883100 … 21.883100  significantly low (p = 0.041400)
+
+  socmob = soc. mob. N:
+
+    1680–1699:  22.252900 … 22.252900  significantly high (p = 0.006500)
+    1700–1719:  20.557100 … 20.557100  typical           
+    1720–1739:  21.262400 … 21.262400  typical           
+    1740–1759:  22.794600 … 22.794600  low                (p = 0.115800)
+    1760–1779:  23.101600 … 23.101600  low                (p = 0.085600)
+    1780–1799:  21.268700 … 21.268700  low                (p = 0.101200)
+
+  socmob = soc. mob. U:
+
+    1680–1699:  18.001400 … 18.001400  significantly low (p = 0.006300)
+    1700–1719:  19.574900 … 19.574900  typical          
+    1720–1739:  23.476200 … 23.476200  high              (p = 0.117400)
+    1740–1759:  22.460700 … 22.460700  high              (p = 0.132000)
+    1760–1779:  23.772300 … 23.772300  high              (p = 0.199800)
+    1780–1799:  21.800100 … 21.800100  typical          
+
+(calculations done with 10000 iterations)
+

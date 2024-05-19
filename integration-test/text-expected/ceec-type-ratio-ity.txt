@@ -1,0 +1,18 @@
+Ity types in subcorpora with 178 total types
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:   87.486000 …  91.611100  low                (p = 0.070100)
+    1700–1719:   91.271400 …  95.006500  low                (p = 0.204100)
+    1720–1739:  101.000000 … 101.000000  typical           
+    1740–1759:  101.470500 … 111.022000  typical           
+    1760–1779:   95.514800 … 103.774700  typical           
+    1780–1799:   97.794600 … 113.802300  significantly high (p = 0.011400)
+
+(calculations done with 10000 iterations)
+

@@ -1,0 +1,25 @@
+Types in subcorpora with 1240 tokens
+
+Sample restriction: everything
+Token restriction: variant = ity
+
+Significance of differences in time:
+
+  gender = female:
+
+
+  gender = male:
+
+    1780–1799:  198.000000 … 198.000000  significantly high (p = 0.030400)
+
+Significance in comparison with other categories:
+
+  gender = female:
+
+
+  gender = male:
+
+    1780–1799:  198.000000 … 198.000000  typical
+
+(calculations done with 10000 iterations)
+

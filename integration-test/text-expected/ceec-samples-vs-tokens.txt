@@ -1,0 +1,18 @@
+Samples in subcorpora with 786 tokens
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  36.934100 … 37.891200  typical           
+    1700–1719:  40.120000 … 41.077400  high               (p = 0.206600)
+    1720–1739:  75.824600 … 75.824600  significantly high (p = 0.000100)
+    1740–1759:  35.712600 … 36.672100  typical           
+    1760–1779:  33.568400 … 34.531800  typical           
+    1780–1799:  18.622600 … 19.602300  significantly low  (p = 0.000000)
+
+(calculations done with 10000 iterations)
+

@@ -1,0 +1,18 @@
+Tokens in subcorpora with 211788 words
+
+Sample restriction: everything
+Token restriction: variant = ity
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  475.293300 … 512.147600  low               (p = 0.223400)
+    1700–1719:  425.855100 … 466.724300  significantly low (p = 0.045500)
+    1720–1739:  450.000000 … 450.000000  low               (p = 0.114500)
+    1740–1759:  551.914200 … 598.548400  typical          
+    1760–1779:  600.244200 … 639.177000  high              (p = 0.100800)
+    1780–1799:  561.352200 … 625.934800  high              (p = 0.099600)
+
+(calculations done with 10000 iterations)
+

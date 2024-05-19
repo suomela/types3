@@ -1,0 +1,18 @@
+Hapaxes in subcorpora with 89 tokens
+
+Sample restriction: gender = female
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  19.000000 … 19.000000  typical
+    1700–1719:   0.619700 … 46.780800  typical
+    1720–1739:  21.105700 … 37.527500  typical
+    1740–1759:   6.387700 … 66.621600  typical
+    1760–1779:   8.086000 … 70.284100  typical
+    1780–1799:   5.979900 … 60.292800  typical
+
+(calculations done with 10000 iterations)
+

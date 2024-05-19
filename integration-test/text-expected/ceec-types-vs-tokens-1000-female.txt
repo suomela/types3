@@ -1,0 +1,13 @@
+Types in subcorpora with 1413 tokens
+
+Sample restriction: gender = female
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1780–1799:  252.000000 … 252.000000  typical
+
+(calculations done with 10000 iterations)
+

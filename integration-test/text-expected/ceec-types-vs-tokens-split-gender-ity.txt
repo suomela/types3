@@ -1,0 +1,47 @@
+Types in subcorpora with 35 tokens
+
+Sample restriction: everything
+Token restriction: variant = ity
+
+Significance of differences in time:
+
+  gender = female:
+
+    1680–1699:  14.000000 … 14.000000  significantly low (p = 0.000000)
+    1700–1719:  21.651400 … 21.651400  significantly low (p = 0.005600)
+    1720–1739:  22.210500 … 22.210500  low               (p = 0.073300)
+    1740–1759:  23.705400 … 23.705400  significantly low (p = 0.020100)
+    1760–1779:  24.636200 … 24.636200  typical          
+    1780–1799:  24.398700 … 24.398700  typical          
+
+  gender = male:
+
+    1680–1699:  21.551000 … 21.551000  significantly low  (p = 0.000000)
+    1700–1719:  22.601900 … 22.601900  significantly low  (p = 0.000000)
+    1720–1739:  22.878700 … 22.878700  significantly low  (p = 0.002200)
+    1740–1759:  25.243500 … 25.243500  low                (p = 0.162000)
+    1760–1779:  25.781100 … 25.781100  typical           
+    1780–1799:  24.400700 … 24.400700  significantly high (p = 0.008800)
+
+Significance in comparison with other categories:
+
+  gender = female:
+
+    1680–1699:  14.000000 … 14.000000  significantly low (p = 0.000800)
+    1700–1719:  21.651400 … 21.651400  typical          
+    1720–1739:  22.210500 … 22.210500  typical          
+    1740–1759:  23.705400 … 23.705400  significantly low (p = 0.006300)
+    1760–1779:  24.636200 … 24.636200  low               (p = 0.154200)
+    1780–1799:  24.398700 … 24.398700  significantly low (p = 0.005400)
+
+  gender = male:
+
+    1680–1699:  21.551000 … 21.551000  typical
+    1700–1719:  22.601900 … 22.601900  low     (p = 0.059100)
+    1720–1739:  22.878700 … 22.878700  typical
+    1740–1759:  25.243500 … 25.243500  typical
+    1760–1779:  25.781100 … 25.781100  typical
+    1780–1799:  24.400700 … 24.400700  typical
+
+(calculations done with 10000 iterations)
+

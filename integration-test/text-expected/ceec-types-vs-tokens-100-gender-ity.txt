@@ -1,0 +1,45 @@
+Types in subcorpora with 111 tokens
+
+Sample restriction: everything
+Token restriction: variant = ity
+
+Significance of differences in time:
+
+  gender = female:
+
+    1700–1719:  34.734200 … 51.671600  typical
+    1720–1739:  48.000000 … 48.000000  typical
+    1740–1759:  22.597900 … 67.746100  typical
+    1760–1779:  27.377900 … 64.967300  typical
+    1780–1799:  31.589300 … 58.239100  typical
+
+  gender = male:
+
+    1680–1699:  33.533500 … 46.693800  significantly low  (p = 0.000500)
+    1700–1719:  36.667600 … 46.442300  significantly low  (p = 0.011700)
+    1720–1739:  41.836100 … 49.458500  typical           
+    1740–1759:  43.336300 … 55.846700  typical           
+    1760–1779:  45.922700 … 58.522900  typical           
+    1780–1799:  36.547200 … 60.002200  significantly high (p = 0.030400)
+
+Significance in comparison with other categories:
+
+  gender = female:
+
+    1700–1719:  34.734200 … 51.671600  typical
+    1720–1739:  48.000000 … 48.000000  typical
+    1740–1759:  22.597900 … 67.746100  typical
+    1760–1779:  27.377900 … 64.967300  typical
+    1780–1799:  31.589300 … 58.239100  typical
+
+  gender = male:
+
+    1680–1699:  33.533500 … 46.693800  typical
+    1700–1719:  36.667600 … 46.442300  typical
+    1720–1739:  41.836100 … 49.458500  typical
+    1740–1759:  43.336300 … 55.846700  typical
+    1760–1779:  45.922700 … 58.522900  typical
+    1780–1799:  36.547200 … 60.002200  typical
+
+(calculations done with 10000 iterations)
+

@@ -1,0 +1,18 @@
+Samples in subcorpora with 211788 words
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  43.096200 … 44.096100  typical           
+    1700–1719:  44.840500 … 45.840000  typical           
+    1720–1739:  76.000000 … 76.000000  significantly high (p = 0.000700)
+    1740–1759:  44.550800 … 45.550500  typical           
+    1760–1779:  46.611700 … 47.611200  typical           
+    1780–1799:  25.835900 … 26.835900  significantly low  (p = 0.000100)
+
+(calculations done with 10000 iterations)
+

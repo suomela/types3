@@ -1,0 +1,18 @@
+Hapaxes in subcorpora with 211788 words
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:   83.701600 …  94.910700  low               (p = 0.123800)
+    1700–1719:   75.948700 …  88.567000  significantly low (p = 0.041600)
+    1720–1739:   84.000000 …  84.000000  low               (p = 0.118900)
+    1740–1759:  102.078500 … 118.921200  typical          
+    1760–1779:  117.285800 … 131.850700  typical          
+    1780–1799:  107.399000 … 134.671200  typical          
+
+(calculations done with 10000 iterations)
+

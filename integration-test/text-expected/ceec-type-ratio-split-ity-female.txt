@@ -1,0 +1,18 @@
+Ity types in subcorpora with 36 total types
+
+Sample restriction: gender = female
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  14.000000 … 14.000000  significantly low (p = 0.004000)
+    1700–1719:  21.655300 … 21.655300  typical          
+    1720–1739:  21.285800 … 21.285800  typical          
+    1740–1759:  21.826600 … 21.826600  typical          
+    1760–1779:  20.093700 … 20.093700  low               (p = 0.235800)
+    1780–1799:  20.630700 … 20.630700  typical          
+
+(calculations done with 10000 iterations)
+

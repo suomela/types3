@@ -1,0 +1,18 @@
+Types in subcorpora with 25807 words
+
+Sample restriction: gender = female
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  36.000000 … 36.000000  typical
+    1700–1719:  25.316900 … 50.498200  low     (p = 0.178700)
+    1720–1739:  43.466800 … 52.273400  typical
+    1740–1759:  28.782200 … 79.441800  typical
+    1760–1779:  46.133800 … 89.621100  high    (p = 0.156100)
+    1780–1799:  20.796500 … 75.348200  typical
+
+(calculations done with 10000 iterations)
+

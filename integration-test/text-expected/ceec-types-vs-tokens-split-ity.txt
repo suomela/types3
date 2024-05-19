@@ -1,0 +1,18 @@
+Types in subcorpora with 450 tokens
+
+Sample restriction: everything
+Token restriction: variant = ity
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:   87.408800 …  87.408800  significantly low  (p = 0.000000)
+    1700–1719:   91.051800 …  91.051800  significantly low  (p = 0.000000)
+    1720–1739:  101.000000 … 101.000000  significantly low  (p = 0.000800)
+    1740–1759:  116.229800 … 116.229800  low                (p = 0.110800)
+    1760–1779:  120.003000 … 120.003000  typical           
+    1780–1799:  126.385500 … 126.385500  significantly high (p = 0.004000)
+
+(calculations done with 10000 iterations)
+

@@ -1,0 +1,18 @@
+Hapaxes in subcorpora with 786 tokens
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:   87.451100 …  87.451100  significantly low (p = 0.000500)
+    1700–1719:   81.358100 …  81.358100  significantly low (p = 0.000000)
+    1720–1739:   84.000000 …  84.000000  significantly low (p = 0.000900)
+    1740–1759:  104.180600 … 104.180600  low               (p = 0.146000)
+    1760–1779:  115.123600 … 115.123600  typical          
+    1780–1799:  115.264800 … 115.264800  low               (p = 0.171600)
+
+(calculations done with 10000 iterations)
+

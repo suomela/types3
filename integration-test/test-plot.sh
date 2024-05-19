@@ -3,14 +3,16 @@
 set -e
 
 cd integration-test
-rm -rf plot
-mkdir -p plot
+rm -rf plot text
+mkdir -p plot text
 
 for a in calc/ceec-types-vs-tokens.json; do
     x="${a#calc/}"
     x="${x%.json}"
     b="plot/$x.pdf"
+    d="text/$x.txt"
     ../types3-plot --legend 'lower right' "$a" "$b"
+    ../types3-plot "$a" "$d"
 done
 
 for a in calc/*.json; do
@@ -18,8 +20,10 @@ for a in calc/*.json; do
     x="${x%.json}"
     b="plot/$x.pdf"
     c="plot/$x-wide.pdf"
+    d="text/$x.txt"
     ../types3-plot --legend 'lower right' "$a" "$b" &
     ../types3-plot --legend 'lower right' --wide "$a" "$c" &
+    ../types3-plot "$a" "$d" &
 done
 wait
 
@@ -45,4 +49,9 @@ done
 
 diff plot-expected/hash.txt plot/hash.txt
 rm -f plot-expected/hash.txt plot/hash.txt
-echo "SUCCESS: all images agree."
+
+cd text
+for a in *.txt; do
+    diff ../text-expected/$a $a
+done
+echo "SUCCESS: all images and text files agree."

@@ -1,0 +1,59 @@
+Types in subcorpora with 127 tokens
+
+Sample restriction: everything
+Token restriction: everything
+
+Significance of differences in time:
+
+  socmob = soc. mob. D:
+
+    1680–1699:  45.000000 … 45.000000  typical
+    1740–1759:  57.637800 … 69.347900  typical
+    1780–1799:   0.000000 … 80.000000  typical
+
+  socmob = soc. mob. N:
+
+    1680–1699:  39.542100 … 74.691200  typical
+    1700–1719:  27.447100 … 61.810100  low     (p = 0.055900)
+    1720–1739:  50.573800 … 62.698800  typical
+    1740–1759:  44.287000 … 76.931000  typical
+    1760–1779:  46.977800 … 77.750200  typical
+    1780–1799:  34.260400 … 74.354600  typical
+
+  socmob = soc. mob. U:
+
+    1680–1699:  36.850300 … 54.332700  low     (p = 0.077500)
+    1700–1719:  49.304700 … 57.041600  typical
+    1720–1739:  58.339200 … 73.041000  typical
+    1740–1759:  34.548500 … 81.285800  typical
+    1760–1779:  45.895300 … 89.758600  high    (p = 0.202000)
+    1780–1799:  24.742200 … 82.503300  typical
+
+Significance in comparison with other categories:
+
+  socmob = soc. mob. D:
+
+    1680–1699:  45.000000 … 45.000000  typical
+    1740–1759:  57.637800 … 69.347900  typical
+    1780–1799:   0.000000 … 80.000000  typical
+
+  socmob = soc. mob. N:
+
+    1680–1699:  39.542100 … 74.691200  high    (p = 0.149600)
+    1700–1719:  27.447100 … 61.810100  typical
+    1720–1739:  50.573800 … 62.698800  typical
+    1740–1759:  44.287000 … 76.931000  typical
+    1760–1779:  46.977800 … 77.750200  typical
+    1780–1799:  34.260400 … 74.354600  typical
+
+  socmob = soc. mob. U:
+
+    1680–1699:  36.850300 … 54.332700  typical
+    1700–1719:  49.304700 … 57.041600  typical
+    1720–1739:  58.339200 … 73.041000  typical
+    1740–1759:  34.548500 … 81.285800  typical
+    1760–1779:  45.895300 … 89.758600  typical
+    1780–1799:  24.742200 … 82.503300  typical
+
+(calculations done with 10000 iterations)
+

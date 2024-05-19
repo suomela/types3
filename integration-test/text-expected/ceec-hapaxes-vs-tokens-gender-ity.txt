@@ -1,0 +1,47 @@
+Hapaxes in subcorpora with 35 tokens
+
+Sample restriction: everything
+Token restriction: variant = ity
+
+Significance of differences in time:
+
+  gender = female:
+
+    1680–1699:  6.000000 …  6.000000  typical
+    1700–1719:  0.102600 … 30.266800  typical
+    1720–1739:  9.826600 … 19.927500  typical
+    1740–1759:  2.059800 … 34.824500  typical
+    1760–1779:  4.414100 … 36.300800  typical
+    1780–1799:  2.405600 … 36.802400  typical
+
+  gender = male:
+
+    1680–1699:  4.679900 … 21.912300  significantly low (p = 0.031000)
+    1700–1719:  6.347900 … 23.553300  low               (p = 0.078900)
+    1720–1739:  6.912900 … 21.505100  typical          
+    1740–1759:  5.975500 … 27.058600  typical          
+    1760–1779:  3.675800 … 28.231500  typical          
+    1780–1799:  2.645200 … 30.710800  typical          
+
+Significance in comparison with other categories:
+
+  gender = female:
+
+    1680–1699:  6.000000 …  6.000000  typical
+    1700–1719:  0.102600 … 30.266800  typical
+    1720–1739:  9.826600 … 19.927500  typical
+    1740–1759:  2.059800 … 34.824500  typical
+    1760–1779:  4.414100 … 36.300800  typical
+    1780–1799:  2.405600 … 36.802400  typical
+
+  gender = male:
+
+    1680–1699:  4.679900 … 21.912300  typical
+    1700–1719:  6.347900 … 23.553300  typical
+    1720–1739:  6.912900 … 21.505100  typical
+    1740–1759:  5.975500 … 27.058600  typical
+    1760–1779:  3.675800 … 28.231500  typical
+    1780–1799:  2.645200 … 30.710800  typical
+
+(calculations done with 10000 iterations)
+

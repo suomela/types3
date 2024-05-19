@@ -1,0 +1,18 @@
+Types in subcorpora with 89 tokens
+
+Sample restriction: gender = female
+Token restriction: everything
+
+Significance of differences in time:
+
+  everything:
+
+    1680–1699:  36.000000 … 36.000000  significantly low (p = 0.000500)
+    1700–1719:  41.231600 … 41.231600  significantly low (p = 0.000000)
+    1720–1739:  47.611000 … 47.611000  low               (p = 0.150000)
+    1740–1759:  47.371900 … 47.371900  significantly low (p = 0.007600)
+    1760–1779:  53.721500 … 53.721500  high              (p = 0.070600)
+    1780–1799:  47.023700 … 47.023700  low               (p = 0.126300)
+
+(calculations done with 10000 iterations)
+
