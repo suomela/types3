@@ -5,10 +5,12 @@ use log::{error, info};
 use rust_xlsxwriter::{Format, Workbook};
 use std::collections::{HashMap, HashSet};
 use std::{error, fs, io, process};
+use types3::categories;
 use types3::driver;
 use types3::errors::{self, Result};
 use types3::input::{ISample, Input, Year};
-use types3::output::{self, OError, Years};
+use types3::output::{self, OError};
+use types3::samples::{self, CSample};
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -32,6 +34,12 @@ struct Args {
     /// Step length (years)
     #[arg(long)]
     step: Year,
+    /// Sample metadata restriction, of the form key=value
+    #[arg(long)]
+    restrict_samples: Option<String>,
+    /// Token metadata restriction, of the form key=value
+    #[arg(long)]
+    restrict_tokens: Option<String>,
     /// Report errors as a JSON file
     #[arg(long)]
     error_file: Option<String>,
@@ -40,22 +48,11 @@ struct Args {
     verbose: Verbosity<WarnLevel>,
 }
 
-pub fn get_years(samples: &[ISample]) -> Years {
-    let mut years = None;
-    for s in samples {
-        years = match years {
-            None => Some((s.year, s.year + 1)),
-            Some((a, b)) => Some((a.min(s.year), b.max(s.year + 1))),
-        };
-    }
-    years.expect("there are samples")
-}
-
 struct RawStat<'a> {
     samples: u64,
     words: u64,
     tokens: u64,
-    types: HashSet<&'a String>,
+    types: HashSet<&'a str>,
 }
 
 impl<'a> RawStat<'a> {
@@ -68,12 +65,12 @@ impl<'a> RawStat<'a> {
         }
     }
 
-    fn feed_sample(&mut self, sample: &'a ISample) {
+    fn feed_sample(&mut self, sample: &'a CSample) {
         self.samples += 1;
         self.words += sample.words;
         for token in &sample.tokens {
             self.tokens += 1;
-            self.types.insert(&token.lemma);
+            self.types.insert(token.token);
         }
     }
 
@@ -110,23 +107,22 @@ impl Kind {
 const SHEETS: &[Kind] = &[Kind::Samples, Kind::Words, Kind::Tokens, Kind::Types];
 
 fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
+    let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
+    let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
+    let samples = samples::get_samples(restrict_samples, restrict_tokens, None, samples);
     if samples.is_empty() {
         return Err(errors::invalid_input_ref("no samples found"));
     }
-    let years = get_years(samples);
+    let years = samples::get_years(&samples);
     info!(target: "types3", "years in input data: {}", output::pretty_period(&years));
     let years = (years.0.max(args.start), years.1.min(args.end + 1));
+
     let mut periods = driver::get_periods(args.offset, args.window, args.step, &years);
     periods.push(years);
 
-    let samples = samples
-        .iter()
-        .filter(|s| years.0 <= s.year && s.year < years.1)
-        .collect_vec();
-
     let mut smd: HashSet<MdPair> = HashSet::new();
     for sample in &samples {
-        for md in &sample.metadata {
+        for md in sample.metadata {
             smd.insert(md);
         }
     }
@@ -141,7 +137,7 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
         for sample in &samples {
             if period.0 <= sample.year && sample.year < period.1 {
                 overall.feed_sample(sample);
-                for md in &sample.metadata {
+                for md in sample.metadata {
                     by_smd[smd_map[&md]].feed_sample(sample);
                 }
             }
