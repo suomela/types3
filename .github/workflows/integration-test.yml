@@ -83,6 +83,10 @@ jobs:
         run: |
           integration-test/test-version.sh
 
+      - name: Test statistics
+        run: |
+          integration-test/test-stat.sh
+
       - name: Test UI
         run: |
           integration-test/test-ui.sh
