@@ -67,6 +67,17 @@ def _catname(cats):
     return ', '.join(s)
 
 
+def _catname_text(cats):
+    s = []
+    for cat in cats:
+        if cat is not None:
+            k, v = cat
+            s.append(f'{k} = {v}')
+    if len(s) == 0:
+        s.append('everything')
+    return ', '.join(s)
+
+
 def _significance(x, n):
     assert 0 <= x <= n
     p = (n - x) / n
@@ -74,6 +85,21 @@ def _significance(x, n):
         return min(MAX_SIGNIFICANCE, -math.log10(p))
     except ValueError:
         return MAX_SIGNIFICANCE
+
+
+def _significance_value(x, n):
+    assert 0 <= x <= n
+    p = (n - x) / n
+    return p
+
+
+def _significance_text(side, p):
+    if p <= 0.05:
+        return [f'significantly {side}', f'(p = {p:f})']
+    elif p <= 0.25:
+        return [f'{side}', f'(p = {p:f})']
+    else:
+        return ['typical']
 
 
 def _get_avg(r):
@@ -84,6 +110,13 @@ def _get_avg(r):
     return (x, y)
 
 
+def _get_avg_text(r):
+    ar = r['average_at_limit']
+    y1 = ar['low'] / ar['iter']
+    y2 = ar['high'] / ar['iter']
+    return [f'{y1:f}', '…', f'{y2:f}']
+
+
 def _get_vs(r, what):
     period = r['period']
     x = period[0]
@@ -91,6 +124,16 @@ def _get_vs(r, what):
     above = _significance(pr['above'], pr['iter'])
     below = _significance(pr['below'], pr['iter'])
     return (x, above, -below)
+
+
+def _get_vs_text(r, what):
+    pr = r[what]
+    above = _significance_value(pr['above'], pr['iter'])
+    below = _significance_value(pr['below'], pr['iter'])
+    if above < below:
+        return _significance_text('high', above)
+    else:
+        return _significance_text('low', below)
 
 
 def _upcase(x):
@@ -264,3 +307,64 @@ def plot(fig, data, dims, legend):
 
     ax1.set_ylim((0, ymax * 1.05))
     ax1.legend(loc=legend)
+
+
+def _pperiod(period):
+    return f'{period[0]}–{period[1]-1}'
+
+
+def _pretty_table(table, right, pad):
+    widths = []
+    for r in table:
+        for i, c in enumerate(r):
+            if i >= len(widths):
+                widths.append(0)
+            widths[i] = max(widths[i], len(c))
+    result = []
+    for r in table:
+        row = []
+        for i, c in enumerate(r):
+            w = widths[i]
+            if i in right:
+                c = c.rjust(w)
+            else:
+                c = c.ljust(w)
+            row.append(c)
+        result.append(pad + ' '.join(row))
+    return result
+
+
+def text(data):
+    result = []
+    curves = data['curves']
+    if curves[0]['category'] is not None:
+        cases = ['vs_time', 'vs_categories']
+    else:
+        cases = ['vs_time']
+    result += [
+        _title(data),
+        '',
+        'Sample restriction: ' + _catname_text([data['restrict_samples']]),
+        'Token restriction: ' + _catname_text([data['restrict_tokens']]),
+        '',
+    ]
+    expl = {
+        'vs_time': 'Significance of differences in time:',
+        'vs_categories': 'Significance in comparison with other categories:'
+    }
+    for case in cases:
+        result += [expl[case], '']
+        for curve in curves:
+            label = _catname_text([curve['category']])
+            result += [f'  {label}:', '']
+            table = []
+            for r in curve['results']:
+                period = _pperiod(r['period'])
+                avg = _get_avg_text(r)
+                vs = _get_vs_text(r, case)
+                table.append([f'{period}: '] + avg + [''] + vs)
+            result += _pretty_table(table, {1, 3}, '    ')
+            result += ['']
+
+    result += [f'(calculations done with {data["iter"]} iterations)', '', '']
+    return '\n'.join(result)
