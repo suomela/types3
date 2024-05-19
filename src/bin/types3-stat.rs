@@ -121,7 +121,7 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
 
     let samples = samples
         .iter()
-        .filter(|s| years.0 <= s.year && s.year <= years.1)
+        .filter(|s| years.0 <= s.year && s.year < years.1)
         .collect_vec();
 
     let mut smd: HashSet<MdPair> = HashSet::new();
@@ -139,25 +139,12 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
         let mut overall = RawStat::new();
         let mut by_smd = (0..smd.len()).map(|_| RawStat::new()).collect_vec();
         for sample in &samples {
-            if period.0 <= sample.year && sample.year <= period.1 {
+            if period.0 <= sample.year && sample.year < period.1 {
                 overall.feed_sample(sample);
                 for md in &sample.metadata {
                     by_smd[smd_map[&md]].feed_sample(sample);
                 }
             }
-        }
-        println!("period: {}", output::pretty_period(period));
-        println!("- samples: {}", overall.samples);
-        println!("- words: {}", overall.words);
-        println!("- tokens: {}", overall.tokens);
-        println!("- types: {}", overall.types.len());
-        for (j, md) in smd.iter().enumerate() {
-            println!("  {} = {}:", md.0, md.1);
-            let s = &by_smd[j];
-            println!("  - samples: {}", s.samples);
-            println!("  - words: {}", s.words);
-            println!("  - tokens: {}", s.tokens);
-            println!("  - types: {}", s.types.len());
         }
         by_period.push((period, overall, by_smd));
     }
@@ -183,7 +170,7 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
         for (i, (period, overall, by_smd)) in by_period.iter().enumerate() {
             let row = (i + 2) as u32;
             sheet.write_with_format(row, 0, period.0, &bold)?;
-            sheet.write_with_format(row, 1, period.1, &bold)?;
+            sheet.write_with_format(row, 1, period.1 - 1, &bold)?;
             sheet.write(row, 2, overall.get(kind))?;
             for (j, md) in by_smd.iter().enumerate() {
                 let col = (j + 3) as u16;
