@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+WHERE=$(readlink -f "$0")
+TYPES3_BASEDIR=$(dirname "$WHERE")
+
+if [ ! -e "$TYPES3_BASEDIR/target/release/types3-stat" ]; then
+    echo "Cannot find types3-stat binary"
+    echo "Try to run util/setup.sh first!"
+    exit 1
+fi
+
+exec $TYPES3_BASEDIR/target/release/types3-stat "$@"
