@@ -1,3 +1,5 @@
+//! Internal representation of tokens and samples.
+
 use crate::categories::{self, Category};
 use crate::errors::{self, Result};
 use crate::input::{ISample, Year};
@@ -6,15 +8,28 @@ use itertools::Itertools;
 use log::info;
 use std::collections::{HashMap, HashSet};
 
+/// Internal representation of tokens,
 pub struct CToken<'a> {
+    /// Lemma.
+    /// See [crate::input::IToken::lemma].
     pub token: &'a str,
+    /// Is this marked as relevant?
+    /// See [crate::driver::DriverArgs::mark_tokens].
     pub marked: bool,
 }
 
+/// Internal representation of samples.
 pub struct CSample<'a> {
+    /// Year.
+    /// See [crate::input::ISample::year].
     pub year: Year,
+    /// Metadata related to this sample.
+    /// See [crate::input::ISample::metadata].
     pub metadata: &'a HashMap<String, String>,
+    /// The number of words in this sample.
+    /// See [crate::input::ISample::words].
     pub words: u64,
+    /// Tokens of this sample.
     pub tokens: Vec<CToken<'a>>,
 }
 
@@ -40,6 +55,13 @@ fn get_sample<'a>(restrict_tokens: Category, mark_tokens: Category, s: &'a ISamp
     }
 }
 
+/// Filter and convert samples.
+///
+/// Turn a list of [crate::input::ISample] objects into [crate::input::CSample] objects.
+/// Only samples that match `restrict_samples` are kept.
+/// Only tokens that match `restrict_tokens` are kept.
+/// Tokens that match `mark_tokens` are marked.
+/// Token metadata is then discarded.
 pub fn get_samples<'a>(
     restrict_samples: Category,
     restrict_tokens: Category,
@@ -58,6 +80,7 @@ pub fn get_samples<'a>(
         .collect_vec()
 }
 
+/// Get the range of years represented by a list of samples.
 pub fn get_years(samples: &[CSample]) -> Years {
     let mut years = None;
     for s in samples {
@@ -69,6 +92,7 @@ pub fn get_years(samples: &[CSample]) -> Years {
     years.expect("there are samples")
 }
 
+/// Get all categories for a given key.
 pub fn get_categories<'a>(key: &'a str, samples: &[CSample<'a>]) -> Result<Vec<Category<'a>>> {
     let mut values = HashSet::new();
     for s in samples {

@@ -16,6 +16,6 @@ mod information;
 pub mod input;
 pub mod output;
 mod parallelism;
-mod samples;
+pub mod samples;
 mod shuffle;
 mod subsets;
