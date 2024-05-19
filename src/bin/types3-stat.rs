@@ -2,6 +2,7 @@ use clap::Parser;
 use clap_verbosity_flag::{Verbosity, WarnLevel};
 use itertools::Itertools;
 use log::{error, info};
+use rust_xlsxwriter::{Format, Workbook};
 use std::collections::{HashMap, HashSet};
 use std::{error, fs, io, process};
 use types3::driver;
@@ -14,7 +15,7 @@ use types3::output::{self, OError, Years};
 struct Args {
     /// Input file (JSON)
     infile: String,
-    /// Output file (JSON)
+    /// Output file (XLSX)
     outfile: String,
     /// Starting offset
     #[arg(long, default_value_t = 0)]
@@ -34,9 +35,6 @@ struct Args {
     /// Report errors as a JSON file
     #[arg(long)]
     error_file: Option<String>,
-    /// Produce compact JSON files
-    #[arg(long)]
-    compact: bool,
     /// Verbosity
     #[command(flatten)]
     verbose: Verbosity<WarnLevel>,
@@ -78,11 +76,40 @@ impl<'a> RawStat<'a> {
             self.types.insert(&token.lemma);
         }
     }
+
+    fn get(&self, kind: &Kind) -> u64 {
+        match kind {
+            Kind::Samples => self.samples,
+            Kind::Words => self.words,
+            Kind::Tokens => self.tokens,
+            Kind::Types => self.types.len() as u64,
+        }
+    }
 }
 
 type MdPair<'a> = (&'a String, &'a String);
 
-fn stat(args: &Args, samples: &[ISample]) -> Result<()> {
+enum Kind {
+    Samples,
+    Words,
+    Tokens,
+    Types,
+}
+
+impl Kind {
+    fn sheetname(&self) -> &'static str {
+        match self {
+            Kind::Samples => "samples",
+            Kind::Words => "words",
+            Kind::Tokens => "tokens",
+            Kind::Types => "types",
+        }
+    }
+}
+
+const SHEETS: &[Kind] = &[Kind::Samples, Kind::Words, Kind::Tokens, Kind::Types];
+
+fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
     if samples.is_empty() {
         return Err(errors::invalid_input_ref("no samples found"));
     }
@@ -107,6 +134,7 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<()> {
     smd.sort();
     let smd_map: HashMap<MdPair, usize> = smd.iter().enumerate().map(|(i, &x)| (x, i)).collect();
 
+    let mut by_period = vec![];
     for period in &periods {
         let mut overall = RawStat::new();
         let mut by_smd = (0..smd.len()).map(|_| RawStat::new()).collect_vec();
@@ -123,23 +151,56 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<()> {
         println!("- words: {}", overall.words);
         println!("- tokens: {}", overall.tokens);
         println!("- types: {}", overall.types.len());
-        for (i, md) in smd.iter().enumerate() {
+        for (j, md) in smd.iter().enumerate() {
             println!("  {} = {}:", md.0, md.1);
-            let s = &by_smd[i];
+            let s = &by_smd[j];
             println!("  - samples: {}", s.samples);
             println!("  - words: {}", s.words);
             println!("  - tokens: {}", s.tokens);
             println!("  - types: {}", s.types.len());
         }
+        by_period.push((period, overall, by_smd));
     }
-    Ok(())
+
+    let mut workbook = Workbook::new();
+    let bold = Format::new().set_bold();
+    for kind in SHEETS {
+        const PWIDTH: f32 = 6.0;
+        const WIDTH: f32 = 12.0;
+        let sheet = workbook.add_worksheet();
+        sheet.set_name(kind.sheetname())?;
+        sheet.write_with_format(0, 0, "Period", &bold)?;
+        sheet.set_column_width(0, PWIDTH)?;
+        sheet.set_column_width(1, PWIDTH)?;
+        sheet.write_with_format(0, 2, "Everything", &bold)?;
+        sheet.set_column_width(2, WIDTH)?;
+        for (j, md) in smd.iter().enumerate() {
+            let col = (j + 3) as u16;
+            sheet.write_with_format(0, col, md.0, &bold)?;
+            sheet.write_with_format(1, col, md.1, &bold)?;
+            sheet.set_column_width(col, WIDTH)?;
+        }
+        for (i, (period, overall, by_smd)) in by_period.iter().enumerate() {
+            let row = (i + 2) as u32;
+            sheet.write_with_format(row, 0, period.0, &bold)?;
+            sheet.write_with_format(row, 1, period.1, &bold)?;
+            sheet.write(row, 2, overall.get(kind))?;
+            for (j, md) in by_smd.iter().enumerate() {
+                let col = (j + 3) as u16;
+                sheet.write(row, col, md.get(kind))?;
+            }
+        }
+    }
+    Ok(workbook)
 }
 
 fn process(args: &Args) -> Result<()> {
     info!(target: "types3", "read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
-    stat(args, &input.samples)?;
+    let mut workbook = stat(args, &input.samples)?;
+    info!(target: "types3", "write: {}", args.outfile);
+    workbook.save(&args.outfile)?;
     Ok(())
 }
 
