@@ -308,6 +308,7 @@ class App:
         what_choices = [
             'PDF',
             'PNG',
+            'text',
         ]
         e = ttk.OptionMenu(widgetframe, self.save_format, what_choices[0],
                            *what_choices)
@@ -732,6 +733,7 @@ class App:
         ftmap = {
             'PDF': ([('PDF', '*.pdf')], 'types3.pdf'),
             'PNG': ([('PNG', '*.png')], 'types3.png'),
+            'text': ([('text', '*.txt')], 'types3.txt'),
         }
         fmt = self.save_format.get()
         if fmt not in ftmap:
