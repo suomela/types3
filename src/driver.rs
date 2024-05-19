@@ -85,20 +85,26 @@ struct Curve<'a> {
     keys: Vec<SubsetKey<'a>>,
 }
 
-fn get_periods(args: &DriverArgs, years: &Years) -> Vec<Years> {
+/// Turn a list of years into a list of periods.
+pub fn get_periods(offset: Year, window: Year, step: Year, years: &Years) -> Vec<Years> {
     let mut periods = vec![];
-    let mut y = args.offset;
-    while y + args.step <= years.0 {
-        y += args.step;
+    let mut y = offset;
+    while y + step <= years.0 {
+        y += step;
     }
     loop {
-        let p = (y, y + args.window);
+        let p = (y, y + window);
         periods.push(p);
         if p.1 >= years.1 {
             break;
         }
-        y += args.step;
+        y += step;
     }
+    periods
+}
+
+fn get_periods_wrapper(args: &DriverArgs, years: &Years) -> Vec<Years> {
+    let periods = get_periods(args.offset, args.window, args.step, years);
     info!(target: "types3", "periods: {}", output::pretty_periods(&periods));
     periods
 }
@@ -163,7 +169,7 @@ impl<'a> Calc<'a> {
             info!(target: "types3", "years in input data: {}", output::pretty_period(&years));
             (years.0.max(args.start), years.1.min(args.end + 1))
         };
-        let periods = get_periods(args, &years);
+        let periods = get_periods_wrapper(args, &years);
         let curves = build_curves(&categories, &periods);
         let mut subset_map = HashMap::new();
         for curve in &curves {
@@ -357,7 +363,7 @@ mod test {
     fn get_periods_10_10() {
         let args = build_args(10, 10, 0);
         assert_eq!(
-            get_periods(&args, &(1911, 1979)),
+            get_periods_wrapper(&args, &(1911, 1979)),
             [
                 (1910, 1920),
                 (1920, 1930),
@@ -369,7 +375,7 @@ mod test {
             ]
         );
         assert_eq!(
-            get_periods(&args, &(1910, 1980)),
+            get_periods_wrapper(&args, &(1910, 1980)),
             [
                 (1910, 1920),
                 (1920, 1930),
@@ -381,7 +387,7 @@ mod test {
             ]
         );
         assert_eq!(
-            get_periods(&args, &(1909, 1981)),
+            get_periods_wrapper(&args, &(1909, 1981)),
             [
                 (1900, 1910),
                 (1910, 1920),
@@ -400,15 +406,15 @@ mod test {
     fn get_periods_40_10() {
         let args = build_args(40, 10, 0);
         assert_eq!(
-            get_periods(&args, &(1911, 1979)),
+            get_periods_wrapper(&args, &(1911, 1979)),
             [(1910, 1950), (1920, 1960), (1930, 1970), (1940, 1980),]
         );
         assert_eq!(
-            get_periods(&args, &(1910, 1980)),
+            get_periods_wrapper(&args, &(1910, 1980)),
             [(1910, 1950), (1920, 1960), (1930, 1970), (1940, 1980),]
         );
         assert_eq!(
-            get_periods(&args, &(1909, 1981)),
+            get_periods_wrapper(&args, &(1909, 1981)),
             [
                 (1900, 1940),
                 (1910, 1950),
@@ -424,7 +430,7 @@ mod test {
     fn get_periods_10_10_offset1() {
         let args = build_args(10, 10, 1);
         assert_eq!(
-            get_periods(&args, &(1911, 1979)),
+            get_periods_wrapper(&args, &(1911, 1979)),
             [
                 (1911, 1921),
                 (1921, 1931),
@@ -436,20 +442,7 @@ mod test {
             ]
         );
         assert_eq!(
-            get_periods(&args, &(1910, 1980)),
-            [
-                (1901, 1911),
-                (1911, 1921),
-                (1921, 1931),
-                (1931, 1941),
-                (1941, 1951),
-                (1951, 1961),
-                (1961, 1971),
-                (1971, 1981),
-            ]
-        );
-        assert_eq!(
-            get_periods(&args, &(1909, 1981)),
+            get_periods_wrapper(&args, &(1910, 1980)),
             [
                 (1901, 1911),
                 (1911, 1921),
@@ -462,7 +455,20 @@ mod test {
             ]
         );
         assert_eq!(
-            get_periods(&args, &(1908, 1982)),
+            get_periods_wrapper(&args, &(1909, 1981)),
+            [
+                (1901, 1911),
+                (1911, 1921),
+                (1921, 1931),
+                (1931, 1941),
+                (1941, 1951),
+                (1951, 1961),
+                (1961, 1971),
+                (1971, 1981),
+            ]
+        );
+        assert_eq!(
+            get_periods_wrapper(&args, &(1908, 1982)),
             [
                 (1901, 1911),
                 (1911, 1921),
