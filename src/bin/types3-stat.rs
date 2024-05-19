@@ -120,10 +120,19 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
     let mut periods = driver::get_periods(args.offset, args.window, args.step, &years);
     periods.push(years);
 
+    let skip = |md: &MdPair| -> bool {
+        match restrict_samples {
+            None => false,
+            Some((k, v)) => md.0 == k && md.1 == v,
+        }
+    };
+
     let mut smd: HashSet<MdPair> = HashSet::new();
     for sample in &samples {
         for md in sample.metadata {
-            smd.insert(md);
+            if !skip(&md) {
+                smd.insert(md);
+            }
         }
     }
     let mut smd: Vec<MdPair> = smd.into_iter().collect_vec();
@@ -138,7 +147,9 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
             if period.0 <= sample.year && sample.year < period.1 {
                 overall.feed_sample(sample);
                 for md in sample.metadata {
-                    by_smd[smd_map[&md]].feed_sample(sample);
+                    if !skip(&md) {
+                        by_smd[smd_map[&md]].feed_sample(sample);
+                    }
                 }
             }
         }
@@ -152,19 +163,31 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
         const WIDTH: f32 = 12.0;
         let sheet = workbook.add_worksheet();
         sheet.set_name(kind.sheetname())?;
-        sheet.write_with_format(0, 0, "Period", &bold)?;
+        let mut baserow = 0;
+        if let Some(md) = restrict_samples {
+            sheet.write_with_format(baserow, 0, format!("Samples: {} = {}", md.0, md.1), &bold)?;
+            baserow += 1;
+        }
+        if let Some(md) = restrict_tokens {
+            sheet.write_with_format(baserow, 0, format!("Tokens: {} = {}", md.0, md.1), &bold)?;
+            baserow += 1;
+        }
+        if baserow > 0 {
+            baserow += 1;
+        }
+        sheet.write_with_format(baserow, 0, "Period", &bold)?;
+        sheet.write_with_format(baserow, 2, "Everything", &bold)?;
         sheet.set_column_width(0, PWIDTH)?;
         sheet.set_column_width(1, PWIDTH)?;
-        sheet.write_with_format(0, 2, "Everything", &bold)?;
         sheet.set_column_width(2, WIDTH)?;
         for (j, md) in smd.iter().enumerate() {
             let col = (j + 3) as u16;
-            sheet.write_with_format(0, col, md.0, &bold)?;
-            sheet.write_with_format(1, col, md.1, &bold)?;
+            sheet.write_with_format(baserow, col, md.0, &bold)?;
+            sheet.write_with_format(baserow + 1, col, md.1, &bold)?;
             sheet.set_column_width(col, WIDTH)?;
         }
         for (i, (period, overall, by_smd)) in by_period.iter().enumerate() {
-            let row = (i + 2) as u32;
+            let row = i as u32 + baserow + 2;
             sheet.write_with_format(row, 0, period.0, &bold)?;
             sheet.write_with_format(row, 1, period.1 - 1, &bold)?;
             sheet.write(row, 2, overall.get(kind))?;
