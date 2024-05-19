@@ -771,9 +771,6 @@ class App:
 
     def save_stat(self, *_):
         args, errors = self.get_period_args()
-        category = self.category_map[self.category.get()]
-        if category is not None:
-            args += ['--category', category]
         restrict_samples = self.restrict_samples_map[
             self.restrict_samples.get()]
         if restrict_samples is not None:
