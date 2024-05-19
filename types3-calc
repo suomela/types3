@@ -5,10 +5,10 @@ set -e
 WHERE=$(readlink -f "$0")
 TYPES3_BASEDIR=$(dirname "$WHERE")
 
-if [ ! -e "$TYPES3_BASEDIR/target/release/types3" ]; then
-    echo "Cannot find types-calc binary"
+if [ ! -e "$TYPES3_BASEDIR/target/release/types3-calc" ]; then
+    echo "Cannot find types3-calc binary"
     echo "Try to run util/setup.sh first!"
     exit 1
 fi
 
-exec $TYPES3_BASEDIR/target/release/types3 "$@"
+exec $TYPES3_BASEDIR/target/release/types3-calc "$@"

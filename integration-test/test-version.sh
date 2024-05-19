@@ -11,14 +11,14 @@ if [ ! -e "$TYPES3_BASEDIR/venv/bin/activate" ]; then
     exit 1
 fi
 
-if [ ! -e "$TYPES3_BASEDIR/target/release/types3" ]; then
-    echo "Cannot find types-calc binary"
+if [ ! -e "$TYPES3_BASEDIR/target/release/types3-calc" ]; then
+    echo "Cannot find types3-calc binary"
     exit 1
 fi
 
 source "$TYPES3_BASEDIR/venv/bin/activate"
 
-v1=$($TYPES3_BASEDIR/target/release/types3 --version)
+v1=$($TYPES3_BASEDIR/target/release/types3-calc --version)
 v2=$(python3 $TYPES3_BASEDIR/python/types3-version.py)
 
 if [ "$v1" != "$v2" ]; then
