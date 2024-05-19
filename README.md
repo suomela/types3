@@ -84,6 +84,7 @@ If you have input data in `data.json`, you can start to explore it with:
 For more information, see:
 
     ./types3-ui --help
+    ./types3-stat --help
     ./types3-calc --help
     ./types3-plot --help
 
