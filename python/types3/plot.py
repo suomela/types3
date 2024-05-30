@@ -1,4 +1,5 @@
 import math
+import re
 from collections import namedtuple
 
 COLORS = ['#f26924', '#0088cc', '#3ec636']
@@ -142,7 +143,7 @@ def _upcase(x):
     return x[0].upper() + x[1:]
 
 
-def _title(data):
+def _old_title(data):
     measure_x = data['measure_x']
     measure_y = data['measure_y']
     mark_tokens = data['mark_tokens']
@@ -156,6 +157,15 @@ def _title(data):
     else:
         measure_y_cased = _upcase(measure_y)
         return f'{measure_y_cased} in subcorpora with {limit} {measure_x}'
+
+
+def _title(data):
+    title = _old_title(data)
+    title = re.sub(r'\bTypes\b', 'Authors', title)
+    title = re.sub(r'\btypes\b', 'authors', title)
+    title = re.sub(r'\btokens\b', 'books', title)
+    title = re.sub(r'\bsubcorpora\b', 'collections', title)
+    return title
 
 
 def set_height(data, dims):
