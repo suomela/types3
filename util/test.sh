@@ -8,5 +8,6 @@ cargo clippy
 integration-test/test-ui.sh
 integration-test/test-calc.sh
 integration-test/test-calc2.sh
+integration-test/test-convert.sh
 integration-test/test-plot.sh
 integration-test/test-version.sh

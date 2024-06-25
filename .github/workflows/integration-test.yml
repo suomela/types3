@@ -83,6 +83,10 @@ jobs:
         run: |
           integration-test/test-version.sh
 
+      - name: Test conversion
+        run: |
+          integration-test/test-convert.sh
+
       - name: Test statistics
         run: |
           integration-test/test-stat.sh
