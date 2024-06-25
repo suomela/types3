@@ -25,7 +25,7 @@ id,lemma,variant
 
 Note that in the second file the ***id*** column refers to the identifier of the sample.
 
-Columns ***id***, ***words***, ***year***, and ***lemma*** are required; any other columns are considered to be additional metadata and classifications. Here ***id*** is an arbitrary label for the sample and ***words*** is the number of running words in the sample (relevant if you want to compare e.g. the number of types with the number of running words).
+Columns ***id***, ***words***, ***year***, and ***lemma*** are required; any other columns are considered to be additional metadata and classifications. Here ***id*** is an arbitrary label for the sample and ***words*** is the number of running words in the sample (relevant if you want to compare e.g. the number of types with the number of running words). In the token file ***lemma*** should be the lemmatized version of the token of interest; two tokens are considered to represent the same type if their lemmas are exactly equal strings.
 
 Now if your samples are listed in file `samples.csv` and your tokens are listed in file `tokens.csv`, you can use the following command to convert it into a JSON file `data.json` that is suitable for types3:
 
