@@ -2,7 +2,7 @@
 
 types3 assumes that you have all your input data in a single JSON file with a specific structure. However, it is easy to convert e.g. CSV files into the right format, as follows.
 
-Assume you have a CSV file that describes your samples, like this (see [example_samples.csv](example_samples.csv) for an example):
+Assume you have a CSV file that describes your samples, like this (see [example-samples.csv](example-samples.csv) for an example):
 
 ```csv
 id,words,year,gender
@@ -11,7 +11,7 @@ id,words,year,gender
 7,53750,1913,F
 ````
 
-And another CSV file that describes your tokens, like this (see [example_tokens.csv](example_tokens.csv) for an example):
+And another CSV file that describes your tokens, like this (see [example-tokens.csv](example-tokens.csv) for an example):
 
 ```csv
 id,lemma,variant
