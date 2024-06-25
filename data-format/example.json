@@ -1,0 +1,82 @@
+{
+ "samples": [
+  {
+   "id": "7009",
+   "words": 107744,
+   "year": 1848,
+   "metadata": {
+    "gender": "M"
+   },
+   "tokens": [
+    {
+     "lemma": "seek",
+     "metadata": {
+      "variant": "be-going-to-verb"
+     }
+    },
+    {
+     "lemma": "write",
+     "metadata": {
+      "variant": "be-going-to-verb"
+     }
+    },
+    {
+     "lemma": "write",
+     "metadata": {
+      "variant": "gonna"
+     }
+    }
+   ]
+  },
+  {
+   "id": "2997",
+   "words": 55962,
+   "year": 1917,
+   "metadata": {
+    "gender": "F"
+   },
+   "tokens": [
+    {
+     "lemma": "last",
+     "metadata": {
+      "variant": "be-going-to-verb"
+     }
+    },
+    {
+     "lemma": "fall",
+     "metadata": {
+      "variant": "be-going-to-verb"
+     }
+    },
+    {
+     "lemma": "write",
+     "metadata": {
+      "variant": "be-going-to-verb"
+     }
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "words": 53750,
+   "year": 1913,
+   "metadata": {
+    "gender": "F"
+   },
+   "tokens": [
+    {
+     "lemma": "paint",
+     "metadata": {
+      "variant": "gonna"
+     }
+    },
+    {
+     "lemma": "seek",
+     "metadata": {
+      "variant": "be-going-to-verb"
+     }
+    }
+   ]
+  }
+ ]
+}
