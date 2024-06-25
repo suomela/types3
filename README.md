@@ -89,6 +89,10 @@ For more information, see:
     ./types3-plot --help
     ./types3-stat --help
 
+## Data format
+
+See [data-format](data-format) for more information on the data format and how to convert your own data into the right format.
+
 ## Sample data
 
 To explore the [sample data sets](sample-data), try:
