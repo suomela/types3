@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+
+WHERE=$(readlink -f "$0")
+TYPES3_BASEDIR=$(dirname "$WHERE")
+
+if [ ! -e "$TYPES3_BASEDIR/venv/bin/activate" ]; then
+    echo "Cannot find Python virtual environment"
+    echo "Try to run util/setup.sh first!"
+    exit 1
+fi
+
+source "$TYPES3_BASEDIR/venv/bin/activate"
+exec python3 $TYPES3_BASEDIR/python/types3-convert.py "$@"
