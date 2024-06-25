@@ -1,5 +1,7 @@
 # types3 data format
 
+types3 assumes that you have all your input data in a single JSON file with a specific structure. However, it is easy to convert e.g. CSV files into the right format, as follows.
+
 Assume you have a CSV file that describes your samples, like this (see [example_samples.md](example_samples.md) for an example):
 
 ```csv
