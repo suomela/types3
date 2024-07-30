@@ -31,7 +31,7 @@ for dir in plot plot-expected; do
     cd "$dir"
     for a in *.pdf; do
         b="${a%.pdf}.png"
-        convert -quiet -density 100 "$a" "$b" &
+        magick -quiet -density 100 "$a" "$b" &
     done
     wait
 
