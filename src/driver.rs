@@ -424,6 +424,10 @@ mod test {
                 (1950, 1990),
             ]
         );
+        assert_eq!(get_periods_wrapper(&args, &(1909, 1909)), [(1900, 1940),]);
+        assert_eq!(get_periods_wrapper(&args, &(1909, 1900)), [(1900, 1940),]);
+        assert_eq!(get_periods_wrapper(&args, &(1909, 1899)), [(1900, 1940),]);
+        assert_eq!(get_periods_wrapper(&args, &(1909, 0)), [(1900, 1940),]);
     }
 
     #[test]
