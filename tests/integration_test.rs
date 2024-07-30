@@ -257,3 +257,51 @@ fn test_category_minimum() {
     let output = driver::calc(&driver_args, &input).unwrap();
     assert_eq!(output, expected);
 }
+
+#[test]
+fn test_future_start() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: None,
+        measure_y: MeasureY::Types,
+        measure_x: MeasureX::Tokens,
+        iter: 10000,
+        offset: 0,
+        start: 3000,
+        end: 9999,
+        window: 20,
+        step: 20,
+        minimum_size: 1,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    assert!(driver::calc(&driver_args, &input).is_err());
+}
+
+#[test]
+fn test_past_end() {
+    init();
+    let data = slurp("sample-data/ceec.json");
+    let input: Input = serde_json::from_str(&data).unwrap();
+    let driver_args = DriverArgs {
+        category: None,
+        measure_y: MeasureY::Types,
+        measure_x: MeasureX::Tokens,
+        iter: 10000,
+        offset: 0,
+        start: 0,
+        end: 1000,
+        window: 20,
+        step: 20,
+        minimum_size: 1,
+        restrict_samples: None,
+        restrict_tokens: None,
+        mark_tokens: None,
+        split_samples: false,
+    };
+    assert!(driver::calc(&driver_args, &input).is_err());
+}
