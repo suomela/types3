@@ -150,7 +150,9 @@ struct Calc<'a> {
 impl<'a> Calc<'a> {
     fn new(args: &'a DriverArgs, input: &'a Input) -> Result<Calc<'a>> {
         information::statistics(&input.samples);
+        let restrict_years = (args.start, args.end + 1);
         let samples = samples::get_samples(
+            &restrict_years,
             args.restrict_samples,
             args.restrict_tokens,
             args.mark_tokens,
@@ -164,11 +166,8 @@ impl<'a> Calc<'a> {
             None => vec![None],
             Some(key) => samples::get_categories(key, &samples)?,
         };
-        let years = {
-            let years = samples::get_years(&samples);
-            info!(target: "types3", "years in input data: {}", output::pretty_period(&years));
-            (years.0.max(args.start), years.1.min(args.end + 1))
-        };
+        let years = samples::get_years(&samples);
+        info!(target: "types3", "years in input data: {}", output::pretty_period(&years));
         let periods = get_periods_wrapper(args, &years);
         let curves = build_curves(&categories, &periods);
         let mut subset_map = HashMap::new();

@@ -58,11 +58,13 @@ fn get_sample<'a>(restrict_tokens: Category, mark_tokens: Category, s: &'a ISamp
 /// Filter and convert samples.
 ///
 /// Turn a list of [crate::input::ISample] objects into [crate::input::CSample] objects.
+/// Only samples with year in range `years` are kept.
 /// Only samples that match `restrict_samples` are kept.
 /// Only tokens that match `restrict_tokens` are kept.
 /// Tokens that match `mark_tokens` are marked.
 /// Token metadata is then discarded.
 pub fn get_samples<'a>(
+    years: &Years,
     restrict_samples: Category,
     restrict_tokens: Category,
     mark_tokens: Category,
@@ -71,7 +73,10 @@ pub fn get_samples<'a>(
     samples
         .iter()
         .filter_map(|s| {
-            if categories::matches(restrict_samples, &s.metadata) {
+            if years.0 <= s.year
+                && s.year < years.1
+                && categories::matches(restrict_samples, &s.metadata)
+            {
                 Some(get_sample(restrict_tokens, mark_tokens, s))
             } else {
                 None

@@ -107,15 +107,21 @@ impl Kind {
 const SHEETS: &[Kind] = &[Kind::Samples, Kind::Words, Kind::Tokens, Kind::Types];
 
 fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
+    let restrict_years = (args.start, args.end + 1);
     let restrict_samples = categories::parse_restriction(&args.restrict_samples)?;
     let restrict_tokens = categories::parse_restriction(&args.restrict_tokens)?;
-    let samples = samples::get_samples(restrict_samples, restrict_tokens, None, samples);
+    let samples = samples::get_samples(
+        &restrict_years,
+        restrict_samples,
+        restrict_tokens,
+        None,
+        samples,
+    );
     if samples.is_empty() {
         return Err(errors::invalid_input_ref("no samples found"));
     }
     let years = samples::get_years(&samples);
     info!(target: "types3", "years in input data: {}", output::pretty_period(&years));
-    let years = (years.0.max(args.start), years.1.min(args.end + 1));
 
     let mut periods = driver::get_periods(args.offset, args.window, args.step, &years);
     periods.push(years);
