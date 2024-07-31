@@ -452,6 +452,44 @@ class App:
         e.grid(column=0, row=row, columnspan=2, sticky='ew')
         row += 1
 
+        e = ttk.Label(widgetframe, text='Start year:')
+        e.grid(column=0, row=row, sticky='e')
+        inner = ttk.Frame(widgetframe)
+        inner.grid(column=1, row=row, sticky='w')
+        inner.rowconfigure(0, weight=1)
+        inner.columnconfigure(0, weight=1)
+        inner.columnconfigure(1, weight=0)
+        self.start = tk.StringVar()
+        e = ttk.Entry(inner, textvariable=self.start, width=6)
+        e.grid(column=0, row=0, sticky='w')
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
+        self.start_label = tk.StringVar(value='')
+        e = ttk.Label(inner, textvariable=self.start_label)
+        e.grid(column=1, row=0, sticky='w')
+        row += 1
+
+        e = ttk.Label(widgetframe, text='End year:')
+        e.grid(column=0, row=row, sticky='e')
+        inner = ttk.Frame(widgetframe)
+        inner.grid(column=1, row=row, sticky='w')
+        inner.rowconfigure(0, weight=1)
+        inner.columnconfigure(0, weight=1)
+        inner.columnconfigure(1, weight=0)
+        self.end = tk.StringVar()
+        e = ttk.Entry(inner, textvariable=self.end, width=6)
+        e.grid(column=0, row=0, sticky='w')
+        e.bind('<FocusOut>', self.update)
+        e.bind('<Return>', self.update)
+        self.end_label = tk.StringVar(value='')
+        e = ttk.Label(inner, textvariable=self.end_label)
+        e.grid(column=1, row=0, sticky='w')
+        row += 1
+
+        e = ttk.Separator(widgetframe, orient='horizontal')
+        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        row += 1
+
         e = ttk.Label(widgetframe, text='Window size:')
         e.grid(column=0, row=row, sticky='e')
         self.window = tk.StringVar(value=str(self.default_step))
@@ -465,24 +503,6 @@ class App:
         e.grid(column=0, row=row, sticky='e')
         self.step = tk.StringVar(value=str(self.default_step))
         e = ttk.Entry(widgetframe, textvariable=self.step, width=6)
-        e.grid(column=1, row=row, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
-        row += 1
-
-        e = ttk.Label(widgetframe, text='Start year (optional):')
-        e.grid(column=0, row=row, sticky='e')
-        self.start = tk.StringVar()
-        e = ttk.Entry(widgetframe, textvariable=self.start, width=6)
-        e.grid(column=1, row=row, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
-        row += 1
-
-        e = ttk.Label(widgetframe, text='End year (optional):')
-        e.grid(column=0, row=row, sticky='e')
-        self.end = tk.StringVar()
-        e = ttk.Entry(widgetframe, textvariable=self.end, width=6)
         e.grid(column=1, row=row, sticky='w')
         e.bind('<FocusOut>', self.update)
         e.bind('<Return>', self.update)
@@ -722,6 +742,10 @@ class App:
         with open(outfile) as f:
             data = json.load(f)
 
+        start = data['years'][0]
+        end = data['years'][1] - 1
+        self.start_label.set(f'(first sample: {start})')
+        self.end_label.set(f'(last sample: {end})')
         self.fig.clear()
         dims = types3.plot.DIMS_UI
         types3.plot.plot(self.fig, data, dims, legend='lower right')
