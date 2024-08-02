@@ -12,8 +12,9 @@ use types3::input::{ISample, Input, Year};
 use types3::output::{self, OError};
 use types3::samples::{self, CSample};
 
+/// Export statistics (used by types3-ui)
 #[derive(Parser)]
-#[command(author, version, about)]
+#[command(version)]
 struct Args {
     /// Input file (JSON)
     infile: String,

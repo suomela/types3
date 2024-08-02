@@ -5,7 +5,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import types3.plot
 
-cli = argparse.ArgumentParser()
+cli = argparse.ArgumentParser(
+    description='Plot type accumulation curves (used by types3-ui).')
 cli.add_argument('--verbose',
                  '-v',
                  action='count',

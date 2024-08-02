@@ -5,7 +5,8 @@ import logging
 import sys
 import types3
 
-cli = argparse.ArgumentParser()
+cli = argparse.ArgumentParser(
+    description='Convert CSV files to types3-compatible format.')
 cli.add_argument('--verbose',
                  '-v',
                  action='count',

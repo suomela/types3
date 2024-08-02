@@ -28,7 +28,7 @@ TIMEOUT = 0.1
 WINDOW_INIT_SIZE = '1200x1050'
 WIDGET_WIDTH = 300
 
-cli = argparse.ArgumentParser()
+cli = argparse.ArgumentParser(description='types3 user interface.')
 cli.add_argument('--verbose',
                  '-v',
                  action='count',

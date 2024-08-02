@@ -84,8 +84,8 @@ If you have input data in `data.json`, you can start to explore it with:
 For more information, see:
 
     ./types3-ui --help
-    ./types3-calc --help
     ./types3-convert --help
+    ./types3-calc --help
     ./types3-plot --help
     ./types3-stat --help
 
@@ -95,7 +95,7 @@ See [data-format](data-format) for more information on the data format and how t
 
 ## Sample data
 
-To explore the [sample data sets](sample-data), try:
+See [sample-data](sample-data) for our sample data sets. To explore our sample data sets, try:
 
     ./types3-ui sample-data/ceec.json
 

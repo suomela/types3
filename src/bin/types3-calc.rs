@@ -10,8 +10,9 @@ use types3::output::{MeasureX, MeasureY, OError};
 
 const DEFAULT_ITER: u64 = 1_000_000;
 
+/// Calculate type accumulation curves (used by types3-ui)
 #[derive(Parser)]
-#[command(author, version, about)]
+#[command(version)]
 struct Args {
     /// Input file (JSON)
     infile: String,
