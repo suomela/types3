@@ -29,7 +29,7 @@ where
     for job in 0..RANDOM_JOBS {
         s1.send(job).unwrap();
     }
-    let iter_per_job = (iter + RANDOM_JOBS - 1) / RANDOM_JOBS;
+    let iter_per_job = iter.div_ceil(RANDOM_JOBS);
     let iter = iter_per_job * RANDOM_JOBS;
     drop(s1);
     let nthreads = num_cpus::get();
