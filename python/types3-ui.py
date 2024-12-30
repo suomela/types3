@@ -610,7 +610,7 @@ class App:
             return None
         try:
             x = int(v)
-        except:
+        except ValueError:
             errors.append(f'{label} is not a valid number.')
             return None
         if vmin is not None and x < vmin:
