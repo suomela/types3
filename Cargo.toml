@@ -2,7 +2,7 @@
 name = "types3"
 version = "0.1.5"
 authors = ["Jukka Suomela"]
-edition = "2021"
+edition = "2024"
 description = "Type accumulation curves"
 license = "MIT"
 readme = "README.md"

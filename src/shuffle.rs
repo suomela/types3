@@ -1,7 +1,7 @@
 use crate::parallelism::Job;
 use rand::seq::SliceRandom;
-use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoshiro256PlusPlus;
+use rand_xoshiro::rand_core::SeedableRng;
 
 pub fn shuffle_job<TCalcOne>(mut calc_one: TCalcOne, n: usize, job: Job)
 where

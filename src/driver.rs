@@ -11,8 +11,8 @@ use crate::samples;
 use crate::subsets::{self, Subset, SubsetKey};
 use itertools::Itertools;
 use log::{debug, info};
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 /// What to calculate?
 pub struct DriverArgs<'a> {
