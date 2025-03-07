@@ -18,44 +18,42 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import types3.plot
 
-matplotlib.rcParams['axes.titlesize'] = 'medium'
+matplotlib.rcParams["axes.titlesize"] = "medium"
 
-OUTPUT_VERSION = 'v4'
+OUTPUT_VERSION = "v4"
 MIN_ITER = 1_000
 MAX_ITER = 1_000_000
 ITER_STEP = 10
 TIMEOUT = 0.1
-WINDOW_INIT_SIZE = '1200x1050'
+WINDOW_INIT_SIZE = "1200x1050"
 WIDGET_WIDTH = 300
 
-cli = argparse.ArgumentParser(description='types3 user interface.')
-cli.add_argument('--verbose',
-                 '-v',
-                 action='count',
-                 default=0,
-                 help='Increase verbosity')
-cli.add_argument('infile', help='Input file (JSON)')
-cli.add_argument('--version',
-                 action='version',
-                 version='%(prog)s ' + types3.__version__)
+cli = argparse.ArgumentParser(description="types3 user interface.")
+cli.add_argument(
+    "--verbose", "-v", action="count", default=0, help="Increase verbosity"
+)
+cli.add_argument("infile", help="Input file (JSON)")
+cli.add_argument(
+    "--version", action="version", version="%(prog)s " + types3.__version__
+)
 
 
 def sanity_check():
-    tcltk_version = tk.Tcl().eval('info patchlevel')
-    if tcltk_version.split('.') < ['8', '6']:
-        logging.error(f'Unsupported Tcl/Tk version {tcltk_version}')
+    tcltk_version = tk.Tcl().eval("info patchlevel")
+    if tcltk_version.split(".") < ["8", "6"]:
+        logging.error(f"Unsupported Tcl/Tk version {tcltk_version}")
         sys.exit(1)
-    if 'TYPES3_BASEDIR' not in os.environ:
-        logging.error('TYPES3_BASEDIR environment variable not defined')
+    if "TYPES3_BASEDIR" not in os.environ:
+        logging.error("TYPES3_BASEDIR environment variable not defined")
         sys.exit(1)
 
 
 def metadata_choices(metadata):
-    r = ['everything']
-    m = {'everything': None}
+    r = ["everything"]
+    m = {"everything": None}
     for k in sorted(metadata.keys()):
         for v in sorted(metadata[k]):
-            l = f'{k}: {v}'
+            l = f"{k}: {v}"
             assert l not in m
             m[l] = (k, v)
             r.append(l)
@@ -63,15 +61,15 @@ def metadata_choices(metadata):
 
 
 def metadata_top_choices(metadata):
-    r = ['none']
-    m = {'none': None}
+    r = ["none"]
+    m = {"none": None}
     for k in sorted(metadata.keys()):
         if len(metadata[k]) > len(types3.plot.COLORS):
             continue
-        vv = ', '.join(sorted(metadata[k]))
+        vv = ", ".join(sorted(metadata[k]))
         if len(vv) > 25:
-            vv = vv[:20] + '…'
-        l = f'{k} ({vv})'
+            vv = vv[:20] + "…"
+        l = f"{k} ({vv})"
         assert l not in m
         m[l] = k
         r.append(l)
@@ -80,14 +78,12 @@ def metadata_top_choices(metadata):
 
 def cmd_digest(x):
     x = json.dumps(x)
-    x = bytes(x, encoding='utf-8')
+    x = bytes(x, encoding="utf-8")
     return hashlib.sha256(x).hexdigest()
 
 
 class Runner:
-
-    def __init__(self, infile, cachedir, verbose, runner_queue, result_queue,
-                 root):
+    def __init__(self, infile, cachedir, verbose, runner_queue, result_queue, root):
         self.infile = infile
         self.cachedir = cachedir
         self.verbose = verbose
@@ -100,33 +96,37 @@ class Runner:
 
     def msg(self, x):
         self.result_queue.put(x)
-        self.root.event_generate('<<NewResults>>')
+        self.root.event_generate("<<NewResults>>")
 
     def start_cmd(self):
         assert self.process is None
         assert self.current is not None
         assert self.iter is not None
         digest = cmd_digest(self.current)
-        self.errfile = self.cachedir / f'{digest}-{self.iter}.err'
-        self.tempfile = self.cachedir / f'{digest}-{self.iter}.new'
-        self.outfile = self.cachedir / f'{digest}-{self.iter}.json'
-        basedir = Path(os.environ['TYPES3_BASEDIR'])
-        tool = basedir / 'target/release/types3-calc'
+        self.errfile = self.cachedir / f"{digest}-{self.iter}.err"
+        self.tempfile = self.cachedir / f"{digest}-{self.iter}.new"
+        self.outfile = self.cachedir / f"{digest}-{self.iter}.json"
+        basedir = Path(os.environ["TYPES3_BASEDIR"])
+        tool = basedir / "target/release/types3-calc"
         base_args = [
-            tool, self.infile, self.tempfile, '--error-file', self.errfile,
-            '--iter',
-            str(self.iter)
+            tool,
+            self.infile,
+            self.tempfile,
+            "--error-file",
+            self.errfile,
+            "--iter",
+            str(self.iter),
         ]
         for _ in range(self.verbose):
-            base_args += ['--verbose']
+            base_args += ["--verbose"]
         full_cmd = base_args + self.current
-        logging.debug(f'starting: {full_cmd}...')
+        logging.debug(f"starting: {full_cmd}...")
         try:
             self.process = subprocess.Popen(full_cmd)
         except Exception as e:
-            logging.warning(f'starting {full_cmd} failed with {e}')
-            error = 'Cannot start calculations.'
-            self.msg(('ERROR', self.current, self.iter, error))
+            logging.warning(f"starting {full_cmd} failed with {e}")
+            error = "Cannot start calculations."
+            self.msg(("ERROR", self.current, self.iter, error))
             self.iter = None
             self.current = None
 
@@ -139,27 +139,27 @@ class Runner:
             return
         self.process = None
         if ret != 0:
-            error = 'Unknown error during calculation.'
+            error = "Unknown error during calculation."
             if self.errfile.exists():
                 with open(self.errfile) as f:
                     error_struct = json.load(f)
-                    error = error_struct['error']
+                    error = error_struct["error"]
                 self.errfile.unlink()
             else:
-                logging.warning('process failed without telling why')
-            self.msg(('ERROR', self.current, self.iter, error))
+                logging.warning("process failed without telling why")
+            self.msg(("ERROR", self.current, self.iter, error))
             self.iter = None
             self.current = None
             return
-        logging.debug('process finished successfully')
+        logging.debug("process finished successfully")
         self.tempfile.rename(self.outfile)
         if self.iter < MAX_ITER:
-            self.msg(('DONE-WORKING', self.current, self.iter, None))
+            self.msg(("DONE-WORKING", self.current, self.iter, None))
             self.iter *= ITER_STEP
             self.start_cmd()
         else:
-            self.msg(('DONE', self.current, self.iter, None))
-            logging.debug('all iterations done')
+            self.msg(("DONE", self.current, self.iter, None))
+            logging.debug("all iterations done")
             self.iter = None
             self.current = None
 
@@ -167,11 +167,11 @@ class Runner:
         assert self.process is not None
         assert self.current is not None
         assert self.iter is not None
-        logging.debug('stopping...')
+        logging.debug("stopping...")
         self.process.terminate()
-        logging.debug('waiting...')
+        logging.debug("waiting...")
         self.process.wait()
-        logging.debug('stopped')
+        logging.debug("stopped")
         self.iter = None
         self.process = None
         self.current = None
@@ -184,7 +184,7 @@ class Runner:
         best = None
         all_done = False
         while True:
-            cached = self.cachedir / f'{digest}-{self.iter}.json'
+            cached = self.cachedir / f"{digest}-{self.iter}.json"
             if cached.exists():
                 best = self.iter
                 if self.iter < MAX_ITER:
@@ -195,19 +195,19 @@ class Runner:
             else:
                 break
         if all_done:
-            self.msg(('DONE', self.current, self.iter, None))
-            logging.debug('all iterations in cache')
+            self.msg(("DONE", self.current, self.iter, None))
+            logging.debug("all iterations in cache")
             self.iter = None
             self.current = None
         else:
             if best is not None:
-                self.msg(('DONE-WORKING', self.current, best, None))
+                self.msg(("DONE-WORKING", self.current, best, None))
             else:
-                self.msg(('WORKING', self.current, 0, None))
+                self.msg(("WORKING", self.current, 0, None))
             self.start_cmd()
 
     def run(self):
-        logging.debug('runner started')
+        logging.debug("runner started")
         while True:
             if self.process:
                 need_poll = False
@@ -224,19 +224,18 @@ class Runner:
                 continue
             if self.process:
                 self.terminate()
-            if cmd == 'STOP':
+            if cmd == "STOP":
                 break
             assert self.iter is None
             self.iter = MIN_ITER
             self.current = cmd
             self.try_cache()
-        logging.debug('runner done')
+        logging.debug("runner done")
 
 
 class App:
-
     def __init__(self, root, args):
-        root.title('types3')
+        root.title("types3")
         self.verbose = args.verbose
         self.infile = args.infile
         self.cur_args = None
@@ -246,33 +245,34 @@ class App:
         self._build_ui(root)
         self._setup_menu(root)
         self._setup_hooks(root)
-        logging.debug('ready')
+        logging.debug("ready")
 
     def _read_infile(self):
-        logging.debug(f'read: {self.infile}')
+        logging.debug(f"read: {self.infile}")
         with open(self.infile) as f:
             raw_data = f.read()
-        raw_bytes = bytes(raw_data, encoding='utf-8')
+        raw_bytes = bytes(raw_data, encoding="utf-8")
         self.data_digest = hashlib.sha256(raw_bytes).hexdigest()
         data = json.loads(raw_data)
         years = set()
         self.sample_metadata = defaultdict(set)
         self.token_metadata = defaultdict(set)
-        for s in data['samples']:
-            years.add(s['year'])
-            for k, v in s['metadata'].items():
+        for s in data["samples"]:
+            years.add(s["year"])
+            for k, v in s["metadata"].items():
                 self.sample_metadata[k].add(v)
-            for t in s['tokens']:
-                for k, v in t['metadata'].items():
+            for t in s["tokens"]:
+                for k, v in t["metadata"].items():
                     self.token_metadata[k].add(v)
         gcd = math.gcd(*years)
         self.default_step = max(gcd, 10)
 
     def _setup_cache(self):
-        self.cachedir = Path(appdirs.user_cache_dir(
-            'types3')) / OUTPUT_VERSION / self.data_digest
+        self.cachedir = (
+            Path(appdirs.user_cache_dir("types3")) / OUTPUT_VERSION / self.data_digest
+        )
         self.cachedir.mkdir(parents=True, exist_ok=True)
-        logging.debug(f'cache directory: {self.cachedir}')
+        logging.debug(f"cache directory: {self.cachedir}")
 
     def _build_ui(self, root):
         root.geometry(WINDOW_INIT_SIZE)
@@ -280,318 +280,335 @@ class App:
         root.rowconfigure(0, weight=1)
 
         mainframe = ttk.Frame(root)
-        mainframe.grid(column=0, row=0, sticky='nwes')
+        mainframe.grid(column=0, row=0, sticky="nwes")
         mainframe.rowconfigure(0, weight=1)
         mainframe.columnconfigure(0, weight=1)
         mainframe.columnconfigure(1, weight=0)
 
         canvasframe = ttk.Frame(mainframe)
-        canvasframe.grid(column=0, row=0, padx=3, pady=3, sticky='nwes')
+        canvasframe.grid(column=0, row=0, padx=3, pady=3, sticky="nwes")
         canvasframe.columnconfigure(0, weight=1)
         canvasframe.columnconfigure(1, weight=0)
         canvasframe.rowconfigure(0, weight=1)
         canvasframe.rowconfigure(1, weight=0)
 
-        widgetframe = ttk.Frame(mainframe, padding='5 5 5 5')
-        widgetframe.grid(column=1, row=0, padx=3, pady=3, sticky='nw')
+        widgetframe = ttk.Frame(mainframe, padding="5 5 5 5")
+        widgetframe.grid(column=1, row=0, padx=3, pady=3, sticky="nw")
         widgetframe.columnconfigure(1, minsize=WIDGET_WIDTH)
 
         row = 0
 
-        e = ttk.Label(widgetframe, text='Export:')
-        e.grid(column=0, row=row, sticky='e')
-        e = ttk.Button(widgetframe, text='Save as…', command=self.save)
-        e.grid(column=1, row=row, sticky='w')
+        e = ttk.Label(widgetframe, text="Export:")
+        e.grid(column=0, row=row, sticky="e")
+        e = ttk.Button(widgetframe, text="Save as…", command=self.save)
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
         self.save_format = tk.StringVar()
         what_choices = [
-            'PDF',
-            'PNG',
-            'text',
+            "PDF",
+            "PNG",
+            "text",
         ]
-        e = ttk.OptionMenu(widgetframe, self.save_format, what_choices[0],
-                           *what_choices)
-        e.grid(column=1, row=row, sticky='w')
+        e = ttk.OptionMenu(
+            widgetframe, self.save_format, what_choices[0], *what_choices
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        self.save_wide = tk.StringVar(value='')
-        e = ttk.Checkbutton(widgetframe,
-                            text='Wide layout',
-                            onvalue='wide',
-                            offvalue='',
-                            variable=self.save_wide)
-        e.grid(column=1, row=row, sticky='w')
+        self.save_wide = tk.StringVar(value="")
+        e = ttk.Checkbutton(
+            widgetframe,
+            text="Wide layout",
+            onvalue="wide",
+            offvalue="",
+            variable=self.save_wide,
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        self.save_large = tk.StringVar(value='')
-        e = ttk.Checkbutton(widgetframe,
-                            text='Large fonts',
-                            onvalue='large',
-                            offvalue='',
-                            variable=self.save_large)
-        e.grid(column=1, row=row, sticky='w')
+        self.save_large = tk.StringVar(value="")
+        e = ttk.Checkbutton(
+            widgetframe,
+            text="Large fonts",
+            onvalue="large",
+            offvalue="",
+            variable=self.save_large,
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Legend:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Legend:")
+        e.grid(column=0, row=row, sticky="e")
         self.save_legend = tk.StringVar()
         what_choices = [
-            'lower right',
-            'lower left',
-            'upper right',
-            'upper left',
+            "lower right",
+            "lower left",
+            "upper right",
+            "upper left",
         ]
-        e = ttk.OptionMenu(widgetframe, self.save_legend, what_choices[0],
-                           *what_choices)
-        e.grid(column=1, row=row, sticky='w')
+        e = ttk.OptionMenu(
+            widgetframe, self.save_legend, what_choices[0], *what_choices
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='PNG DPI:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="PNG DPI:")
+        e.grid(column=0, row=row, sticky="e")
         self.save_dpi = tk.StringVar()
         what_choices = [
-            '100',
-            '200',
-            '300',
-            '400',
-            '600',
+            "100",
+            "200",
+            "300",
+            "400",
+            "600",
         ]
-        e = ttk.OptionMenu(widgetframe, self.save_dpi, '300', *what_choices)
-        e.grid(column=1, row=row, sticky='w')
+        e = ttk.OptionMenu(widgetframe, self.save_dpi, "300", *what_choices)
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Statistics:')
-        e.grid(column=0, row=row, sticky='e')
-        e = ttk.Button(widgetframe, text='Save as…', command=self.save_stat)
-        e.grid(column=1, row=row, sticky='w')
+        e = ttk.Label(widgetframe, text="Statistics:")
+        e.grid(column=0, row=row, sticky="e")
+        e = ttk.Button(widgetframe, text="Save as…", command=self.save_stat)
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Separator(widgetframe, orient='horizontal')
-        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        e = ttk.Separator(widgetframe, orient="horizontal")
+        e.grid(column=0, row=row, columnspan=2, sticky="ew")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Calculate:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Calculate:")
+        e.grid(column=0, row=row, sticky="e")
         self.what = tk.StringVar()
         what_choices = [
-            'types vs. tokens, using samples',
-            'types vs. tokens, individually',
-            'types vs. words, using samples',
-            'hapaxes vs. tokens, using samples',
-            'hapaxes vs. tokens, individually',
-            'hapaxes vs. words, using samples',
-            'tokens vs. words, using samples',
-            'samples vs. tokens',
-            'samples vs. words',
-            'type ratio, using samples',
-            'type ratio, individually',
+            "types vs. tokens, using samples",
+            "types vs. tokens, individually",
+            "types vs. words, using samples",
+            "hapaxes vs. tokens, using samples",
+            "hapaxes vs. tokens, individually",
+            "hapaxes vs. words, using samples",
+            "tokens vs. words, using samples",
+            "samples vs. tokens",
+            "samples vs. words",
+            "type ratio, using samples",
+            "type ratio, individually",
             # Useful for testing:
             # 'tokens vs. tokens, using samples',
             # 'tokens vs. tokens, individually',
         ]
-        e = ttk.OptionMenu(widgetframe, self.what, what_choices[0],
-                           *what_choices)
-        e.grid(column=1, row=row, sticky='w')
+        e = ttk.OptionMenu(widgetframe, self.what, what_choices[0], *what_choices)
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='What is relevant:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="What is relevant:")
+        e.grid(column=0, row=row, sticky="e")
         self.mark_tokens = tk.StringVar()
         self.mark_tokens_map, mark_tokens_choices = metadata_choices(
-            self.token_metadata)
-        e = ttk.OptionMenu(widgetframe, self.mark_tokens,
-                           mark_tokens_choices[0], *mark_tokens_choices)
-        e.grid(column=1, row=row, sticky='w')
+            self.token_metadata
+        )
+        e = ttk.OptionMenu(
+            widgetframe, self.mark_tokens, mark_tokens_choices[0], *mark_tokens_choices
+        )
+        e.grid(column=1, row=row, sticky="w")
         self.mark_tokens_menu = e
         self.mark_tokens_menu.configure(state="disabled")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Categories:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Categories:")
+        e.grid(column=0, row=row, sticky="e")
         self.category = tk.StringVar()
-        self.category_map, category_choices = metadata_top_choices(
-            self.sample_metadata)
-        e = ttk.OptionMenu(widgetframe, self.category, category_choices[0],
-                           *category_choices)
-        e.grid(column=1, row=row, sticky='w')
+        self.category_map, category_choices = metadata_top_choices(self.sample_metadata)
+        e = ttk.OptionMenu(
+            widgetframe, self.category, category_choices[0], *category_choices
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Sample restriction:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Sample restriction:")
+        e.grid(column=0, row=row, sticky="e")
         self.restrict_samples = tk.StringVar()
         self.restrict_samples_map, restrict_samples_choices = metadata_choices(
-            self.sample_metadata)
-        e = ttk.OptionMenu(widgetframe, self.restrict_samples,
-                           restrict_samples_choices[0],
-                           *restrict_samples_choices)
-        e.grid(column=1, row=row, sticky='w')
+            self.sample_metadata
+        )
+        e = ttk.OptionMenu(
+            widgetframe,
+            self.restrict_samples,
+            restrict_samples_choices[0],
+            *restrict_samples_choices,
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Token restriction:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Token restriction:")
+        e.grid(column=0, row=row, sticky="e")
         self.restrict_tokens = tk.StringVar()
         self.restrict_tokens_map, restrict_tokens_choices = metadata_choices(
-            self.token_metadata)
-        e = ttk.OptionMenu(widgetframe, self.restrict_tokens,
-                           restrict_tokens_choices[0],
-                           *restrict_tokens_choices)
-        e.grid(column=1, row=row, sticky='w')
+            self.token_metadata
+        )
+        e = ttk.OptionMenu(
+            widgetframe,
+            self.restrict_tokens,
+            restrict_tokens_choices[0],
+            *restrict_tokens_choices,
+        )
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Minimum size:')
-        e.grid(column=0, row=row, sticky='e')
-        self.minimum_size = tk.StringVar(value='10')
+        e = ttk.Label(widgetframe, text="Minimum size:")
+        e.grid(column=0, row=row, sticky="e")
+        self.minimum_size = tk.StringVar(value="10")
         e = ttk.Entry(widgetframe, textvariable=self.minimum_size, width=6)
-        e.grid(column=1, row=row, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
+        e.grid(column=1, row=row, sticky="w")
+        e.bind("<FocusOut>", self.update)
+        e.bind("<Return>", self.update)
         row += 1
 
-        e = ttk.Separator(widgetframe, orient='horizontal')
-        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        e = ttk.Separator(widgetframe, orient="horizontal")
+        e.grid(column=0, row=row, columnspan=2, sticky="ew")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Start year:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Start year:")
+        e.grid(column=0, row=row, sticky="e")
         inner = ttk.Frame(widgetframe)
-        inner.grid(column=1, row=row, sticky='w')
+        inner.grid(column=1, row=row, sticky="w")
         inner.rowconfigure(0, weight=1)
         inner.columnconfigure(0, weight=1)
         inner.columnconfigure(1, weight=0)
         self.start = tk.StringVar()
         e = ttk.Entry(inner, textvariable=self.start, width=6)
-        e.grid(column=0, row=0, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
-        self.start_label = tk.StringVar(value='')
+        e.grid(column=0, row=0, sticky="w")
+        e.bind("<FocusOut>", self.update)
+        e.bind("<Return>", self.update)
+        self.start_label = tk.StringVar(value="")
         e = ttk.Label(inner, textvariable=self.start_label)
-        e.grid(column=1, row=0, sticky='w')
+        e.grid(column=1, row=0, sticky="w")
         row += 1
 
-        e = ttk.Label(widgetframe, text='End year:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="End year:")
+        e.grid(column=0, row=row, sticky="e")
         inner = ttk.Frame(widgetframe)
-        inner.grid(column=1, row=row, sticky='w')
+        inner.grid(column=1, row=row, sticky="w")
         inner.rowconfigure(0, weight=1)
         inner.columnconfigure(0, weight=1)
         inner.columnconfigure(1, weight=0)
         self.end = tk.StringVar()
         e = ttk.Entry(inner, textvariable=self.end, width=6)
-        e.grid(column=0, row=0, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
-        self.end_label = tk.StringVar(value='')
+        e.grid(column=0, row=0, sticky="w")
+        e.bind("<FocusOut>", self.update)
+        e.bind("<Return>", self.update)
+        self.end_label = tk.StringVar(value="")
         e = ttk.Label(inner, textvariable=self.end_label)
-        e.grid(column=1, row=0, sticky='w')
+        e.grid(column=1, row=0, sticky="w")
         row += 1
 
-        e = ttk.Separator(widgetframe, orient='horizontal')
-        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        e = ttk.Separator(widgetframe, orient="horizontal")
+        e.grid(column=0, row=row, columnspan=2, sticky="ew")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Window size:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Window size:")
+        e.grid(column=0, row=row, sticky="e")
         self.window = tk.StringVar(value=str(self.default_step))
         e = ttk.Entry(widgetframe, textvariable=self.window, width=6)
-        e.grid(column=1, row=row, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
+        e.grid(column=1, row=row, sticky="w")
+        e.bind("<FocusOut>", self.update)
+        e.bind("<Return>", self.update)
         row += 1
 
-        e = ttk.Label(widgetframe, text='Step size:')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Step size:")
+        e.grid(column=0, row=row, sticky="e")
         self.step = tk.StringVar(value=str(self.default_step))
         e = ttk.Entry(widgetframe, textvariable=self.step, width=6)
-        e.grid(column=1, row=row, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
+        e.grid(column=1, row=row, sticky="w")
+        e.bind("<FocusOut>", self.update)
+        e.bind("<Return>", self.update)
         row += 1
 
-        e = ttk.Label(widgetframe, text='Period offset (optional):')
-        e.grid(column=0, row=row, sticky='e')
+        e = ttk.Label(widgetframe, text="Period offset (optional):")
+        e.grid(column=0, row=row, sticky="e")
         self.offset = tk.StringVar()
         e = ttk.Entry(widgetframe, textvariable=self.offset, width=6)
-        e.grid(column=1, row=row, sticky='w')
-        e.bind('<FocusOut>', self.update)
-        e.bind('<Return>', self.update)
+        e.grid(column=1, row=row, sticky="w")
+        e.bind("<FocusOut>", self.update)
+        e.bind("<Return>", self.update)
         row += 1
 
-        e = ttk.Separator(widgetframe, orient='horizontal')
-        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        e = ttk.Separator(widgetframe, orient="horizontal")
+        e.grid(column=0, row=row, columnspan=2, sticky="ew")
         row += 1
 
-        e = ttk.Label(widgetframe, text='Iterations:')
-        e.grid(column=0, row=row, sticky='e')
-        self.iter = tk.StringVar(value='')
+        e = ttk.Label(widgetframe, text="Iterations:")
+        e.grid(column=0, row=row, sticky="e")
+        self.iter = tk.StringVar(value="")
         e = ttk.Label(widgetframe, textvariable=self.iter)
-        e.grid(column=1, row=row, sticky='w')
+        e.grid(column=1, row=row, sticky="w")
         row += 1
 
-        e = ttk.Separator(widgetframe, orient='horizontal')
-        e.grid(column=0, row=row, columnspan=2, sticky='ew')
+        e = ttk.Separator(widgetframe, orient="horizontal")
+        e.grid(column=0, row=row, columnspan=2, sticky="ew")
         row += 1
 
-        self.error = tk.StringVar(value='')
-        e = ttk.Label(widgetframe,
-                      textvariable=self.error,
-                      wraplength=WIDGET_WIDTH)
-        e.grid(column=0, columnspan=2, row=row, sticky='w')
+        self.error = tk.StringVar(value="")
+        e = ttk.Label(widgetframe, textvariable=self.error, wraplength=WIDGET_WIDTH)
+        e.grid(column=0, columnspan=2, row=row, sticky="w")
         row += 1
 
         for child in widgetframe.winfo_children():
             child.grid_configure(padx=5, pady=3)
 
-        scrollablecanvas = tk.Canvas(canvasframe,
-                                     borderwidth=0,
-                                     highlightthickness=0)
+        scrollablecanvas = tk.Canvas(canvasframe, borderwidth=0, highlightthickness=0)
         scrollableframe = ttk.Frame(scrollablecanvas)
-        scrollablecanvas.grid(column=0, row=0, sticky='nesw')
-        sx = ttk.Scrollbar(canvasframe,
-                           orient='horizontal',
-                           command=scrollablecanvas.xview)
-        sx.grid(row=1, column=0, sticky='ew')
-        sy = ttk.Scrollbar(canvasframe,
-                           orient='vertical',
-                           command=scrollablecanvas.yview)
-        sy.grid(row=0, column=1, sticky='ns')
-        scrollablecanvas.configure(yscrollcommand=sy.set,
-                                   xscrollcommand=sx.set)
-        scrollablecanvas.grid(row=0, column=0, sticky='nesw')
-        scrollablecanvas.create_window((0, 0),
-                                       window=scrollableframe,
-                                       anchor='nw')
+        scrollablecanvas.grid(column=0, row=0, sticky="nesw")
+        sx = ttk.Scrollbar(
+            canvasframe, orient="horizontal", command=scrollablecanvas.xview
+        )
+        sx.grid(row=1, column=0, sticky="ew")
+        sy = ttk.Scrollbar(
+            canvasframe, orient="vertical", command=scrollablecanvas.yview
+        )
+        sy.grid(row=0, column=1, sticky="ns")
+        scrollablecanvas.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+        scrollablecanvas.grid(row=0, column=0, sticky="nesw")
+        scrollablecanvas.create_window((0, 0), window=scrollableframe, anchor="nw")
         scrollableframe.bind(
-            '<Configure>', lambda ev: scrollablecanvas.configure(
-                scrollregion=scrollablecanvas.bbox('all')))
+            "<Configure>",
+            lambda ev: scrollablecanvas.configure(
+                scrollregion=scrollablecanvas.bbox("all")
+            ),
+        )
 
         dims = types3.plot.DIMS_UI
         self.fig = Figure(figsize=(dims.width, dims.height))
         self.canvas = FigureCanvasTkAgg(self.fig, master=scrollableframe)
         self.canvas.draw()
         e = self.canvas.get_tk_widget()
-        e.grid(column=0, row=0, sticky='ne')
+        e.grid(column=0, row=0, sticky="ne")
 
     def _setup_menu(self, root):
-        if root.tk.call('tk', 'windowingsystem') == 'aqua':
+        if root.tk.call("tk", "windowingsystem") == "aqua":
             # macOS: cmd-q and "Quit" in the application menu will
             # close the window instead of just killing Python
             menubar = tk.Menu(root)
-            appmenu = tk.Menu(menubar, name='apple')
+            appmenu = tk.Menu(menubar, name="apple")
             menubar.add_cascade(menu=appmenu)
-            root.createcommand('tk::mac::Quit', root.destroy)
+            root.createcommand("tk::mac::Quit", root.destroy)
 
     def _setup_hooks(self, root):
-        self.what.trace_add('write', self.update)
-        self.category.trace_add('write', self.update)
-        self.restrict_samples.trace_add('write', self.update)
-        self.restrict_tokens.trace_add('write', self.update)
-        self.mark_tokens.trace_add('write', self.update)
-        root.bind('<<NewResults>>', self.new_results)
+        self.what.trace_add("write", self.update)
+        self.category.trace_add("write", self.update)
+        self.restrict_samples.trace_add("write", self.update)
+        self.restrict_tokens.trace_add("write", self.update)
+        self.mark_tokens.trace_add("write", self.update)
+        root.bind("<<NewResults>>", self.new_results)
         self.result_queue = queue.Queue()
         self.runner_queue = queue.Queue()
-        runner = Runner(self.infile, self.cachedir, self.verbose,
-                        self.runner_queue, self.result_queue, root)
+        runner = Runner(
+            self.infile,
+            self.cachedir,
+            self.verbose,
+            self.runner_queue,
+            self.result_queue,
+            root,
+        )
         self.runner_thread = threading.Thread(target=runner.run)
         self.runner_thread.start()
         self.update()
@@ -599,92 +616,90 @@ class App:
     def parse_required_int(self, errors, label, vmin, vmax, v):
         x = self.parse_opt_int(errors, label, vmin, vmax, v)
         if x is None:
-            errors.append(f'{label} is required.')
+            errors.append(f"{label} is required.")
             return None
         return x
 
     def parse_opt_int(self, errors, label, vmin, vmax, v):
         if v is None:
             return None
-        if v.strip() == '':
+        if v.strip() == "":
             return None
         try:
             x = int(v)
         except ValueError:
-            errors.append(f'{label} is not a valid number.')
+            errors.append(f"{label} is not a valid number.")
             return None
         if vmin is not None and x < vmin:
-            errors.append(f'{label} should be at least {vmin}.')
+            errors.append(f"{label} should be at least {vmin}.")
             return None
         if vmax is not None and x > vmax:
-            errors.append(f'{label} should be at most {vmax}.')
+            errors.append(f"{label} should be at most {vmax}.")
             return None
         return x
 
     def get_period_args(self):
         args = []
         errors = []
-        window = self.parse_required_int(errors, 'Window size', 1, None,
-                                         self.window.get())
+        window = self.parse_required_int(
+            errors, "Window size", 1, None, self.window.get()
+        )
         if window is not None:
-            args += ['--window', str(window)]
-        step = self.parse_required_int(errors, 'Step size', 1, None,
-                                       self.step.get())
+            args += ["--window", str(window)]
+        step = self.parse_required_int(errors, "Step size", 1, None, self.step.get())
         if step is not None:
-            args += ['--step', str(step)]
-        start = self.parse_opt_int(errors, 'Start year', None, None,
-                                   self.start.get())
+            args += ["--step", str(step)]
+        start = self.parse_opt_int(errors, "Start year", None, None, self.start.get())
         if start is not None:
-            args += ['--start', str(start)]
-        end = self.parse_opt_int(errors, 'End year', None, None,
-                                 self.end.get())
+            args += ["--start", str(start)]
+        end = self.parse_opt_int(errors, "End year", None, None, self.end.get())
         if end is not None:
-            args += ['--end', str(end)]
-        offset = self.parse_opt_int(errors, 'Offset', None, None,
-                                    self.offset.get())
+            args += ["--end", str(end)]
+        offset = self.parse_opt_int(errors, "Offset", None, None, self.offset.get())
         if offset is not None:
-            args += ['--offset', str(offset)]
+            args += ["--offset", str(offset)]
         return args, errors
 
     def update(self, *x):
         args, errors = self.get_period_args()
-        minimum_size = self.parse_opt_int(errors, 'Minimum size', 1, None,
-                                          self.minimum_size.get())
+        minimum_size = self.parse_opt_int(
+            errors, "Minimum size", 1, None, self.minimum_size.get()
+        )
         if minimum_size is not None:
-            args += ['--minimum-size', str(minimum_size)]
+            args += ["--minimum-size", str(minimum_size)]
         category = self.category_map[self.category.get()]
         if category is not None:
-            args += ['--category', category]
-        restrict_samples = self.restrict_samples_map[
-            self.restrict_samples.get()]
+            args += ["--category", category]
+        restrict_samples = self.restrict_samples_map[self.restrict_samples.get()]
         if restrict_samples is not None:
-            args += ['--restrict-samples', '='.join(restrict_samples)]
+            args += ["--restrict-samples", "=".join(restrict_samples)]
         restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
         if restrict_tokens is not None:
-            args += ['--restrict-tokens', '='.join(restrict_tokens)]
+            args += ["--restrict-tokens", "=".join(restrict_tokens)]
         mark_tokens = self.mark_tokens_map[self.mark_tokens.get()]
         if mark_tokens is not None:
-            args += ['--mark-tokens', '='.join(mark_tokens)]
+            args += ["--mark-tokens", "=".join(mark_tokens)]
         what = self.what.get()
         extra, marked = {
-            'types vs. tokens, using samples': ([], False),
-            'types vs. tokens, individually': (['--split-samples'], False),
-            'types vs. words, using samples': (['--words'], False),
-            'hapaxes vs. tokens, using samples': (['--count-hapaxes'], False),
-            'hapaxes vs. tokens, individually':
-            (['--count-hapaxes', '--split-samples'], False),
-            'hapaxes vs. words, using samples':
-            (['--count-hapaxes', '--words'], False),
-            'tokens vs. tokens, using samples': (['--count-tokens'], False),
-            'tokens vs. tokens, individually':
-            (['--count-tokens', '--split-samples'], False),
-            'tokens vs. words, using samples': (['--count-tokens',
-                                                 '--words'], False),
-            'samples vs. tokens': (['--count-samples'], False),
-            'samples vs. words': (['--count-samples', '--words'], False),
-            'type ratio, using samples': (['--type-ratio'], True),
-            'type ratio, individually': (['--type-ratio',
-                                          '--split-samples'], True),
+            "types vs. tokens, using samples": ([], False),
+            "types vs. tokens, individually": (["--split-samples"], False),
+            "types vs. words, using samples": (["--words"], False),
+            "hapaxes vs. tokens, using samples": (["--count-hapaxes"], False),
+            "hapaxes vs. tokens, individually": (
+                ["--count-hapaxes", "--split-samples"],
+                False,
+            ),
+            "hapaxes vs. words, using samples": (["--count-hapaxes", "--words"], False),
+            "tokens vs. tokens, using samples": (["--count-tokens"], False),
+            "tokens vs. tokens, individually": (
+                ["--count-tokens", "--split-samples"],
+                False,
+            ),
+            "tokens vs. words, using samples": (["--count-tokens", "--words"], False),
+            "samples vs. tokens": (["--count-samples"], False),
+            "samples vs. words": (["--count-samples", "--words"], False),
+            "type ratio, using samples": (["--type-ratio"], True),
+            "type ratio, individually": (["--type-ratio", "--split-samples"], True),
         }.get(what, ([], False))
         args += extra
         if marked:
@@ -693,7 +708,7 @@ class App:
             self.mark_tokens_menu.configure(state="disabled")
         if errors:
             logging.debug(errors)
-            self.error.set('\n'.join(errors))
+            self.error.set("\n".join(errors))
             return
         if self.cur_args != args:
             self.cur_args = args
@@ -701,10 +716,10 @@ class App:
 
     def run(self, root):
         root.mainloop()
-        logging.debug('stopping...')
-        self.runner_queue.put('STOP')
+        logging.debug("stopping...")
+        self.runner_queue.put("STOP")
         self.runner_thread.join()
-        logging.debug('done')
+        logging.debug("done")
 
     def new_results(self, *_):
         to_draw = None
@@ -715,20 +730,20 @@ class App:
                 break
             logging.debug(x)
             what, cmd, iter, error = x
-            if what == 'WORKING':
+            if what == "WORKING":
                 to_draw = None
-                self.iter.set('… (working)')
-                self.error.set('')
-            elif what == 'DONE-WORKING':
+                self.iter.set("… (working)")
+                self.error.set("")
+            elif what == "DONE-WORKING":
                 to_draw = (cmd, iter)
-                self.iter.set(f'{iter}… (more coming)')
-                self.error.set('')
-            elif what == 'DONE':
+                self.iter.set(f"{iter}… (more coming)")
+                self.error.set("")
+            elif what == "DONE":
                 to_draw = (cmd, iter)
-                self.iter.set(f'{iter} (all done)')
-                self.error.set('')
-            elif what == 'ERROR':
-                self.iter.set('—')
+                self.iter.set(f"{iter} (all done)")
+                self.error.set("")
+            elif what == "ERROR":
+                self.iter.set("—")
                 self.error.set(error)
             else:
                 assert False, what
@@ -737,105 +752,100 @@ class App:
 
     def draw(self, cmd, iter):
         digest = cmd_digest(cmd)
-        outfile = self.cachedir / f'{digest}-{iter}.json'
+        outfile = self.cachedir / f"{digest}-{iter}.json"
         self.cur_outfile = outfile
         with open(outfile) as f:
             data = json.load(f)
 
-        start = data['years'][0]
-        end = data['years'][1] - 1
-        self.start_label.set(f'(first sample: {start})')
-        self.end_label.set(f'(last sample: {end})')
+        start = data["years"][0]
+        end = data["years"][1] - 1
+        self.start_label.set(f"(first sample: {start})")
+        self.end_label.set(f"(last sample: {end})")
         self.fig.clear()
         dims = types3.plot.DIMS_UI
-        types3.plot.plot(self.fig, data, dims, legend='lower right')
+        types3.plot.plot(self.fig, data, dims, legend="lower right")
         self.canvas.draw()
 
     def save(self, *_):
         if self.cur_outfile is None:
             return
         ftmap = {
-            'PDF': ([('PDF', '*.pdf')], 'types3.pdf'),
-            'PNG': ([('PNG', '*.png')], 'types3.png'),
-            'text': ([('text', '*.txt')], 'types3.txt'),
+            "PDF": ([("PDF", "*.pdf")], "types3.pdf"),
+            "PNG": ([("PNG", "*.png")], "types3.png"),
+            "text": ([("text", "*.txt")], "types3.txt"),
         }
         fmt = self.save_format.get()
         if fmt not in ftmap:
-            fmt = 'PDF'
+            fmt = "PDF"
         filetypes, initialfile = ftmap[fmt]
         save_filename = tk.filedialog.asksaveasfilename(
-            filetypes=filetypes,
-            defaultextension=filetypes,
-            initialfile=initialfile)
+            filetypes=filetypes, defaultextension=filetypes, initialfile=initialfile
+        )
         if not save_filename:
             return
-        basedir = Path(os.environ['TYPES3_BASEDIR'])
-        tool = basedir / 'types3-plot'
+        basedir = Path(os.environ["TYPES3_BASEDIR"])
+        tool = basedir / "types3-plot"
         cmd = [
             tool,
             self.cur_outfile,
             save_filename,
-            '--legend',
+            "--legend",
             self.save_legend.get(),
-            '--dpi',
+            "--dpi",
             self.save_dpi.get(),
         ]
-        if self.save_wide.get() == 'wide':
-            cmd += ['--wide']
-        if self.save_large.get() == 'large':
-            cmd += ['--large']
+        if self.save_wide.get() == "wide":
+            cmd += ["--wide"]
+        if self.save_large.get() == "large":
+            cmd += ["--large"]
         for _ in range(self.verbose):
-            cmd += ['--verbose']
+            cmd += ["--verbose"]
         try:
             subprocess.run(cmd, check=True)
         except Exception as e:
-            logging.warning(f'starting {cmd} failed with {e}')
-            tk.messagebox.showerror(
-                message=f'Could not export as {save_filename}')
+            logging.warning(f"starting {cmd} failed with {e}")
+            tk.messagebox.showerror(message=f"Could not export as {save_filename}")
 
     def save_stat(self, *_):
         args, errors = self.get_period_args()
-        restrict_samples = self.restrict_samples_map[
-            self.restrict_samples.get()]
+        restrict_samples = self.restrict_samples_map[self.restrict_samples.get()]
         if restrict_samples is not None:
-            args += ['--restrict-samples', '='.join(restrict_samples)]
+            args += ["--restrict-samples", "=".join(restrict_samples)]
         restrict_tokens = self.restrict_tokens_map[self.restrict_tokens.get()]
         if restrict_tokens is not None:
-            args += ['--restrict-tokens', '='.join(restrict_tokens)]
+            args += ["--restrict-tokens", "=".join(restrict_tokens)]
         if errors:
             logging.debug(errors)
-            tk.messagebox.showerror(message='\n'.join(errors))
+            tk.messagebox.showerror(message="\n".join(errors))
             return
 
         ftmap = {
-            'XLSX': ([('XLSX', '*.xlsx')], 'types3.xlsx'),
+            "XLSX": ([("XLSX", "*.xlsx")], "types3.xlsx"),
         }
         fmt = self.save_format.get()
         if fmt not in ftmap:
-            fmt = 'XLSX'
+            fmt = "XLSX"
         filetypes, initialfile = ftmap[fmt]
         save_filename = tk.filedialog.asksaveasfilename(
-            filetypes=filetypes,
-            defaultextension=filetypes,
-            initialfile=initialfile)
+            filetypes=filetypes, defaultextension=filetypes, initialfile=initialfile
+        )
         if not save_filename:
             return
 
-        basedir = Path(os.environ['TYPES3_BASEDIR'])
-        tool = basedir / 'types3-stat'
+        basedir = Path(os.environ["TYPES3_BASEDIR"])
+        tool = basedir / "types3-stat"
         cmd = [
             tool,
             self.infile,
             save_filename,
         ] + args
         for _ in range(self.verbose):
-            cmd += ['--verbose']
+            cmd += ["--verbose"]
         try:
             subprocess.run(cmd, check=True)
         except Exception as e:
-            logging.warning(f'starting {cmd} failed with {e}')
-            tk.messagebox.showerror(
-                message=f'Could not export as {save_filename}')
+            logging.warning(f"starting {cmd} failed with {e}")
+            tk.messagebox.showerror(message=f"Could not export as {save_filename}")
 
 
 def main():
@@ -846,11 +856,11 @@ def main():
         loglevel = logging.INFO
     else:
         loglevel = logging.WARN
-    logging.basicConfig(format='%(levelname)s %(message)s', level=loglevel)
+    logging.basicConfig(format="%(levelname)s %(message)s", level=loglevel)
     sanity_check()
     root = tk.Tk()
     App(root, args).run(root)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

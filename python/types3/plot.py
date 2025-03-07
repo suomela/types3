@@ -1,14 +1,14 @@
 import math
 from collections import namedtuple
 
-COLORS = ['#f26924', '#0088cc', '#3ec636']
+COLORS = ["#f26924", "#0088cc", "#3ec636"]
 MAX_SIGNIFICANCE = 4
 SIG_MARG = 0
 
-Dims = namedtuple('Dims', [
-    'h1', 'h2', 'm1', 'm2', 'm3', 'm4', 'x0', 'x1', 'w', 'width', 'height',
-    'columns'
-])
+Dims = namedtuple(
+    "Dims",
+    ["h1", "h2", "m1", "m2", "m3", "m4", "x0", "x1", "w", "width", "height", "columns"],
+)
 
 DIMS_UI = Dims(
     h1=4,
@@ -63,8 +63,8 @@ def _catname(cats):
             _, v = cat
             s.append(v)
     if len(s) == 0:
-        s.append('everything')
-    return ', '.join(s)
+        s.append("everything")
+    return ", ".join(s)
 
 
 def _catname_text(cats):
@@ -72,10 +72,10 @@ def _catname_text(cats):
     for cat in cats:
         if cat is not None:
             k, v = cat
-            s.append(f'{k} = {v}')
+            s.append(f"{k} = {v}")
     if len(s) == 0:
-        s.append('everything')
-    return ', '.join(s)
+        s.append("everything")
+    return ", ".join(s)
 
 
 def _significance(x, n):
@@ -95,73 +95,73 @@ def _significance_value(x, n):
 
 def _significance_text(side, p):
     if p <= 0.05:
-        return [f'significantly {side}', f'(p = {p:f})']
+        return [f"significantly {side}", f"(p = {p:f})"]
     elif p <= 0.25:
-        return [f'{side}', f'(p = {p:f})']
+        return [f"{side}", f"(p = {p:f})"]
     else:
-        return ['typical']
+        return ["typical"]
 
 
 def _get_avg(r):
-    period = r['period']
+    period = r["period"]
     x = period[0]
-    ar = r['average_at_limit']
-    y = (ar['low'] + ar['high']) / (2 * ar['iter'])
+    ar = r["average_at_limit"]
+    y = (ar["low"] + ar["high"]) / (2 * ar["iter"])
     return (x, y)
 
 
 def _get_avg_text(r):
-    ar = r['average_at_limit']
-    y1 = ar['low'] / ar['iter']
-    y2 = ar['high'] / ar['iter']
-    return [f'{y1:f}', '…', f'{y2:f}']
+    ar = r["average_at_limit"]
+    y1 = ar["low"] / ar["iter"]
+    y2 = ar["high"] / ar["iter"]
+    return [f"{y1:f}", "…", f"{y2:f}"]
 
 
 def _get_vs(r, what):
-    period = r['period']
+    period = r["period"]
     x = period[0]
     pr = r[what]
-    above = _significance(pr['above'], pr['iter'])
-    below = _significance(pr['below'], pr['iter'])
+    above = _significance(pr["above"], pr["iter"])
+    below = _significance(pr["below"], pr["iter"])
     return (x, above, -below)
 
 
 def _get_vs_text(r, what):
     pr = r[what]
-    above = _significance_value(pr['above'], pr['iter'])
-    below = _significance_value(pr['below'], pr['iter'])
+    above = _significance_value(pr["above"], pr["iter"])
+    below = _significance_value(pr["below"], pr["iter"])
     if above < below:
-        return _significance_text('high', above)
+        return _significance_text("high", above)
     else:
-        return _significance_text('low', below)
+        return _significance_text("low", below)
 
 
 def _upcase(x):
-    if x == '':
+    if x == "":
         return x
     return x[0].upper() + x[1:]
 
 
 def _title(data):
-    measure_x = data['measure_x']
-    measure_y = data['measure_y']
-    mark_tokens = data['mark_tokens']
-    limit = data['limit']
-    if measure_y == 'markedtypes':
+    measure_x = data["measure_x"]
+    measure_y = data["measure_y"]
+    mark_tokens = data["mark_tokens"]
+    limit = data["limit"]
+    if measure_y == "markedtypes":
         if mark_tokens is None:
-            return f'Types in subcorpora with {limit} {measure_x}'
+            return f"Types in subcorpora with {limit} {measure_x}"
         else:
             what = _upcase(mark_tokens[1])
-            return f'{what} types in subcorpora with {limit} total {measure_x}'
+            return f"{what} types in subcorpora with {limit} total {measure_x}"
     else:
         measure_y_cased = _upcase(measure_y)
-        return f'{measure_y_cased} in subcorpora with {limit} {measure_x}'
+        return f"{measure_y_cased} in subcorpora with {limit} {measure_x}"
 
 
 def set_height(data, dims):
-    curves = data['curves']
+    curves = data["curves"]
     nn = len(curves)
-    has_cats = curves[0]['category'] is not None
+    has_cats = curves[0]["category"] is not None
     if dims.columns == 1:
         y = dims.m1
         y += dims.h1
@@ -190,13 +190,13 @@ def set_height(data, dims):
 
 
 def plot(fig, data, dims, legend):
-    periods = data['periods']
-    curves = data['curves']
-    restrictions = [data['restrict_samples'], data['restrict_tokens']]
-    has_cats = curves[0]['category'] is not None
+    periods = data["periods"]
+    curves = data["curves"]
+    restrictions = [data["restrict_samples"], data["restrict_tokens"]]
+    has_cats = curves[0]["category"] is not None
 
     xx = [a for (a, b) in periods]
-    periodlabels = [f'{a}–{b-1}' for (a, b) in periods]
+    periodlabels = [f"{a}–{b - 1}" for (a, b) in periods]
 
     if len(xx) > 1:
         xrange = xx[-1] - xx[0]
@@ -211,10 +211,14 @@ def plot(fig, data, dims, legend):
     axs3 = []
     y = dims.m1
     y += dims.h1
-    ax = fig.add_axes([
-        col / dims.width, 1 - y / dims.height, dims.w / dims.width,
-        dims.h1 / dims.height
-    ])
+    ax = fig.add_axes(
+        [
+            col / dims.width,
+            1 - y / dims.height,
+            dims.w / dims.width,
+            dims.h1 / dims.height,
+        ]
+    )
     ax.set_title(_title(data))
     ax.set_xlim(xlimits)
     ax.set_xticks(xx, [])
@@ -222,21 +226,24 @@ def plot(fig, data, dims, legend):
     last = ax
     y += dims.m2
     if dims.columns > 1:
-        last.set_xticks(xx, periodlabels, rotation='vertical')
+        last.set_xticks(xx, periodlabels, rotation="vertical")
         col += dims.x1
         y = dims.m1
     for i, curve in enumerate(curves):
         if i != 0:
             y += dims.m3
         y += dims.h2
-        ax = fig.add_axes([
-            col / dims.width, 1 - y / dims.height, dims.w / dims.width,
-            dims.h2 / dims.height
-        ])
+        ax = fig.add_axes(
+            [
+                col / dims.width,
+                1 - y / dims.height,
+                dims.w / dims.width,
+                dims.h2 / dims.height,
+            ]
+        )
         if i == 0:
-            ax.set_title('Significance of differences in time')
-        ax.set_ylim(
-            (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
+            ax.set_title("Significance of differences in time")
+        ax.set_ylim((-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
         ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
         ax.set_xlim(xlimits)
         ax.set_xticks([], [])
@@ -249,40 +256,44 @@ def plot(fig, data, dims, legend):
             if i != 0:
                 y += dims.m3
             y += dims.h2
-            ax = fig.add_axes([
-                col / dims.width, 1 - y / dims.height, dims.w / dims.width,
-                dims.h2 / dims.height
-            ])
+            ax = fig.add_axes(
+                [
+                    col / dims.width,
+                    1 - y / dims.height,
+                    dims.w / dims.width,
+                    dims.h2 / dims.height,
+                ]
+            )
             if i == 0:
-                ax.set_title(
-                    'Significance in comparison with other categories')
-            ax.set_ylim(
-                (-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
+                ax.set_title("Significance in comparison with other categories")
+            ax.set_ylim((-MAX_SIGNIFICANCE - SIG_MARG, MAX_SIGNIFICANCE + SIG_MARG))
             ax.set_yticks(range(-MAX_SIGNIFICANCE, MAX_SIGNIFICANCE + 1), [])
             ax.set_xlim(xlimits)
             ax.set_xticks([], [])
             axs3.append(ax)
             last = ax
-    last.set_xticks(xx, periodlabels, rotation='vertical')
+    last.set_xticks(xx, periodlabels, rotation="vertical")
 
     ymax = 1
     for i, curve in enumerate(curves):
-        if len(curve['results']) == 0:
+        if len(curve["results"]) == 0:
             continue
-        if curve['category']:
+        if curve["category"]:
             color = COLORS[i]
         else:
-            color = '#000000'
-        label = _catname(restrictions + [curve['category']])
-        points = [_get_avg(r) for r in curve['results']]
+            color = "#000000"
+        label = _catname(restrictions + [curve["category"]])
+        points = [_get_avg(r) for r in curve["results"]]
         xx, yy = zip(*points)
-        ax1.plot(xx,
-                 yy,
-                 label=label,
-                 color=color,
-                 markeredgecolor=color,
-                 markerfacecolor=color,
-                 marker='o')
+        ax1.plot(
+            xx,
+            yy,
+            label=label,
+            color=color,
+            markeredgecolor=color,
+            markerfacecolor=color,
+            marker="o",
+        )
         ymax = max(ymax, max(yy))
 
         def plotter(ax, points):
@@ -290,19 +301,14 @@ def plot(fig, data, dims, legend):
             ax.fill_between(xx, yy1, yy2, color=color, alpha=0.7, linewidth=0)
             msig = min(math.ceil(max(max(yy1), -min(yy2))), MAX_SIGNIFICANCE)
             for i in range(1, msig):
-                ax.fill_between(xx,
-                                -i,
-                                +i,
-                                color='#ffffff',
-                                alpha=0.4,
-                                linewidth=0)
-            ax.axhline(0, color='#000000', linewidth=0.8)
+                ax.fill_between(xx, -i, +i, color="#ffffff", alpha=0.4, linewidth=0)
+            ax.axhline(0, color="#000000", linewidth=0.8)
 
-        points = [_get_vs(r, 'vs_time') for r in curve['results']]
+        points = [_get_vs(r, "vs_time") for r in curve["results"]]
         plotter(axs2[i], points)
 
         if has_cats:
-            points = [_get_vs(r, 'vs_categories') for r in curve['results']]
+            points = [_get_vs(r, "vs_categories") for r in curve["results"]]
             plotter(axs3[i], points)
 
     ax1.set_ylim((0, ymax * 1.05))
@@ -310,7 +316,7 @@ def plot(fig, data, dims, legend):
 
 
 def _pperiod(period):
-    return f'{period[0]}–{period[1]-1}'
+    return f"{period[0]}–{period[1] - 1}"
 
 
 def _pretty_table(table, right, pad):
@@ -330,41 +336,41 @@ def _pretty_table(table, right, pad):
             else:
                 c = c.ljust(w)
             row.append(c)
-        result.append(pad + ' '.join(row))
+        result.append(pad + " ".join(row))
     return result
 
 
 def text(data):
     result = []
-    curves = data['curves']
-    if curves[0]['category'] is not None:
-        cases = ['vs_time', 'vs_categories']
+    curves = data["curves"]
+    if curves[0]["category"] is not None:
+        cases = ["vs_time", "vs_categories"]
     else:
-        cases = ['vs_time']
+        cases = ["vs_time"]
     result += [
         _title(data),
-        '',
-        'Sample restriction: ' + _catname_text([data['restrict_samples']]),
-        'Token restriction: ' + _catname_text([data['restrict_tokens']]),
-        '',
+        "",
+        "Sample restriction: " + _catname_text([data["restrict_samples"]]),
+        "Token restriction: " + _catname_text([data["restrict_tokens"]]),
+        "",
     ]
     expl = {
-        'vs_time': 'Significance of differences in time:',
-        'vs_categories': 'Significance in comparison with other categories:'
+        "vs_time": "Significance of differences in time:",
+        "vs_categories": "Significance in comparison with other categories:",
     }
     for case in cases:
-        result += [expl[case], '']
+        result += [expl[case], ""]
         for curve in curves:
-            label = _catname_text([curve['category']])
-            result += [f'  {label}:', '']
+            label = _catname_text([curve["category"]])
+            result += [f"  {label}:", ""]
             table = []
-            for r in curve['results']:
-                period = _pperiod(r['period'])
+            for r in curve["results"]:
+                period = _pperiod(r["period"])
                 avg = _get_avg_text(r)
                 vs = _get_vs_text(r, case)
-                table.append([f'{period}: '] + avg + [''] + vs)
-            result += _pretty_table(table, {1, 3}, '    ')
-            result += ['']
+                table.append([f"{period}: "] + avg + [""] + vs)
+            result += _pretty_table(table, {1, 3}, "    ")
+            result += [""]
 
-    result += [f'(calculations done with {data["iter"]} iterations)', '', '']
-    return '\n'.join(result)
+    result += [f"(calculations done with {data['iter']} iterations)", "", ""]
+    return "\n".join(result)
