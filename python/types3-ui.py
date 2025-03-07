@@ -53,10 +53,10 @@ def metadata_choices(metadata):
     m = {"everything": None}
     for k in sorted(metadata.keys()):
         for v in sorted(metadata[k]):
-            l = f"{k}: {v}"
-            assert l not in m
-            m[l] = (k, v)
-            r.append(l)
+            label = f"{k}: {v}"
+            assert label not in m
+            m[label] = (k, v)
+            r.append(label)
     return m, r
 
 
@@ -69,10 +69,10 @@ def metadata_top_choices(metadata):
         vv = ", ".join(sorted(metadata[k]))
         if len(vv) > 25:
             vv = vv[:20] + "…"
-        l = f"{k} ({vv})"
-        assert l not in m
-        m[l] = k
-        r.append(l)
+        label = f"{k} ({vv})"
+        assert label not in m
+        m[label] = k
+        r.append(label)
     return m, r
 
 
