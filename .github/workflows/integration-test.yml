@@ -64,6 +64,7 @@ jobs:
 
       - name: Install software
         run: |
+          rustup update
           brew update
           brew upgrade
           brew install python python-tk imagemagick
