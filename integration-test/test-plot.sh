@@ -31,14 +31,14 @@ for dir in plot plot-expected; do
     cd "$dir"
     for a in *.pdf; do
         b="${a%.pdf}.png"
-        magick -quiet -density 100 "$a" "$b" &
+        convert -quiet -density 100 "$a" "$b" &
     done
     wait
 
     for a in *.pdf; do
         b="${a%.pdf}.png"
         c="${a%.pdf}.tmp"
-        magick identify -quiet -format "%# %wx%h $a\n" "$b" > "$c" &
+        identify -quiet -format "%# %wx%h $a\n" "$b" > "$c" &
     done
     wait
 
