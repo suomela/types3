@@ -4,6 +4,12 @@ This is a tool for analyzing textual diversity, richness, and productivity in te
 
 ![Screenshot: user interface](doc/types3.png)
 
+## References
+
+This tool has been used in:
+
+- Margherita Fantoli, Jukka Suomela, Toon Van Hal, Mark Depauw, Lari Virkki, and Mikko Tolonen (2025): "Quantifying the Presence of Ancient Greek and Latin Classics in Early Modern Britain." *Journal of Cultural Analytics*, volume 10, issue 1. [doi:10.22148/001c.128008](https://doi.org/10.22148/001c.128008)
+
 ## Setup
 
 You will need some Unix-like operating system, Python with Tkinter support, and Rust. See below for detailed instructions for your operating system.
