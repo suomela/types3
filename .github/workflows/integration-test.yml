@@ -67,7 +67,7 @@ jobs:
           rustup update
           brew update
           brew upgrade
-          brew install python python-tk imagemagick
+          brew install python python-tk ghostscript imagemagick
 
       - name: Run setup
         run: |
