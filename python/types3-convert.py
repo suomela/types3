@@ -39,7 +39,8 @@ def convert(args):
             metadata = {}
             for key, value in r.items():
                 if key not in KEYS:
-                    metadata[key] = value
+                    if value != '':
+                        metadata[key] = value
             sample = dict(
                 id=r["id"],
                 words=int(r["words"]),
@@ -73,7 +74,8 @@ def convert(args):
             metadata = {}
             for key, value in r.items():
                 if key not in KEYS:
-                    metadata[key] = value
+                    if value != '':
+                        metadata[key] = value
             token = dict(
                 lemma=r["lemma"],
                 metadata=metadata,
