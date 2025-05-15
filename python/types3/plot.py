@@ -25,7 +25,7 @@ DIMS_UI = Dims(
     x1=None,
     w=0.8 * 7,
     width=7,
-    height=15,
+    height=6.8 + 2 * len(COLORS) * 0.9,
     columns=1,
 )
 
