@@ -1,9 +1,13 @@
 import math
 from collections import namedtuple
 
-COLORS = ["#f26924", "#0088cc", "#3ec636"]
+PALETTE = ["#f26924", "#0088cc", "#3ec636", "#000000", "#a0a0a0"]
+COLORS = PALETTE * 2
+FACECOLORS = PALETTE + ["#ffffff"] * len(PALETTE)
 MAX_SIGNIFICANCE = 4
 SIG_MARG = 0
+
+assert len(FACECOLORS) == len(COLORS)
 
 Dims = namedtuple(
     "Dims",
@@ -280,8 +284,10 @@ def plot(fig, data, dims, legend):
             continue
         if curve["category"]:
             color = COLORS[i]
+            facecolor = FACECOLORS[i]
         else:
             color = "#000000"
+            facecolor = color
         label = _catname(restrictions + [curve["category"]])
         points = [_get_avg(r) for r in curve["results"]]
         xx, yy = zip(*points)
@@ -291,7 +297,7 @@ def plot(fig, data, dims, legend):
             label=label,
             color=color,
             markeredgecolor=color,
-            markerfacecolor=color,
+            markerfacecolor=facecolor,
             marker="o",
         )
         ymax = max(ymax, max(yy))
