@@ -91,6 +91,7 @@ For more information, see:
 
     ./types3-ui --help
     ./types3-convert --help
+    ./types3-filter --help
     ./types3-calc --help
     ./types3-plot --help
     ./types3-stat --help
@@ -108,6 +109,20 @@ See [sample-data](sample-data) for our sample data sets. To explore our sample d
 and:
 
     ./types3-ui sample-data/ced-ppceme-chelar.json
+
+## Creating subcorpora
+
+This program lets you create a subcorpus in an interactive manner:
+
+    ./types3-filter input.json output.json
+
+Try, for example:
+
+    ./types3-filter sample-data/ced-ppceme-chelar.json subcorpus.json
+
+And once you have created a subcorpus:
+
+    ./types3-ui subcorpus.json
 
 ## Tests
 

@@ -1,13 +1,13 @@
 //! Data structures for representing the input.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Type used to represent years.
 pub type Year = i16;
 
 /// One token in the input.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct IToken {
     /// Lemma.
     /// Tokens with the same lemma are considered to represent the same type.
@@ -21,7 +21,7 @@ pub struct IToken {
 }
 
 /// One sample in the input.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ISample {
     /// Sample identifier.
     pub id: String,
@@ -42,7 +42,7 @@ pub struct ISample {
 }
 
 /// The entire input.
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Input {
     /// Samples.
     pub samples: Vec<ISample>,
