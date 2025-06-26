@@ -9,6 +9,7 @@ This is a tool for analyzing textual diversity, richness, and productivity in te
 This tool has been used in:
 
 - Margherita Fantoli, Jukka Suomela, Toon Van Hal, Mark Depauw, Lari Virkki, and Mikko Tolonen (2025): "Quantifying the Presence of Ancient Greek and Latin Classics in Early Modern Britain." *Journal of Cultural Analytics*, volume 10, issue 1. [doi:10.22148/001c.128008](https://doi.org/10.22148/001c.128008)
+- Tanja Säily, Florent Perek, and Jukka Suomela (2025): "Variation and Change in the Productivity of BE *going to* V in the *Corpus of Historical American English*, 1810–2009." *English Language and Linguistics*, volume 29, issue 2 (special issue, Tanja Säily & Turo Vartiainen (eds.), *Constructional Approaches to Creativity and Productivity in English*). [doi:10.1017/S136067432500022X](https://doi.org/10.1017/S136067432500022X)
 
 ## Setup
 
