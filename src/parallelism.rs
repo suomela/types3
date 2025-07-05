@@ -103,7 +103,7 @@ mod test {
 
     #[test]
     fn compute_parallel_small() {
-        assert!(5 < RANDOM_JOBS);
+        const _: () = assert!(5 < RANDOM_JOBS);
         let (r, iter) = compute_parallel(
             || Adder { x: 0, y: 0 },
             |job, adder| {

@@ -532,7 +532,7 @@ mod test {
         }];
         let result = average_at_limit(MeasureY::Tokens, &samples, ITER, 1000);
         assert_eq!(result.iter, ITER);
-        assert_eq!(result.low, 0 * ITER);
+        assert_eq!(result.low, 0);
         assert_eq!(result.high, 10 * ITER);
     }
 
