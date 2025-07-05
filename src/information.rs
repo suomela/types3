@@ -34,7 +34,7 @@ pub fn statistics(samples: &[ISample]) {
         }
     }
     info!(target: "types3", "before filtering: samples: {}", samples.len());
-    info!(target: "types3", "before filtering: tokens: {}", tokencount);
+    info!(target: "types3", "before filtering: tokens: {tokencount}");
     info!(target: "types3", "before filtering: distinct lemmas: {}", lemmas.len());
     info!(target: "types3",
         "token metadata categories: {}",
@@ -63,8 +63,7 @@ pub fn post_statistics(samples: &[CSample]) {
     }
     info!(target: "types3", "after filtering: samples: {}", samples.len());
     info!(target: "types3",
-        "after filtering: tokens: {}, marked: {}",
-        tokencount, marked_tokencount
+        "after filtering: tokens: {tokencount}, marked: {marked_tokencount}"
     );
     info!(target: "types3",
         "after filtering: distinct lemmas: {}, marked: {}",

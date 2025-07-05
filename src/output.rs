@@ -188,7 +188,7 @@ pub struct OError {
 pub fn avg_string(ar: &AvgResult) -> String {
     let low = ar.low as f64 / ar.iter as f64;
     let high = ar.high as f64 / ar.iter as f64;
-    format!("{:.2}–{:.2}", low, high)
+    format!("{low:.2}–{high:.2}")
 }
 
 /// Human-friendly representation for [PointResult].

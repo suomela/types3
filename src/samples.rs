@@ -110,8 +110,7 @@ pub fn get_categories<'a>(key: &'a str, samples: &[CSample<'a>]) -> Result<Vec<C
     }
     if values.is_empty() {
         return Err(errors::invalid_input(format!(
-            "there are no samples with metadata key {}",
-            key
+            "there are no samples with metadata key {key}"
         )));
     }
     let mut values = values.into_iter().collect_vec();
@@ -121,6 +120,6 @@ pub fn get_categories<'a>(key: &'a str, samples: &[CSample<'a>]) -> Result<Vec<C
         .into_iter()
         .map(|val| Some((key as &str, val as &str)))
         .collect_vec();
-    info!(target: "types3", "categories: {} = {}", key, valstring);
+    info!(target: "types3", "categories: {key} = {valstring}");
     Ok(categories)
 }

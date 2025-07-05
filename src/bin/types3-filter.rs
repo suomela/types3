@@ -279,7 +279,7 @@ fn main() -> Result<()> {
                 let writer = io::BufWriter::new(file);
                 let new_input = Input { samples };
                 serde_json::to_writer_pretty(writer, &new_input)?;
-                log::info(format!("Wrote to {}", filename))?;
+                log::info(format!("Wrote to {filename}"))?;
             }
             Action::Restrict(how, What::Tokens) => match select_tokens(&samples)? {
                 None => (),
