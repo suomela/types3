@@ -48,7 +48,7 @@ pub fn matches(category: Category, metadata: &HashMap<String, String>) -> bool {
 /// assert_eq!(parse_restriction(&Some("a b=c d".to_owned())).unwrap(), Some(("a b", "c d")));
 /// assert!(parse_restriction(&Some("a=b=c".to_owned())).is_err());
 /// ```
-pub fn parse_restriction(arg: &Option<String>) -> Result<Category> {
+pub fn parse_restriction(arg: &Option<String>) -> Result<Category<'_>> {
     match arg {
         None => Ok(None),
         Some(r) => {

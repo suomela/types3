@@ -37,7 +37,7 @@ impl<'a> Subset<'a> {
         self.key().pretty()
     }
 
-    pub fn key(&self) -> SubsetKey {
+    pub fn key(&self) -> SubsetKey<'_> {
         SubsetKey {
             category: self.category,
             period: self.period,
@@ -202,14 +202,14 @@ mod test {
         }
     }
 
-    fn ct(token: &str) -> CToken {
+    fn ct(token: &str) -> CToken<'_> {
         CToken {
             token,
             marked: false,
         }
     }
 
-    fn ctm(token: &str) -> CToken {
+    fn ctm(token: &str) -> CToken<'_> {
         CToken {
             token,
             marked: true,

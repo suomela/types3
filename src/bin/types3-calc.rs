@@ -114,7 +114,7 @@ impl Args {
         Ok(())
     }
 
-    fn to_driver_args(&self) -> Result<DriverArgs> {
+    fn to_driver_args(&self) -> Result<DriverArgs<'_>> {
         let category: Option<&str> = match &self.category {
             None => None,
             Some(key) => Some(key),
