@@ -7,7 +7,7 @@ use std::fmt;
 
 /// What to calculate.
 ///
-/// In the visualizations, this corresponds to what will be put in the y axis.
+/// In the visualizations, this corresponds to what will be put on the y-axis.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MeasureY {
@@ -17,7 +17,7 @@ pub enum MeasureY {
     Tokens,
     /// Number of hapax legomena (types with only one token).
     Hapaxes,
-    /// Number of smaples.
+    /// Number of samples.
     Samples,
     /// Number of distinct lemmas in marked tokens.
     MarkedTypes,
@@ -150,7 +150,7 @@ pub struct Output {
     /// covers exactly the same time periods as what is specified here.
     pub periods: Vec<Years>,
     /// What was calculated.
-    /// In the visualizations, this corresponds to what is put in the y axis.
+    /// In the visualizations, this corresponds to what is put on the y-axis.
     /// See [crate::driver::DriverArgs::measure_y].
     pub measure_y: MeasureY,
     /// Criterion used to compare subcorpora.

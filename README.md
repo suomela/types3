@@ -1,6 +1,6 @@
 # types3: Type accumulation curves
 
-This is a tool for analyzing textual diversity, richness, and productivity in text corpora and other data sets.
+This is a tool for analyzing textual diversity, richness, and productivity in text corpora and other datasets.
 
 ![Screenshot: user interface](doc/types3.png)
 
@@ -13,26 +13,26 @@ This tool has been used in:
 
 ## Setup
 
-You will need some Unix-like operating system, Python with Tkinter support, and Rust. See below for detailed instructions for your operating system.
+You will need a Unix-like operating system, Python with Tkinter support, and Rust. See below for detailed instructions for your operating system.
 
 ### macOS
 
 Open a terminal.
 
-Make sure you have Homebrew installed and up-to-date:
+Make sure you have Homebrew installed and up to date:
 
 - Run `brew update` and `brew upgrade` and see if it works.
 - If not, follow the usual [Homebrew installation instructions](https://brew.sh).
 - After installation, you can close and re-open the terminal.
 
-Make sure you have got the relevant packages installed, by running this command:
+Make sure you have the relevant packages installed by running this command:
 
     brew install python python-tk
 
-Make sure you have got Rust installed and up-to-date:
+Make sure you have Rust installed and up to date:
 
 - Run `rustup update` and see if it works.
-- If not, follow the usual [Rust installation instructions](https://www.rust-lang.org/tools/install). You need to copy-paste one command to the terminal and follow instructions (all default settings are fine).
+- If not, follow the usual [Rust installation instructions](https://www.rust-lang.org/tools/install). You need to copy and paste one command into the terminal and follow the instructions (all default settings are fine).
 - After installation, you can close and re-open the terminal.
 
 Download and set up types3:
@@ -41,7 +41,7 @@ Download and set up types3:
     cd types3
     util/setup.sh
 
-Try it out with our sample data set:
+Try it out with our sample dataset:
 
     ./types3-ui sample-data/ceec.json
 
@@ -49,15 +49,15 @@ Try it out with our sample data set:
 
 Open a terminal.
 
-Make sure you have got the relevant packages installed, by running these commands:
+Make sure you have the relevant packages installed by running these commands:
 
     sudo apt-get update
     sudo apt-get install git curl build-essential python3 python3-venv python3-tk
 
-Make sure you have got Rust installed and up-to-date:
+Make sure you have Rust installed and up to date:
 
 - Run `rustup update` and see if it works.
-- If not, follow the usual [Rust installation instructions](https://www.rust-lang.org/tools/install). You need to copy-paste one command to the terminal and follow instructions (all default settings are fine).
+- If not, follow the usual [Rust installation instructions](https://www.rust-lang.org/tools/install). You need to copy and paste one command into the terminal and follow the instructions (all default settings are fine).
 - After installation, you can close and re-open the terminal.
 
 Download and set up types3:
@@ -80,7 +80,7 @@ Install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Su
 - Open "Ubuntu" (from the Start menu).
 - Follow the instructions to set your Linux username and password.
 
-Now you have got Ubuntu Linux running inside your Windows computer, and you can follow the instructions for Ubuntu Linux above. Just make sure that you run all commands inside "Ubuntu" (and not e.g. in the regular Windows terminal).
+You now have Ubuntu Linux running on your Windows computer, and you can follow the instructions for Ubuntu Linux above. Just make sure that you run all commands inside "Ubuntu" (and not, e.g., in the regular Windows terminal).
 
 ## Usage
 
@@ -103,7 +103,7 @@ See [data-format](data-format) for more information on the data format and how t
 
 ## Sample data
 
-See [sample-data](sample-data) for our sample data sets. To explore our sample data sets, try:
+See [sample-data](sample-data) for our sample datasets. To explore our sample datasets, try:
 
     ./types3-ui sample-data/ceec.json
 

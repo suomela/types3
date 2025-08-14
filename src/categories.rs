@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// See [crate::output::OCategory] for the owned version.
 pub type Category<'a> = Option<(&'a str, &'a str)>;
 
-/// Convertes [Category] to [OCategory].
+/// Converts [Category] to [OCategory].
 pub fn owned_cat(category: Category) -> OCategory {
     category.map(|(k, v)| (k.to_owned(), v.to_owned()))
 }

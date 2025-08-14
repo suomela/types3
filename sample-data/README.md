@@ -16,7 +16,7 @@ Generated with `util/ced-ppceme-chelar-convert.py` from [suffix-competition](htt
 
 ## Scripts
 
-You can use `util/run-all.sh` to re-generate the JSON files.
+You can use `util/run-all.sh` to regenerate the JSON files.
 
 ## Authors
 

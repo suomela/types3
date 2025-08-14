@@ -22,7 +22,7 @@ pub struct DriverArgs<'a> {
     pub category: Option<&'a str>,
 
     /// What to calculate.
-    /// In the visualizations, this corresponds to what will be put in the y axis.
+    /// In the visualizations, this corresponds to what will be put on the y-axis.
     pub measure_y: MeasureY,
 
     /// Criterion used to compare subcorpora.
@@ -36,20 +36,20 @@ pub struct DriverArgs<'a> {
     /// Periodization offset.
     /// If 0, period starting points will be multiples of the step size.
     /// For example, if we use 100-year steps, we will have periods starting at 1800, 1900, 2000, etc.
-    /// By setting the `offset` e.g. to 12, we will switch to periods starting at 1812, 1912, 2012, etc.
+    /// By setting the `offset`, e.g., to 12, we will switch to periods starting at 1812, 1912, 2012, etc.
     pub offset: Year,
 
     /// Starting year.
     /// Empty periods in the beginning will be automatically omitted,
-    /// so the starting year can be safely set to e.g. 0.
+    /// so the starting year can be safely set to, e.g., 0.
     pub start: Year,
 
     /// Final year.
     /// Empty periods in the end will be automatically omitted,
-    /// so the final year can be safely set to e.g. 9999.
+    /// so the final year can be safely set to, e.g., 9999.
     pub end: Year,
 
-    /// Windows size.
+    /// Window size.
     pub window: Year,
 
     /// Step size.
