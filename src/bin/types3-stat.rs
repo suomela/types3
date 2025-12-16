@@ -49,6 +49,18 @@ struct Args {
     verbose: Verbosity<WarnLevel>,
 }
 
+impl Args {
+    fn sanity(&self) -> Result<()> {
+        if self.window <= 0 {
+            return Err(errors::invalid_argument_ref("window must be positive"));
+        }
+        if self.step <= 0 {
+            return Err(errors::invalid_argument_ref("step must be positive"));
+        }
+        Ok(())
+    }
+}
+
 struct RawStat<'a> {
     samples: u64,
     words: u64,
@@ -208,6 +220,7 @@ fn stat(args: &Args, samples: &[ISample]) -> Result<Workbook> {
 }
 
 fn process(args: &Args) -> Result<()> {
+    args.sanity()?;
     info!(target: "types3", "read: {}", args.infile);
     let indata = fs::read_to_string(&args.infile)?;
     let input: Input = serde_json::from_str(&indata)?;
@@ -249,5 +262,16 @@ fn main() {
             }
             process::exit(1);
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn args_bad_step() {
+        let args = Args::parse_from(["", "--window", "100", "--step", "0", "a", "b"]);
+        args.sanity().unwrap_err();
     }
 }

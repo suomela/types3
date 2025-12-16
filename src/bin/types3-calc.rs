@@ -85,6 +85,12 @@ impl Args {
         if self.minimum_size == 0 {
             return Err(errors::invalid_argument_ref("minimum size cannot be 0"));
         }
+        if self.window <= 0 {
+            return Err(errors::invalid_argument_ref("window must be positive"));
+        }
+        if self.step <= 0 {
+            return Err(errors::invalid_argument_ref("step must be positive"));
+        }
         if self.words && self.split_samples {
             return Err(errors::invalid_argument_ref(
                 "cannot select both --words and --split-samples",
@@ -279,6 +285,12 @@ mod test {
             "a",
             "b",
         ]);
+        args.sanity().unwrap_err();
+    }
+
+    #[test]
+    fn args_bad_step() {
+        let args = Args::parse_from(["", "--window", "100", "--step", "0", "a", "b"]);
         args.sanity().unwrap_err();
     }
 }

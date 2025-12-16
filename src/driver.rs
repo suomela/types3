@@ -87,6 +87,9 @@ struct Curve<'a> {
 
 /// Turn a list of years into a list of periods.
 pub fn get_periods(offset: Year, window: Year, step: Year, years: &Years) -> Vec<Years> {
+    if window <= 0 || step <= 0 {
+        return vec![];
+    }
     let mut periods = vec![];
     let mut y = offset;
     while y + step <= years.0 {
@@ -149,6 +152,12 @@ struct Calc<'a> {
 
 impl<'a> Calc<'a> {
     fn new(args: &'a DriverArgs, input: &'a Input) -> Result<Calc<'a>> {
+        if args.window <= 0 {
+            return Err(errors::invalid_argument_ref("window must be positive"));
+        }
+        if args.step <= 0 {
+            return Err(errors::invalid_argument_ref("step must be positive"));
+        }
         information::statistics(&input.samples);
         let restrict_years = (args.start, args.end + 1);
         let samples = samples::get_samples(
@@ -338,6 +347,8 @@ impl<'a> Calc<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::input::{ISample, IToken, Input};
+    use std::collections::HashMap;
 
     fn build_args<'a>(window: Year, step: Year, offset: Year) -> DriverArgs<'a> {
         DriverArgs {
@@ -484,5 +495,46 @@ mod test {
                 (1981, 1991),
             ]
         );
+    }
+
+    #[test]
+    fn get_periods_step_zero() {
+        assert!(get_periods(0, 10, 0, &(1911, 1979)).is_empty());
+    }
+
+    #[test]
+    fn calc_rejects_step_zero() {
+        let input = Input {
+            samples: vec![ISample {
+                id: "s".to_owned(),
+                year: 2000,
+                descr: None,
+                metadata: HashMap::new(),
+                words: 1,
+                tokens: vec![IToken {
+                    lemma: "a".to_owned(),
+                    descr: None,
+                    metadata: HashMap::new(),
+                }],
+            }],
+        };
+        let args = DriverArgs {
+            category: None,
+            measure_y: MeasureY::Types,
+            measure_x: MeasureX::Tokens,
+            iter: 1,
+            offset: 0,
+            start: 0,
+            end: 9999,
+            window: 10,
+            step: 0,
+            minimum_size: 1,
+            restrict_samples: None,
+            restrict_tokens: None,
+            mark_tokens: None,
+            split_samples: false,
+        };
+        let e = calc(&args, &input).unwrap_err();
+        assert!(format!("{e}").contains("step must be positive"));
     }
 }
